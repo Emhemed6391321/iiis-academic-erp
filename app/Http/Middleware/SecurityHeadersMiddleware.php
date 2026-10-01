@@ -19,10 +19,12 @@ class SecurityHeadersMiddleware
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         // CSP supporting Alpine.js, Tailwind CDN/fonts, Leaflet maps, and Chart.js
-        $csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com https://*.tile.openstreetmap.org; " .
+        $csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; " .
+               "style-src 'self' 'unsafe-inline' blob: data: https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " .
                "img-src 'self' data: blob: https:; " .
-               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " .
-               "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; " .
+               "font-src 'self' data: blob: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " .
+               "connect-src 'self' data: blob: https: ws: wss:; " .
                "frame-ancestors 'none';";
         $response->headers->set('Content-Security-Policy', $csp);
 
