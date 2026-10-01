@@ -38,11 +38,16 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'enforce.mfa', 'force.password_change'])->group(function () {
 
     Route::get('/', function (Request $request) {
+        $allAcademicYears = \App\Models\AcademicYear::orderBy('id', 'desc')->get();
+        $currentAcademicYear = \App\Models\AcademicYear::where('is_current', true)->first() ?: $allAcademicYears->first();
+
         return view('dashboard', [
-            'initialSection'    => $request->query('section', 'dashboard'),
-            'initialAction'     => $request->query('action', ''),
-            'initialCourseId'   => $request->query('course_id', $request->query('id', 1)),
-            'initialSettingsTab'=> $request->query('tab', 'calendar'),
+            'initialSection'      => $request->query('section', 'dashboard'),
+            'initialAction'       => $request->query('action', ''),
+            'initialCourseId'     => $request->query('course_id', $request->query('id', 1)),
+            'initialSettingsTab'  => $request->query('tab', 'calendar'),
+            'allAcademicYears'    => $allAcademicYears,
+            'currentAcademicYear' => $currentAcademicYear,
         ]);
     })->name('dashboard');
 

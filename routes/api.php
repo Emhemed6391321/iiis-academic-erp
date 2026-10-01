@@ -294,6 +294,11 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::delete('/clear-test-logs', [\App\Http\Controllers\Api\SystemErrorMonitoringController::class, 'clearTestLogs']);
     });
 
-    // 19. Enterprise System Health & Ops Monitoring
+    // 19. User Profile & Account Management
+    Route::get('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'getProfile']);
+    Route::post('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'updateProfile']);
+    Route::post('/user/password', [\App\Http\Controllers\Api\UserProfileController::class, 'updatePassword']);
+
+    // 20. Enterprise System Health & Ops Monitoring
     Route::get('/health', [\App\Http\Controllers\Api\SystemHealthController::class, 'check']);
 });
