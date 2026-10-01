@@ -905,7 +905,7 @@
                             <span x-show="!sidebarCollapsed" class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-400/20 text-amber-300 border border-amber-400/30">مركزي</span>
                         </button>
 
-                        <button @click="currentSection = 'settings'; loadSettingsData()"
+                        <button @click="currentSection = 'settings'; settingsTab = 'years'; loadSettingsData()"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'settings' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="الإعدادات المركزية والتقويم الدراسي">
@@ -16357,7 +16357,7 @@
                 sidebarCollapsed: false,
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
                 selectedCourseId: {{ $initialCourseId ?? 1 }},
-                settingsTab: '{{ $initialSettingsTab ?? "calendar" }}',
+                settingsTab: '{{ $initialSettingsTab ?? "years" }}',
                 selectedAcademicYearId: '{{ $currentAcademicYear ? $currentAcademicYear->id : 1 }}',
                 activeAcademicYearName: '{{ $currentAcademicYear ? $currentAcademicYear->name : "2026-2027" }}',
 
@@ -16709,7 +16709,7 @@
                 },
 
                 // Central Settings & Academic Calendar State (7 Units)
-                settingsTab: 'calendar',
+                settingsTab: 'years',
                 openCalendarEventModal: false,
                 openScheduleModal: false,
                 openCreateYearModal: false,
