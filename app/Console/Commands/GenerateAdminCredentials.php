@@ -9,24 +9,62 @@ use Illuminate\Support\Str;
 
 class GenerateAdminCredentials extends Command
 {
-    protected $signature = 'app:admin-credentials {email? : البريد الإلكتروني للمستخدم} {--reset : إعادة تعيين كلمة المرور بكلمة عشوائية قوية}';
+    protected $signature = 'app:admin-credentials {email? : البريد الإلكتروني للمستخدم} {--reset : إعادة تعيين كلمة المرور بكلمة عشوائية قوية} {--password= : تعيين كلمة مرور محددة للمستخدم}';
     protected $description = 'إدارة وتوليد بيانات الدخول للمستخدمين الإداريين بكلمات مرور آمنة ومشفرة';
 
     public function handle(): int
     {
         $email = $this->argument('email');
         $reset = $this->option('reset');
+        $specifiedPassword = $this->option('password');
 
         if ($email) {
             $user = User::where('email', $email)->first();
             if (!$user) {
-                $this->error("المستخدم بالبريد {$email} غير موجود.");
-                return 1;
+                $role = \App\Models\Role::firstOrCreate(
+                    ['name' => 'super_admin'],
+                    ['display_name' => 'المدير العام', 'scope_type' => 'GLOBAL_SCOPE']
+                );
+                $initialPass = $specifiedPassword ?: '112200225124';
+                $user = User::create([
+                    'name' => 'المدير العام للمعهد التخصصي',
+                    'email' => $email,
+                    'national_id' => '119780000001',
+                    'role_id' => $role->id,
+                    'is_active' => true,
+                    'must_change_password' => false,
+                    'two_factor_enabled' => false,
+                    'password' => $initialPass,
+                ]);
+
+                $this->info("تم إنشاء المستخدم وتعيين كلمة المرور بنجاح للمستخدم: {$user->name}");
+                $this->table(['الحقل', 'القيمة'], [
+                    ['الاسم', $user->name],
+                    ['البريد الإلكتروني', $user->email],
+                    ['كلمة المرور', $initialPass],
+                ]);
+                return 0;
+            }
+
+            if ($specifiedPassword) {
+                $user->password = $specifiedPassword;
+                $user->must_change_password = false;
+                $user->two_factor_enabled = false;
+                $user->is_active = true;
+                $user->save();
+
+                $this->info("تم تحديث كلمة المرور بنجاح للمستخدم: {$user->name}");
+                $this->table(['الحقل', 'القيمة'], [
+                    ['الاسم', $user->name],
+                    ['البريد الإلكتروني', $user->email],
+                    ['كلمة المرور', $specifiedPassword],
+                ]);
+                return 0;
             }
 
             if ($reset) {
                 $plainPassword = Str::password(16, true, true, true, false);
-                $user->password = Hash::make($plainPassword);
+                $user->password = $plainPassword;
                 $user->must_change_password = true;
                 $user->save();
 
