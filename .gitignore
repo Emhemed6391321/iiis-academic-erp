@@ -22,6 +22,11 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+*.sqlite
+*.sqlite-journal
+/storage/app/backups/
+/storage/app/secure_vault/
+/storage/app/private/
 
 # ============================================================
 # ملفات التطوير المؤقتة — Development & Scratch Files
