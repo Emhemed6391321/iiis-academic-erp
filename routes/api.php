@@ -293,4 +293,7 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
         Route::post('/trigger-test', [\App\Http\Controllers\Api\SystemErrorMonitoringController::class, 'triggerTestError']);
         Route::delete('/clear-test-logs', [\App\Http\Controllers\Api\SystemErrorMonitoringController::class, 'clearTestLogs']);
     });
+
+    // 19. Enterprise System Health & Ops Monitoring
+    Route::get('/health', [\App\Http\Controllers\Api\SystemHealthController::class, 'check']);
 });
