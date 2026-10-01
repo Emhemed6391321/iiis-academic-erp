@@ -114,4 +114,13 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Multi-Factor Authentication (MFA / TOTP)
+    |--------------------------------------------------------------------------
+    | Toggle MFA requirement across global scope and super admin accounts.
+    | Set to false to disable mandatory 2FA.
+    */
+    'mfa_enabled' => env('MFA_ENABLED', false),
+
 ];

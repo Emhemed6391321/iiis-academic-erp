@@ -110,10 +110,14 @@ class User extends Authenticatable
 
     /**
      * هل يتطلب حساب المستخدم تفعيل التحقق بخطوتين (MFA/TOTP) إلزامياً؟
-     * إلزامي لجميع أدوار GLOBAL_SCOPE و super_admin.
+     * إلزامي لجميع أدوار GLOBAL_SCOPE و super_admin عند تفعيلها في النظام.
      */
     public function requiresMfa(): bool
     {
+        if (!config('auth.mfa_enabled', false)) {
+            return false;
+        }
+
         return $this->isSuperAdmin() || $this->hasGlobalAccessScope();
     }
 
