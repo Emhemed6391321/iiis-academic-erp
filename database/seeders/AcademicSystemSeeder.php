@@ -174,28 +174,32 @@ class AcademicSystemSeeder extends Seeder
         }
 
         // 4. Academic Structure
-        $currentYear = AcademicYear::create([
-            'code' => '2026-2027',
-            'name' => '1448هـ الموافق 2026/2027م',
-            'start_date' => '2026-09-01',
-            'end_date' => '2027-06-30',
-            'is_current' => true,
-            'is_locked' => false,
-        ]);
+        $currentYear = AcademicYear::firstOrCreate(
+            ['code' => '2026-2027'],
+            [
+                'name' => '1448هـ الموافق 2026/2027م',
+                'start_date' => '2026-09-01',
+                'end_date' => '2027-06-30',
+                'is_current' => true,
+                'is_locked' => false,
+            ]
+        );
 
         $studyYears = [
-            1 => StudyYear::create(['name' => 'السنة الأولى (التأسيسية)', 'level_order' => 1, 'description' => 'المرحلة الدراسية الأولى - نظام فصلي']),
-            2 => StudyYear::create(['name' => 'السنة الثانية (المتوسطة)', 'level_order' => 2, 'description' => 'المرحلة الدراسية الثانية - نظام فصلي']),
-            3 => StudyYear::create(['name' => 'السنة الثالثة (شهادة إتمام المرحلة)', 'level_order' => 3, 'description' => 'مرحلة التخرج والشهادة التخصصية - نظام فترتين وامتحان نهائي']),
+            1 => StudyYear::firstOrCreate(['level_order' => 1], ['name' => 'السنة الأولى (التأسيسية)', 'description' => 'المرحلة الدراسية الأولى - نظام فصلي']),
+            2 => StudyYear::firstOrCreate(['level_order' => 2], ['name' => 'السنة الثانية (المتوسطة)', 'description' => 'المرحلة الدراسية الثانية - نظام فصلي']),
+            3 => StudyYear::firstOrCreate(['level_order' => 3], ['name' => 'السنة الثالثة (شهادة إتمام المرحلة)', 'description' => 'مرحلة التخرج والشهادة التخصصية - نظام فترتين وامتحان نهائي']),
         ];
 
         // Official Department (شعبة الدعوة وأصول الدين)
-        $deptDawah = Department::create([
-            'code' => 'DAWAH_USUL_ALDIN',
-            'name' => 'شعبة الدعوة وأصول الدين',
-            'description' => 'الخطة والمقررات المعتمدة من وزارة الأوقاف والشؤون الإسلامية - الحكومة الليبية',
-            'is_active' => true,
-        ]);
+        $deptDawah = Department::firstOrCreate(
+            ['code' => 'DAWAH_USUL_ALDIN'],
+            [
+                'name' => 'شعبة الدعوة وأصول الدين',
+                'description' => 'الخطة والمقررات المعتمدة من وزارة الأوقاف والشؤون الإسلامية - الحكومة الليبية',
+                'is_active' => true,
+            ]
+        );
 
         // 5. Official Curriculum (الباب الثاني - المقررات الدراسية الـ 12 للسنوات الثلاث)
 
@@ -217,24 +221,28 @@ class AcademicSystemSeeder extends Seeder
 
         foreach ($year1Courses as $c) {
             $isSingle = ($c['hours'] === 1);
-            Course::create([
-                'study_year_id' => $studyYears[1]->id,
-                'department_id' => $deptDawah->id,
-                'semester' => 1,
-                'code' => $c['code'],
-                'name' => $c['name'],
-                'credit_hours' => $c['hours'],
-                'weekly_hours' => $c['hours'],
-                'assessment_system' => 'SEMESTER_SYSTEM',
-                'max_coursework_grade' => $isSingle ? 6.00 : 12.00,
-                'max_midterm_grade' => $isSingle ? 2.00 : 4.00,
-                'max_final_grade' => $isSingle ? 14.00 : 28.00,
-                'pass_grade' => $isSingle ? 20.00 : 40.00,
-                'max_score' => $c['max'],
-                'pass_min_score' => $c['pass'],
-                'second_round_max' => $c['resit'],
-                'is_active' => true,
-            ]);
+            Course::firstOrCreate(
+                [
+                    'study_year_id' => $studyYears[1]->id,
+                    'department_id' => $deptDawah->id,
+                    'semester' => 1,
+                    'code' => $c['code'],
+                ],
+                [
+                    'name' => $c['name'],
+                    'credit_hours' => $c['hours'],
+                    'weekly_hours' => $c['hours'],
+                    'assessment_system' => 'SEMESTER_SYSTEM',
+                    'max_coursework_grade' => $isSingle ? 6.00 : 12.00,
+                    'max_midterm_grade' => $isSingle ? 2.00 : 4.00,
+                    'max_final_grade' => $isSingle ? 14.00 : 28.00,
+                    'pass_grade' => $isSingle ? 20.00 : 40.00,
+                    'max_score' => $c['max'],
+                    'pass_min_score' => $c['pass'],
+                    'second_round_max' => $c['resit'],
+                    'is_active' => true,
+                ]
+            );
         }
 
         // السنة الثانية: نظام فصلي
@@ -255,24 +263,28 @@ class AcademicSystemSeeder extends Seeder
 
         foreach ($year2Courses as $c) {
             $isSingle = ($c['hours'] === 1);
-            Course::create([
-                'study_year_id' => $studyYears[2]->id,
-                'department_id' => $deptDawah->id,
-                'semester' => 1,
-                'code' => $c['code'],
-                'name' => $c['name'],
-                'credit_hours' => $c['hours'],
-                'weekly_hours' => $c['hours'],
-                'assessment_system' => 'SEMESTER_SYSTEM',
-                'max_coursework_grade' => $isSingle ? 6.00 : 12.00,
-                'max_midterm_grade' => $isSingle ? 2.00 : 4.00,
-                'max_final_grade' => $isSingle ? 14.00 : 28.00,
-                'pass_grade' => $isSingle ? 20.00 : 40.00,
-                'max_score' => $c['max'],
-                'pass_min_score' => $c['pass'],
-                'second_round_max' => $c['resit'],
-                'is_active' => true,
-            ]);
+            Course::firstOrCreate(
+                [
+                    'study_year_id' => $studyYears[2]->id,
+                    'department_id' => $deptDawah->id,
+                    'semester' => 1,
+                    'code' => $c['code'],
+                ],
+                [
+                    'name' => $c['name'],
+                    'credit_hours' => $c['hours'],
+                    'weekly_hours' => $c['hours'],
+                    'assessment_system' => 'SEMESTER_SYSTEM',
+                    'max_coursework_grade' => $isSingle ? 6.00 : 12.00,
+                    'max_midterm_grade' => $isSingle ? 2.00 : 4.00,
+                    'max_final_grade' => $isSingle ? 14.00 : 28.00,
+                    'pass_grade' => $isSingle ? 20.00 : 40.00,
+                    'max_score' => $c['max'],
+                    'pass_min_score' => $c['pass'],
+                    'second_round_max' => $c['resit'],
+                    'is_active' => true,
+                ]
+            );
         }
 
         // السنة الثالثة: سنة التخرج وشهادة إتمام المرحلة (نظام فترتين وامتحان نهائي)
@@ -293,24 +305,28 @@ class AcademicSystemSeeder extends Seeder
 
         foreach ($year3Courses as $c) {
             $isSingle = ($c['hours'] === 1);
-            Course::create([
-                'study_year_id' => $studyYears[3]->id,
-                'department_id' => $deptDawah->id,
-                'semester' => 1,
-                'code' => $c['code'],
-                'name' => $c['name'],
-                'credit_hours' => $c['hours'],
-                'weekly_hours' => $c['hours'],
-                'assessment_system' => 'ANNUAL_PERIODS_SYSTEM',
-                'max_coursework_grade' => $isSingle ? 5.00 : 10.00, // أعمال الفترة
-                'max_midterm_grade' => $isSingle ? 3.00 : 6.00,     // امتحان الفترة
-                'max_final_grade' => $isSingle ? 24.00 : 48.00,     // امتحان نهاية العام
-                'pass_grade' => $isSingle ? 20.00 : 40.00,
-                'max_score' => $c['max'],
-                'pass_min_score' => $c['pass'],
-                'second_round_max' => $c['resit'],
-                'is_active' => true,
-            ]);
+            Course::firstOrCreate(
+                [
+                    'study_year_id' => $studyYears[3]->id,
+                    'department_id' => $deptDawah->id,
+                    'semester' => 1,
+                    'code' => $c['code'],
+                ],
+                [
+                    'name' => $c['name'],
+                    'credit_hours' => $c['hours'],
+                    'weekly_hours' => $c['hours'],
+                    'assessment_system' => 'ANNUAL_PERIODS_SYSTEM',
+                    'max_coursework_grade' => $isSingle ? 5.00 : 10.00, // أعمال الفترة
+                    'max_midterm_grade' => $isSingle ? 3.00 : 6.00,     // امتحان الفترة
+                    'max_final_grade' => $isSingle ? 24.00 : 48.00,     // امتحان نهاية العام
+                    'pass_grade' => $isSingle ? 20.00 : 40.00,
+                    'max_score' => $c['max'],
+                    'pass_min_score' => $c['pass'],
+                    'second_round_max' => $c['resit'],
+                    'is_active' => true,
+                ]
+            );
         }
 
         // 6. Users representing the official administrative roles
@@ -407,25 +423,27 @@ class AcademicSystemSeeder extends Seeder
         }
 
         // 7. Operational Windows (Active)
-        OperationalWindow::create([
-            'academic_year_id' => $currentYear->id,
-            'window_type' => 'REGISTRATION',
-            'title' => 'فترة قبول وتسجيل الطلاب الجدد للعام 2026/2027م - شُعبة الدعوة وأصول الدين',
-            'start_at' => Carbon::now()->subDays(5),
-            'end_at' => Carbon::now()->addDays(25),
-            'is_active' => true,
-            'created_by' => $createdUsers[0]->id,
-        ]);
+        OperationalWindow::firstOrCreate(
+            ['academic_year_id' => $currentYear->id, 'window_type' => 'REGISTRATION'],
+            [
+                'title' => 'فترة قبول وتسجيل الطلاب الجدد للعام 2026/2027م - شُعبة الدعوة وأصول الدين',
+                'start_at' => Carbon::now()->subDays(5),
+                'end_at' => Carbon::now()->addDays(25),
+                'is_active' => true,
+                'created_by' => $createdUsers[0]->id,
+            ]
+        );
 
-        OperationalWindow::create([
-            'academic_year_id' => $currentYear->id,
-            'window_type' => 'S1_COURSEWORK',
-            'title' => 'فترة رصد أعمال السنة والتطبيقات التحريرية والامتحانات النصفية',
-            'start_at' => Carbon::now()->subDays(2),
-            'end_at' => Carbon::now()->addDays(40),
-            'is_active' => true,
-            'created_by' => $createdUsers[1]->id,
-        ]);
+        OperationalWindow::firstOrCreate(
+            ['academic_year_id' => $currentYear->id, 'window_type' => 'S1_COURSEWORK'],
+            [
+                'title' => 'فترة رصد أعمال السنة والتطبيقات التحريرية والامتحانات النصفية',
+                'start_at' => Carbon::now()->subDays(2),
+                'end_at' => Carbon::now()->addDays(40),
+                'is_active' => true,
+                'created_by' => $createdUsers[1]->id,
+            ]
+        );
 
         // 8. Enrolled Students across Study Years
         $studentsData = [
@@ -540,7 +558,7 @@ class AcademicSystemSeeder extends Seeder
         ];
 
         foreach ($studentsData as $st) {
-            \App\Models\Student::create($st);
+            \App\Models\Student::firstOrCreate(['academic_number' => $st['academic_number']], $st);
         }
     }
 }
