@@ -1,0 +1,45 @@
+*.log
+.DS_Store
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+/auth.json
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+Homestead.json
+Homestead.yaml
+Thumbs.db
+
+# ============================================================
+# ملفات التطوير المؤقتة — Development & Scratch Files
+# ============================================================
+
+# مجلد السكراتش والأدوات المساعدة (لا يرفع للإنتاج)
+/scratch/
+
+# ملفات PHP القديمة في جذر المشروع (تجاوز Laravel مباشرة)
+/edit_course.php
+/settings.php
+
+# سكريبتات Python المؤقتة
+*.py
+/scratch_tables.py
+
+# تقارير وملفات HTML المؤقتة
+تقرير_انجاز_تطبيق_منهل_الرسمي.html
+
+# ملفات الـ Kilo Editor
+/.kilo/
