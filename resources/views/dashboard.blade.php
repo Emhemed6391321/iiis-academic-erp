@@ -1100,21 +1100,21 @@
                             </span>
                         </div>
                         <div class="flex items-baseline gap-2">
-                            <div class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" x-text="kpis.total_students || 319">319</div>
+                            <div class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" x-text="kpis.total_students ?? 0">0</div>
                             <span class="text-xs text-slate-400 font-semibold">طالباً مسجلاً</span>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span x-text="(kpis.enrolled_students || 295) + ' معتمد نهائياً'">295 معتمد</span>
+                                    <span x-text="(kpis.enrolled_students ?? 0) + ' معتمد نهائياً'">0 معتمد</span>
                                 </span>
-                                <span class="text-amber-600 dark:text-amber-400 font-bold" x-text="(kpis.pending_students || 14) + ' قيد التدقيق'">14 قيد التدقيق</span>
-                                <span class="text-slate-400 font-semibold" x-text="(kpis.draft_students || 10) + ' مسودة'">10 مسودة</span>
+                                <span class="text-amber-600 dark:text-amber-400 font-bold" x-text="(kpis.pending_students ?? 0) + ' قيد التدقيق'">0 قيد التدقيق</span>
+                                <span class="text-slate-400 font-semibold" x-text="(kpis.draft_students ?? 0) + ' مسودة'">0 مسودة</span>
                             </div>
                             <div class="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden flex">
-                                <div class="bg-emerald-500 h-full" :style="'width: ' + ((kpis.enrolled_students || 295) / (kpis.total_students || 319) * 100) + '%'"></div>
-                                <div class="bg-amber-400 h-full" :style="'width: ' + ((kpis.pending_students || 14) / (kpis.total_students || 319) * 100) + '%'"></div>
+                                <div class="bg-emerald-500 h-full" :style="'width: ' + (kpis.total_students ? ((kpis.enrolled_students || 0) / kpis.total_students * 100) : 0) + '%'"></div>
+                                <div class="bg-amber-400 h-full" :style="'width: ' + (kpis.total_students ? ((kpis.pending_students || 0) / kpis.total_students * 100) : 0) + '%'"></div>
                             </div>
                         </div>
                     </div>
@@ -1133,11 +1133,11 @@
                             </span>
                         </div>
                         <div class="flex items-baseline gap-2">
-                            <div class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" x-text="(branches.length || 18) + ' فرعاً'">18 فرعاً</div>
+                            <div class="text-3xl font-black text-slate-900 dark:text-white tracking-tight" x-text="(branches.length ?? 0) + ' فرعاً'">0 فرعاً</div>
                             <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold">تغطية وطنية شاملة</span>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-                            <span class="text-slate-600 dark:text-slate-300 font-semibold" x-text="(kpis.total_properties || 18) + ' مقرات مسجلة'">18 مقراً مسجلاً</span>
+                            <span class="text-slate-600 dark:text-slate-300 font-semibold" x-text="(kpis.total_properties ?? 0) + ' مقرات مسجلة'">0 مقراً مسجلاً</span>
                             <span class="text-[#2b78a5] dark:text-blue-400 font-bold hover:underline">دليل الفروع والمقرات ←</span>
                         </div>
                     </div>
@@ -1252,7 +1252,7 @@
                                 <span>📡 الرادار التشغيلي لشبكة الفروع</span>
                                 <span class="px-2 py-0.5 rounded-[8px] text-[10px] font-mono"
                                       :class="dashboardActiveTab === 'radar' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'"
-                                      x-text="branches.length || 18">18</span>
+                                      x-text="branches.length ?? 0">0</span>
                             </button>
 
                             <button @click="dashboardActiveTab = 'windows'"
@@ -1303,7 +1303,7 @@
                                         </div>
                                     </div>
                                     <div class="text-left space-y-1">
-                                        <div class="font-mono font-bold text-xs text-[#14268d] dark:text-blue-400" x-text="(b.total_students_count || b.students_count || 18) + ' طالب'"></div>
+                                        <div class="font-mono font-bold text-xs text-[#14268d] dark:text-blue-400" x-text="(b.total_students_count ?? 0) + ' طالب'"></div>
                                         <span class="inline-block text-[10px] px-2 py-0.5 rounded-[6px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                             جاهز ميدانياً
                                         </span>

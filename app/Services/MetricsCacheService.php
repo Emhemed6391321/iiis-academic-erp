@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 
 class MetricsCacheService
 {
-    const CACHE_TTL_SECONDS = 3600; // 1 hour default TTL
+    const CACHE_TTL_SECONDS = 60; // 1 minute TTL so changes reflect immediately
     const HQ_SUMMARY_KEY_PREFIX = 'manhal_metrics_hq_summary_';
     const BRANCH_METRICS_KEY_PREFIX = 'manhal_metrics_branch_';
 
