@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class GenerateAdminCredentials extends Command
 {
-    protected $signature = 'app:admin-credentials {email? : البريد الإلكتروني للمستخدم} {--reset : إعادة تعيين كلمة المرور بكلمة عشوائية قوية} {--password= : تعيين كلمة مرور محددة للمستخدم}';
+    protected $signature = 'app:admin-credentials {email? : البريد الإلكتروني للمستخدم} {--reset : إعادة تعيين كلمة المرور بكلمة عشوائية قوية} {--password= : تعيين كلمة مرور محددة للمستخدم} {--disable-mfa : تعطيل التحقق بخطوتين TOTP}';
     protected $description = 'إدارة وتوليد بيانات الدخول للمستخدمين الإداريين بكلمات مرور آمنة ومشفرة';
 
     public function handle(): int
@@ -17,6 +17,7 @@ class GenerateAdminCredentials extends Command
         $email = $this->argument('email');
         $reset = $this->option('reset');
         $specifiedPassword = $this->option('password');
+        $disableMfa = $this->option('disable-mfa');
 
         if ($email) {
             $user = User::where('email', $email)->first();
@@ -34,6 +35,8 @@ class GenerateAdminCredentials extends Command
                     'is_active' => true,
                     'must_change_password' => false,
                     'two_factor_enabled' => false,
+                    'two_factor_secret' => null,
+                    'two_factor_confirmed_at' => null,
                     'password' => $initialPass,
                 ]);
 
@@ -46,18 +49,29 @@ class GenerateAdminCredentials extends Command
                 return 0;
             }
 
+            if ($disableMfa) {
+                $user->two_factor_enabled = false;
+                $user->two_factor_secret = null;
+                $user->two_factor_confirmed_at = null;
+                $user->save();
+                $this->info("✓ تم إلغاء التحقق بخطوتين (MFA/TOTP) بنجاح للمستخدم: {$user->name}");
+            }
+
             if ($specifiedPassword) {
                 $user->password = $specifiedPassword;
                 $user->must_change_password = false;
                 $user->two_factor_enabled = false;
+                $user->two_factor_secret = null;
+                $user->two_factor_confirmed_at = null;
                 $user->is_active = true;
                 $user->save();
 
-                $this->info("تم تحديث كلمة المرور بنجاح للمستخدم: {$user->name}");
+                $this->info("تم تحديث كلمة المرور وتعطيل MFA بنجاح للمستخدم: {$user->name}");
                 $this->table(['الحقل', 'القيمة'], [
                     ['الاسم', $user->name],
                     ['البريد الإلكتروني', $user->email],
                     ['كلمة المرور', $specifiedPassword],
+                    ['التحقق بخطوتين', 'معطل'],
                 ]);
                 return 0;
             }
