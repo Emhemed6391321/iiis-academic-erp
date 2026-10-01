@@ -13,6 +13,7 @@ use App\Models\RequestDiscussion;
 use App\Models\Branch;
 use App\Models\AcademicYear;
 use App\Models\SystemAuditTrail;
+use App\Models\Scopes\BranchScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -401,7 +402,7 @@ class StudentWorkflowController extends Controller
                 $student = Student::lockForUpdate()->find($req->student_id);
                 if ($student) {
                     $oldStatus = $student->academic_status;
-                    $newStatus = ($req->request_type === 'PAUSE') ? 'PAUSED' : 'ENROLLED_ACTIVE';
+                    $newStatus = ($req->request_type === 'PAUSE') ? 'SUSPENDED' : 'ENROLLED_ACTIVE';
                     $student->update(['academic_status' => $newStatus]);
 
                     // Log in history
@@ -559,8 +560,15 @@ class StudentWorkflowController extends Controller
             ], 403);
         }
 
-        if ($step === 'RECEIVING_BRANCH' && $user && !$user->hasGlobalAccessScope()) {
-            if ((int)$user->branch_id !== (int)$transfer->to_branch_id) {
+        if ($step === 'RECEIVING_BRANCH') {
+            if (empty($transfer->central_affairs_approved_at) && empty($transfer->central_affairs_approved_by)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'تسلسل الإجراءات غير مكتمل: لا يمكن للفرع المستقبل البت في طلب النقل قبل صدور إحالة وموافقة الإدارة المركزية (مذكرة شؤون الطلاب العامة).',
+                ], 422);
+            }
+
+            if ($user && !$user->hasGlobalAccessScope() && (int)$user->branch_id !== (int)$transfer->to_branch_id) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'غير مصرح: قرار قبول النقل محصور في إدارة الفرع المستقبل فقط.',
@@ -587,8 +595,8 @@ class StudentWorkflowController extends Controller
                         'approved_at' => $now,
                     ]);
 
-                    // Transfer the student's branch
-                    $student = Student::lockForUpdate()->find($transfer->student_id);
+                    // Transfer the student's branch (bypass scope for incoming student cross-branch)
+                    $student = Student::withoutGlobalScope(BranchScope::class)->lockForUpdate()->find($transfer->student_id);
                     if ($student) {
                         $oldBranch = $student->branch_id;
                         $student->update(['branch_id' => $transfer->to_branch_id]);

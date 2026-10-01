@@ -11,6 +11,7 @@ use App\Models\StudyYear;
 use App\Models\Department;
 use App\Models\AcademicYear;
 use App\Models\SystemAuditTrail;
+use App\Services\AbsenceCalculationEngineService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -611,9 +612,9 @@ class StudentAttendanceController extends Controller
     }
 
     /**
-     * 7. قائمة الطلاب كثيري الغياب والمتجاوزين للنصاب المعتمد (At-Risk Students Hub)
+     * 7. قائمة الطلاب كثيري الغياب والمتجاوزين للنصاب المعتمد (At-Risk Students Hub - Option B)
      */
-    public function getAtRiskStudents(Request $request): JsonResponse
+    public function getAtRiskStudents(Request $request, AbsenceCalculationEngineService $absenceEngine): JsonResponse
     {
         $minDays = (int)$request->get('min_absent_days', 3);
         $branchId = $request->get('branch_id');
@@ -649,23 +650,24 @@ class StudentAttendanceController extends Controller
             $student = Student::with(['branch', 'currentStudyYear', 'department'])->find($row->student_id);
             if (!$student) continue;
 
+            $metrics = $absenceEngine->evaluateStudentAbsence($student, $academicYearId);
             $totalAbsence = (int)$row->unexcused_days + (int)$row->excused_days;
             $unexcused = (int)$row->unexcused_days;
 
-            // تحديد مستوى الإنذار المقترح
-            if ($unexcused >= 10) {
-                $suggestedLevel = 'FINAL_WARNING';
-                $levelText = 'إنذار نهائي / خطر الحرمان من الامتحان';
-                $badgeColor = 'rose';
-            } elseif ($unexcused >= 5) {
-                $suggestedLevel = 'SECOND_WARNING';
-                $levelText = 'إنذار غياب ثانٍ';
-                $badgeColor = 'amber';
-            } else {
-                $suggestedLevel = 'FIRST_WARNING';
-                $levelText = 'تنبيه غياب أول';
-                $badgeColor = 'blue';
-            }
+            // تحديد مستوى الإنذار المعتمد بناءً على النسبة الكلية للفصل (Option B)
+            $suggestedLevel = $metrics['warning_level'] ?? 'FIRST_WARNING';
+            $levelText = match($suggestedLevel) {
+                'EXPULSION_NOTICE' => 'قرار حرمان وشطب رسمي (20% فأكثر)',
+                'FINAL_WARNING'    => 'إنذار نهائي / خطر الحرمان من الامتحان (15%)',
+                'SECOND_WARNING'   => 'إنذار غياب ثانٍ (10%)',
+                'FIRST_WARNING'    => 'تنبيه غياب أول (5%)',
+                default            => 'متابع أكاديمياً',
+            };
+            $badgeColor = match($suggestedLevel) {
+                'EXPULSION_NOTICE', 'FINAL_WARNING' => 'rose',
+                'SECOND_WARNING'                    => 'amber',
+                default                             => 'blue',
+            };
 
             // آخر إنذار تم إصداره بالفعل
             $latestNotice = AttendanceWarningNotice::where('student_id', $student->id)->latest()->first();
@@ -684,6 +686,9 @@ class StudentAttendanceController extends Controller
                 'excused_days'       => (int)$row->excused_days,
                 'total_absence'      => $totalAbsence,
                 'late_days'          => (int)$row->late_days,
+                'total_semester_days'=> $metrics['total_semester_days'],
+                'absence_percentage' => $metrics['absence_percentage'],
+                'is_deprived'        => $metrics['is_deprived'],
                 'suggested_level'    => $suggestedLevel,
                 'level_text'         => $levelText,
                 'badge_color'        => $badgeColor,
@@ -705,9 +710,9 @@ class StudentAttendanceController extends Controller
     }
 
     /**
-     * 8. إصدار وطباعة «إنذار غياب رسمي معتمد» للطالب وولي الأمر
+     * 8. إصدار وطباعة «إنذار غياب رسمي معتمد» للطالب وولي الأمر (Option B)
      */
-    public function issueWarningNotice(Request $request, Student $student): JsonResponse
+    public function issueWarningNotice(Request $request, Student $student, AbsenceCalculationEngineService $absenceEngine): JsonResponse
     {
         $request->validate([
             'warning_level'   => 'required|in:FIRST_WARNING,SECOND_WARNING,FINAL_WARNING,EXPULSION_NOTICE',
@@ -723,6 +728,10 @@ class StudentAttendanceController extends Controller
         $level = $request->input('warning_level');
         $unexcusedDays = (int)$request->input('unexcused_days');
         $totalAbsence = (int)$request->input('total_absence', $unexcusedDays);
+
+        $metrics = $absenceEngine->evaluateStudentAbsence($student, $student->enrolled_academic_year_id ?: $currentYear?->id);
+        $totalSemesterDays = $metrics['total_semester_days'];
+        $absencePercentage = $metrics['absence_percentage'];
 
         $noticeNumber = 'إنذار-غياب-' . date('Y') . '-' . str_pad($student->id, 5, '0', STR_PAD_LEFT) . '-' . rand(10, 99);
 
@@ -740,41 +749,55 @@ class StudentAttendanceController extends Controller
         $sectionName = $student->department?->name ?: 'شعبة الدراسات الإسلامية';
         $academicNumber = $student->academic_number ?: ('قيد الاعتماد (' . $student->id . ')');
 
-        // نص الإنذار الرسمي المعتمد
-        $statement = "نحيطكم علماً بأن الطالب: ({$student->full_name})، ورقم قيده الأكاديمي ({$academicNumber})، المقيد بالمرحلة الدراسية ({$stageName}) بشعبة ({$sectionName})، قد تجاوز مدة الغياب بدون عذر مقبول وبلغ مجموع غيابه بدون عذر ({$unexcusedDays}) أيام دراسية عن العام الدراسي ({$academicYearName}). وعليه نوجه إليكم هذا ({$levelTitle}) للتنبيه والتأكيد على ضرورة الالتزام بالحضور اليومي تفادياً لتطبيق الإجراءات واللوائح والضوابط المنصوص عليها بشأن الحرمان من الامتحانات.";
+        // نص الإنذار الرسمي المعتمد بموجب الخيار (ب)
+        $statement = ($level === 'EXPULSION_NOTICE')
+            ? "قرار حرمان رسمي: تجاوز الطالب ({$student->full_name})، ورقم قيده الأكاديمي ({$academicNumber})، المقيد بالمرحلة الدراسية ({$stageName}) بشعبة ({$sectionName})، نسبة الغياب المسموح بها في الفصل الدراسي وبلغ مجموع غيابه بدون عذر ({$unexcusedDays}) أيام دراسية من أصل ({$totalSemesterDays}) يوماً بنسبة ({$absencePercentage}%). وعليه يعتبر الطالب محروماً رسمياً من دخول الامتحانات."
+            : "نحيطكم علماً بأن الطالب: ({$student->full_name})، ورقم قيده الأكاديمي ({$academicNumber})، المقيد بالمرحلة الدراسية ({$stageName}) بشعبة ({$sectionName})، قد تجاوز مدة الغياب بدون عذر مقبول وبلغ مجموع غيابه بدون عذر ({$unexcusedDays}) أيام دراسية من أصل ({$totalSemesterDays}) يوماً بنسبة ({$absencePercentage}%) عن الفصل الدراسي ({$academicYearName}). وعليه نوجه إليكم هذا ({$levelTitle}) للتنبيه والتأكيد على ضرورة الالتزام بالحضور اليومي تفادياً لتطبيق الإجراءات واللوائح والضوابط المنصوص عليها بشأن الحرمان من الامتحانات.";
 
-        $notice = AttendanceWarningNotice::create([
-            'student_id'            => $student->id,
-            'branch_id'             => $student->branch_id,
-            'academic_year_id'      => $student->enrolled_academic_year_id ?: $currentYear?->id,
-            'notice_number'         => $noticeNumber,
-            'warning_level'         => $level,
-            'unexcused_days_count'  => $unexcusedDays,
-            'total_absence_days'    => $totalAbsence,
-            'absence_percentage'    => $totalAbsence > 0 ? round(($totalAbsence / 60) * 100, 2) : 0,
-            'notice_date'           => Carbon::today(),
-            'admin_statement'       => $statement,
-            'delivery_status'       => 'DELIVERED_TO_GUARDIAN',
-            'issued_by'             => $user?->id,
-        ]);
+        $notice = DB::transaction(function() use ($student, $currentYear, $noticeNumber, $level, $unexcusedDays, $totalAbsence, $absencePercentage, $statement, $user, $levelTitle) {
+            $createdNotice = AttendanceWarningNotice::create([
+                'student_id'            => $student->id,
+                'branch_id'             => $student->branch_id,
+                'academic_year_id'      => $student->enrolled_academic_year_id ?: $currentYear?->id,
+                'notice_number'         => $noticeNumber,
+                'warning_level'         => $level,
+                'unexcused_days_count'  => $unexcusedDays,
+                'total_absence_days'    => $totalAbsence,
+                'absence_percentage'    => $absencePercentage,
+                'notice_date'           => Carbon::today(),
+                'admin_statement'       => $statement,
+                'delivery_status'       => 'DELIVERED_TO_GUARDIAN',
+                'issued_by'             => $user?->id,
+            ]);
 
-        // التدقيق الأمني
-        try {
-            SystemAuditTrail::create([
-                'user_id'     => $user?->id,
-                'branch_id'   => $student->branch_id,
-                'event_type'  => 'ATTENDANCE_WARNING_ISSUED',
-                'description' => "قام المستخدم " . ($user?->name ?? 'إدارة المعهد') . " بإصدار ({$levelTitle}) للطالب: {$student->full_name} برقم إشاري: {$noticeNumber}",
-                'ip_address'  => request()->ip(),
-                'payload'     => [
+            // Enforce retroactive edit lock on absent records
+            StudentAttendance::where('student_id', $student->id)
+                ->whereIn('status', ['absent', 'ABSENT', 'ABSENT_UNEXCUSED'])
+                ->whereNull('modification_reason')
+                ->update([
+                    'modification_reason' => "مغلق آلياً بموجب إشعار الحرمان {$noticeNumber} — يمنع التعديل الرجعي إلا باعتماد مركزي",
+                ]);
+
+            // التدقيق الأمني بسلسلة التشفير
+            SystemAuditTrail::log(
+                eventType: 'ATTENDANCE_WARNING_ISSUED',
+                description: "قام المستخدم " . ($user?->name ?? 'إدارة المعهد') . " بإصدار ({$levelTitle}) للطالب: {$student->full_name} بنسبة غياب ({$absencePercentage}%).",
+                payload: [
                     'notice_number'  => $noticeNumber,
                     'student_id'     => $student->id,
                     'warning_level'  => $level,
                     'unexcused_days' => $unexcusedDays,
+                    'percentage'     => $absencePercentage,
                 ],
-                'created_at'  => Carbon::now(),
-            ]);
-        } catch (\Exception $e) {}
+                userId: $user?->id,
+                branchId: $student->branch_id,
+                modelType: AttendanceWarningNotice::class,
+                modelId: $createdNotice->id,
+                severity: $level === 'EXPULSION_NOTICE' ? 'CRITICAL' : 'WARNING'
+            );
+
+            return $createdNotice;
+        });
 
         $profile = \App\Services\AdminSettingsService::getInstituteProfile();
         $signatories = \App\Services\AdminSettingsService::getSignatoriesFor('warning_notice', $student->branch_id);

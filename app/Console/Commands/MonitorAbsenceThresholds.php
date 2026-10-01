@@ -58,9 +58,11 @@ class MonitorAbsenceThresholds extends Command
 
             $absencePercentage = round(($absentCount / $totalExpectedDays) * 100, 2);
 
-            // Determine threshold level
+            // Determine threshold level (Option B: semester percentage)
             $targetLevel = null;
-            if ($absencePercentage >= 15.0 || $absentCount >= 9) {
+            if ($absencePercentage >= 20.0 || $absentCount >= 12) {
+                $targetLevel = 'EXPULSION_NOTICE';
+            } elseif ($absencePercentage >= 15.0 || $absentCount >= 9) {
                 $targetLevel = 'FINAL_WARNING';
             } elseif ($absencePercentage >= 10.0 || $absentCount >= 6) {
                 $targetLevel = 'SECOND_WARNING';
@@ -79,8 +81,9 @@ class MonitorAbsenceThresholds extends Command
                 ->exists();
 
             if (!$alreadyIssued) {
-                $noticeNumber = 'WARN-' . $student->id . '-' . substr($targetLevel, 0, 3) . '-' . date('Ymd');
+                $noticeNumber = 'WARN-' . $student->id . '-' . substr($targetLevel, 0, 4) . '-' . date('Ymd');
                 $statement = match ($targetLevel) {
+                    'EXPULSION_NOTICE' => "قرار شطب وحرمان نهائي: تجاوز الطالب نسبة غياب 20% ({$absentCount} أيام من أصل {$totalExpectedDays} يوماً). يُحرم الطالب من دخول الامتحانات ويُقفل السجل الأكاديمي.",
                     'FINAL_WARNING'  => "إنذار نهائي: تجاوز الطالب نسبة غياب 15% ({$absentCount} أيام). دخل الطالب مرحلة خطر الحرمان والشطب الأكاديمي، وتم قفل التعديل بأثر رجعي.",
                     'SECOND_WARNING' => "إنذار ثانٍ: تجاوز الطالب نسبة غياب 10% ({$absentCount} أيام). يلزم حضور ولي الأمر للفرع لمتابعة الوضع الدراسي.",
                     'FIRST_WARNING'  => "إنذار أول: تجاوز الطالب نسبة غياب 5% ({$absentCount} أيام). تنبيه للمحافظة على الانضباط الأكاديمي.",

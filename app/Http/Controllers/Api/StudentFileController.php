@@ -21,6 +21,8 @@ use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\StudyYear;
 use App\Models\SystemAuditTrail;
+use App\Services\StudentStateMachineService;
+use App\Services\SecureFileVaultService;
 
 class StudentFileController extends Controller
 {
@@ -503,43 +505,46 @@ class StudentFileController extends Controller
     // STATUS CHANGE — تغيير الحالة مباشرة
     // ===================================================================
 
-    public function changeStatus(Request $request, Student $student): JsonResponse
+    public function changeStatus(Request $request, Student $student, StudentStateMachineService $stateMachine): JsonResponse
     {
         $user = Auth::user();
 
         $request->validate([
             'new_status' => 'required|in:NEW_DRAFT,PENDING_HQ,ENROLLED_ACTIVE,SUSPENDED,TRANSFERRED,GRADUATED,EXPELLED',
             'reason'     => 'required|string|min:5',
+            'document'   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        // CRIT-2: Destructive status changes require explicit permission
-        $restrictedStatuses = ['EXPELLED', 'SUSPENDED', 'GRADUATED', 'TRANSFERRED'];
-        if (in_array($request->new_status, $restrictedStatuses)) {
-            if (!$user || (!$user->hasGlobalAccessScope() && !$user->hasPermission('CHANGE_STUDENT_STATUS'))) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'غير مصرح: تغيير حالة الطالب إلى (فصل / تعليق / تخرج / نقل) يتطلب صلاحية خاصة.',
-                ], 403);
-            }
-        }
-
-        $oldStatus = $student->academic_status;
-        $docPath   = null;
-
+        $docPath = null;
         if ($request->hasFile('document')) {
-            $docPath = $request->file('document')->store("students/{$student->id}/decisions", 'public');
+            $vaultResult = app(SecureFileVaultService::class)->storeSecure(
+                $request->file('document'),
+                "students/{$student->id}/status_transitions",
+                $student->branch_id
+            );
+            $docPath = $vaultResult['path'] ?? null;
         }
 
-        DB::transaction(function () use ($student, $request, $oldStatus, $docPath) {
-            $student->update(['academic_status' => $request->new_status]);
-            $this->logEvent($student, 'STATUS_CHANGE', $oldStatus, $request->new_status, $request->reason, $docPath);
-        });
+        try {
+            $student = $stateMachine->transition(
+                student: $student,
+                targetStatus: $request->new_status,
+                reason: $request->reason,
+                documentPath: $docPath,
+                user: $user
+            );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم تغيير حالة الطالب بنجاح وتوثيقه في السجل.',
-            'student' => $student->fresh()->only(['id', 'academic_status', 'status_label']),
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'تم تغيير حالة الطالب بنجاح وتوثيقه في السجل.',
+                'student' => $student->only(['id', 'academic_status', 'status_label']),
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 403);
+        }
     }
 
     // ===================================================================
@@ -575,34 +580,45 @@ class StudentFileController extends Controller
     }
 
     // ===================================================================
-    // ENROLLMENT STATUS REQUEST — طلب إيقاف/تجديد
+    // ENROLLMENT STATUS REQUEST — طلب إيقاف/تجديد (Option B)
     // ===================================================================
 
-    public function submitStatusRequest(Request $request, Student $student): JsonResponse
+    public function submitStatusRequest(Request $request, Student $student, StudentStateMachineService $stateMachine): JsonResponse
     {
         $request->validate([
             'request_type'           => 'required|in:PAUSE,RENEWAL',
-            'target_academic_year_id'=> 'required|exists:academic_years,id',
+            'target_academic_year_id'=> 'nullable|exists:academic_years,id',
             'reason'                 => 'required|string|min:10',
             'document'               => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $path = $request->file('document')->store("students/{$student->id}/requests", 'public');
+        $user = Auth::user();
+        $targetStatus = ($request->request_type === 'PAUSE') ? 'SUSPENDED' : 'ENROLLED_ACTIVE';
 
-        $req = EnrollmentStatusRequest::create([
-            'student_id'              => $student->id,
-            'request_type'            => $request->request_type,
-            'target_academic_year_id' => $request->target_academic_year_id,
-            'reason'                  => $request->reason,
-            'document_path'           => $path,
-            'created_by'              => Auth::id(),
-        ]);
+        try {
+            $statusRequest = $stateMachine->submitStatusChangeRequest(
+                student: $student,
+                requestedStatus: $targetStatus,
+                reason: $request->reason,
+                documentFile: $request->file('document'),
+                requester: $user
+            );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'تم رفع طلب ' . ($request->request_type === 'PAUSE' ? 'الإيقاف' : 'التجديد') . ' بنجاح وهو قيد المراجعة.',
-            'request' => $req,
-        ]);
+            if ($request->filled('target_academic_year_id')) {
+                $statusRequest->update(['target_academic_year_id' => $request->target_academic_year_id]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم رفع طلب ' . ($request->request_type === 'PAUSE' ? 'الإيقاف' : 'التجديد') . ' بنجاح وهو قيد المراجعة المركزية.',
+                'request' => $statusRequest,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
     }
 
     public function getStatusRequests(Student $student): JsonResponse
