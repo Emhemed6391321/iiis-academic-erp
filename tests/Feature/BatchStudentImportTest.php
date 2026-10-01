@@ -25,7 +25,8 @@ class BatchStudentImportTest extends TestCase
 
     public function test_can_download_sample_csv_template()
     {
-        $response = $this->get('/api/v1/students/sample-template');
+        $admin = User::factory()->create();
+        $response = $this->actingAs($admin)->get('/api/v1/students/sample-template');
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     }

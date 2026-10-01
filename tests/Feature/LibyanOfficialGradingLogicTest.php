@@ -34,8 +34,7 @@ class LibyanOfficialGradingLogicTest extends TestCase
     {
         parent::setUp();
 
-        $role = Role::create([
-            'name' => 'super_admin',
+        $role = Role::firstOrCreate(['name' => 'super_admin'], [
             'display_name' => 'المدير العام',
             'scope_type' => 'GLOBAL_SCOPE',
         ]);
@@ -43,7 +42,7 @@ class LibyanOfficialGradingLogicTest extends TestCase
         $this->user = User::create([
             'name' => 'المدير العام',
             'email' => 'admin@iiis.sch.ly',
-            'password' => bcrypt('Password@2026'),
+            'password' => bcrypt('SecretTestPassword123!'),
             'role_id' => $role->id,
             'national_id' => '119800000001',
             'phone' => '091-0000001',

@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            \App\Http\Middleware\SessionIdleTimeoutMiddleware::class,
+        ]);
+
         $middleware->api(prepend: [
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
@@ -21,10 +26,20 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         ]);
 
-        $middleware->alias([
-            'check.window'       => CheckOperationalWindow::class,
-            'academic.year.active' => EnsureActiveAcademicYear::class,
+        $middleware->api(append: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
         ]);
+
+        $middleware->alias([
+            'check.window'          => CheckOperationalWindow::class,
+            'academic.year.active'  => EnsureActiveAcademicYear::class,
+            'enforce.mfa'           => \App\Http\Middleware\EnforceMfaMiddleware::class,
+            'force.password_change' => \App\Http\Middleware\ForcePasswordChangeMiddleware::class,
+            'security.headers'      => \App\Http\Middleware\SecurityHeadersMiddleware::class,
+        ]);
+
+        // Trust proxies to prevent IP spoofing behind reverse proxies (Requirement 1.7)
+        $middleware->trustProxies(at: '*');
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {

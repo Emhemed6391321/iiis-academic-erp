@@ -33,6 +33,9 @@ Route::prefix('v1')->middleware('throttle:30,1')->group(function () {
 // MED-7: Rate limiting — 60 requests per minute for all authenticated routes
 Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
 
+    // 0. Secure File Vault Signed Download
+    Route::get('/secure-vault/download', [\App\Http\Controllers\Api\SecureVaultDownloadController::class, 'download'])->name('secure.vault.download');
+
     // 1. HQ Central Command & Dashboard
     Route::get('/hq/dashboard', [HQDashboardController::class, 'getSummary']);
 

@@ -138,7 +138,8 @@
           fillAccount(email, roleKey) {
               this.activeRole = roleKey;
               document.getElementById('email_input').value = email;
-              document.getElementById('password_input').value = 'Password@2026';
+              document.getElementById('password_input').value = '';
+              document.getElementById('password_input').focus();
           }
       }">
 
@@ -269,7 +270,6 @@
                                 <input id="password_input"
                                        :type="showPassword ? 'text' : 'password'"
                                        name="password"
-                                       value="Password@2026"
                                        required
                                        placeholder="••••••••••••"
                                        class="w-full pr-10 pl-11 py-3 erp-input text-slate-900 text-xs font-mono font-semibold">

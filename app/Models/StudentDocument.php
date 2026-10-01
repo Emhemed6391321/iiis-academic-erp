@@ -53,7 +53,15 @@ class StudentDocument extends Model
 
     public function getFileUrlAttribute(): string
     {
-        return $this->file_path ? Storage::url($this->file_path) : '';
+        if (!$this->file_path) {
+            return '';
+        }
+
+        if (str_starts_with($this->file_path, 'secure_vault/')) {
+            return app(\App\Services\SecureFileVaultService::class)->generateSignedUrl($this->file_path);
+        }
+
+        return Storage::url($this->file_path);
     }
 
     public function getFormattedSizeAttribute(): string

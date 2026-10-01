@@ -65,6 +65,14 @@ class StudentController extends Controller
      */
     public function show(Student $student): JsonResponse
     {
+        $user = Auth::user();
+        if ($user && $user->cannot('view', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك الاطلاع على بيانات طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         return response()->json([
             'success' => true,
             'student' => $student->load([

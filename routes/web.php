@@ -20,10 +20,22 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 // ============================================================
-// Protected Application Routes (auth middleware)
+// Security & Verification Routes (MFA / Password Policy)
 // ============================================================
-
 Route::middleware('auth')->group(function () {
+    Route::get('/mfa/setup', [\App\Http\Controllers\Auth\MfaController::class, 'showSetup'])->name('mfa.setup');
+    Route::post('/mfa/confirm', [\App\Http\Controllers\Auth\MfaController::class, 'confirmSetup'])->name('mfa.confirm');
+    Route::get('/mfa/challenge', [\App\Http\Controllers\Auth\MfaController::class, 'showChallenge'])->name('mfa.challenge');
+    Route::post('/mfa/verify', [\App\Http\Controllers\Auth\MfaController::class, 'verifyChallenge'])->name('mfa.verify');
+
+    Route::get('/password/change', [\App\Http\Controllers\Auth\PasswordChangeController::class, 'showChangeForm'])->name('password.change');
+    Route::post('/password/update', [\App\Http\Controllers\Auth\PasswordChangeController::class, 'updatePassword'])->name('password.update');
+});
+
+// ============================================================
+// Protected Application Routes (auth + MFA + password check)
+// ============================================================
+Route::middleware(['auth', 'enforce.mfa', 'force.password_change'])->group(function () {
 
     Route::get('/', function (Request $request) {
         return view('dashboard', [
@@ -102,5 +114,7 @@ Route::middleware('auth')->group(function () {
 // ============================================================
 // Public Cryptographic Document Verification Route (No Auth Required)
 // ============================================================
-Route::get('/verify/{uuid}', [\App\Http\Controllers\PublicVerificationController::class, 'show'])->name('document.verify');
+Route::get('/verify/{uuid}', [\App\Http\Controllers\PublicVerificationController::class, 'show'])
+    ->middleware('throttle:15,1')
+    ->name('document.verify');
 

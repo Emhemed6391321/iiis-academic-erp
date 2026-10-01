@@ -12,6 +12,7 @@ use App\Models\StudentTransfer;
 use App\Models\RequestDiscussion;
 use App\Models\Branch;
 use App\Models\AcademicYear;
+use App\Models\SystemAuditTrail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -366,9 +367,25 @@ class StudentWorkflowController extends Controller
         $notes = $request->input('decision_notes', '');
 
         $req = EnrollmentStatusRequest::findOrFail($id);
+        $user = Auth::user();
 
-        DB::transaction(function() use ($req, $action, $notes) {
-            $user = Auth::user();
+        // Four-Eyes Principle (1.8): Submitter cannot approve
+        if ($user && $req->created_by && (int)$req->created_by === (int)$user->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'انتهاك مبدأ الرقابة الثنائية (Four-Eyes Principle): لا يمكن لمقدم طلب تعديل القيد اعتماده أو البت فيه.',
+            ], 403);
+        }
+
+        // HQ approval restriction (Option B)
+        if ($user && !$user->hasGlobalAccessScope() && !$user->hasPermission('APPROVE_STUDENT_STATUS')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح: اعتماد طلبات تعديل قيد الطلاب محصور في الإدارة المركزية (شؤون الطلاب العامة).',
+            ], 403);
+        }
+
+        DB::transaction(function() use ($req, $action, $notes, $user, $request) {
             $now = Carbon::now();
 
             if ($action === 'APPROVE') {
@@ -414,6 +431,17 @@ class StudentWorkflowController extends Controller
                     'rejection_notes' => 'إعادة الطلب للفرع: ' . $notes,
                 ]);
             }
+
+            SystemAuditTrail::log(
+                eventType: 'STUDENT_ENROLLMENT_STATUS_DECIDED',
+                modelType: EnrollmentStatusRequest::class,
+                modelId: $req->id,
+                description: "تم اتخاذ قرار ({$action}) بشأن طلب إيقاف/تجديد قيد الطالب رقم #{$req->student_id}.",
+                branchId: $user?->branch_id,
+                newValues: ['action' => $action, 'final_status' => $req->final_status, 'decided_by' => $user?->id],
+                severity: 'WARNING',
+                request: $request
+            );
         });
 
         return response()->json([
@@ -431,9 +459,25 @@ class StudentWorkflowController extends Controller
         $notes = $request->input('decision_notes', '');
 
         $req = StudyTypeChangeRequest::findOrFail($id);
+        $user = Auth::user();
 
-        DB::transaction(function() use ($req, $action, $notes) {
-            $user = Auth::user();
+        // Four-Eyes Principle (1.8): Submitter cannot approve
+        if ($user && $req->created_by && (int)$req->created_by === (int)$user->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'انتهاك مبدأ الرقابة الثنائية: لا يمكن لمقدم طلب تغيير صفة القيد اعتماده.',
+            ], 403);
+        }
+
+        // HQ approval restriction
+        if ($user && !$user->hasGlobalAccessScope() && !$user->hasPermission('APPROVE_STUDY_TYPE')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح: اعتماد تغيير صفة القيد محصور في إدارة شؤون الطلاب المركزية.',
+            ], 403);
+        }
+
+        DB::transaction(function() use ($req, $action, $notes, $user, $request) {
             $now = Carbon::now();
 
             if ($action === 'APPROVE') {
@@ -467,6 +511,17 @@ class StudentWorkflowController extends Controller
                     'hq_status' => 'REJECTED',
                 ]);
             }
+
+            SystemAuditTrail::log(
+                eventType: 'STUDY_TYPE_CHANGE_DECIDED',
+                modelType: StudyTypeChangeRequest::class,
+                modelId: $req->id,
+                description: "تم البت في طلب تغيير صفة القيد ({$action}) للطالب رقم #{$req->student_id}.",
+                branchId: $user?->branch_id,
+                newValues: ['action' => $action, 'final_status' => $req->final_status, 'decided_by' => $user?->id],
+                severity: 'WARNING',
+                request: $request
+            );
         });
 
         return response()->json([
@@ -488,7 +543,32 @@ class StudentWorkflowController extends Controller
         $user = Auth::user();
         $now = Carbon::now();
 
-        DB::transaction(function() use ($transfer, $step, $notes, $status, $user, $now) {
+        // Four-Eyes Principle (1.8): Submitter cannot approve
+        if ($user && $transfer->requested_by && (int)$transfer->requested_by === (int)$user->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'انتهاك مبدأ الرقابة الثنائية (Four-Eyes Principle): لا يمكن لمنشئ طلب النقل أن يعتمده بنفسه.',
+            ], 403);
+        }
+
+        // Scope/Role verification
+        if ($step === 'CENTRAL_MEMO' && $user && !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح: إحالة النقل المركزية محصورة في إدارة شؤون الطلاب العامة.',
+            ], 403);
+        }
+
+        if ($step === 'RECEIVING_BRANCH' && $user && !$user->hasGlobalAccessScope()) {
+            if ((int)$user->branch_id !== (int)$transfer->to_branch_id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'غير مصرح: قرار قبول النقل محصور في إدارة الفرع المستقبل فقط.',
+                ], 403);
+            }
+        }
+
+        DB::transaction(function() use ($transfer, $step, $notes, $status, $user, $now, $request) {
             if ($step === 'CENTRAL_MEMO') {
                 $transfer->update([
                     'central_affairs_statement' => $notes ?: 'تمت دراسة الطلب وإحالته للفرع المستقبل لضم الطالب.',
@@ -534,6 +614,17 @@ class StudentWorkflowController extends Controller
                     ]);
                 }
             }
+
+            SystemAuditTrail::log(
+                eventType: 'STUDENT_TRANSFER_STEP_PROCESSED',
+                modelType: StudentTransfer::class,
+                modelId: $transfer->id,
+                description: "تمت معالجة مرحلة النقل ({$step}) للطالب رقم #{$transfer->student_id} بالحالة: {$status}.",
+                branchId: $user?->branch_id ?? $transfer->to_branch_id,
+                newValues: ['step' => $step, 'status' => $status, 'decided_by' => $user?->id],
+                severity: 'WARNING',
+                request: $request
+            );
         });
 
         return response()->json([

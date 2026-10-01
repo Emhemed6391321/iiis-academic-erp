@@ -312,7 +312,7 @@ class OperationalResilienceAndAutomationTest extends TestCase
         $webResponse = $this->get('/verify/' . $doc->document_uuid);
         $webResponse->assertOk()
             ->assertSee('وثيقة أصلية ومعتمدة رسمياً')
-            ->assertSee($this->student->full_name)
+            ->assertSee($ledgerService->maskName($this->student->full_name))
             ->assertDontSee($this->student->national_id) // Strict privacy boundary
             ->assertDontSee($this->student->phone);
 
@@ -321,7 +321,7 @@ class OperationalResilienceAndAutomationTest extends TestCase
         $apiResponse->assertOk()
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.is_valid', true)
-            ->assertJsonPath('data.document.student_name', $this->student->full_name);
+            ->assertJsonPath('data.document.student_name', $ledgerService->maskName($this->student->full_name));
 
         // 3. Revoke document and verify updated public status
         $ledgerService->revokeDocument($doc->document_uuid, 'إلغاء لغرض تجديد القيد');

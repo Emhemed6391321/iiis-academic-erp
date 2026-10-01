@@ -42,8 +42,8 @@ class StudentRegistryReportController extends Controller
 
         // عزل الفروع: حصر مستخدمي الفروع ببيانات فرعهم ما لم يكن المستخدم يملك صلاحية مركزية
         $user = Auth::user();
-        if ($user && !$user->hasGlobalAccessScope() && !empty($user->branch_id)) {
-            $query->where('branch_id', $user->branch_id);
+        if ($user && !$user->hasGlobalAccessScope()) {
+            $query->where('branch_id', $user->branch_id ?? -1);
         } else {
             // تصفية بالفرع لمستخدمي الإدارة العامة
             if ($request->filled('branch_id') && $request->branch_id !== 'all') {
@@ -360,25 +360,20 @@ class StudentRegistryReportController extends Controller
     {
         $user = Auth::user();
 
-        // 1. تسجيل الوصول في سجل التدقيق الأمني (Audit Trail)
-        try {
-            SystemAuditTrail::create([
-                'user_id'     => $user?->id,
-                'branch_id'   => $student->branch_id,
-                'event_type'  => 'CONFIDENTIAL_REPORT_ACCESSED',
-                'description' => "قام المستخدم " . ($user?->name ?? 'مسؤول النظام') . " باستخراج التقرير التفصيلي السري للطالب: {$student->full_name} ({$student->academic_number})",
-                'ip_address'  => request()->ip(),
-                'payload'     => [
-                    'student_id'      => $student->id,
-                    'academic_number' => $student->academic_number,
-                    'national_id'     => $student->national_id,
-                    'accessed_at'     => Carbon::now()->toIso8601String(),
-                ],
-                'created_at'  => Carbon::now(),
-            ]);
-        } catch (\Exception $e) {
-            // Non-blocking
-        }
+        // 1. تسجيل الوصول في سجل التدقيق الأمني الموثق بالسلسلة الرقمية
+        SystemAuditTrail::log(
+            eventType: 'CONFIDENTIAL_REPORT_ACCESSED',
+            modelType: Student::class,
+            modelId: $student->id,
+            description: "اطلاع على التقرير التفصيلي السري للطالب: {$student->full_name} ({$student->academic_number}).",
+            branchId: $student->branch_id,
+            newValues: [
+                'student_id'      => $student->id,
+                'academic_number' => $student->academic_number,
+                'national_id'     => $student->national_id,
+            ],
+            severity: 'WARNING'
+        );
 
         // 2. تحميل كافة العلاقات المرتبطة بملف الطالب
         $student->load([
@@ -584,6 +579,21 @@ class StudentRegistryReportController extends Controller
         $students = $data['data'] ?? [];
         $columns = $request->get('columns', 'academic_number,full_name,national_id,branch,stage,section,study_type,academic_status,birth_date,phone');
         $colList = explode(',', $columns);
+
+        $user = Auth::user();
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_REGISTRY_EXPORTED',
+            modelType: Student::class,
+            description: "تصدير سجل قيد الطلاب إلى ملف CSV (" . count($students) . " سجل).",
+            branchId: $user?->branch_id,
+            newValues: [
+                'columns' => $columns,
+                'count' => count($students),
+                'filters' => $request->only(['branch_id', 'stage_id', 'department_id', 'status', 'study_type']),
+            ],
+            severity: 'WARNING',
+            request: $request
+        );
 
         $filename = 'students_registry_' . date('Ymd_His') . '.csv';
         $headers = [

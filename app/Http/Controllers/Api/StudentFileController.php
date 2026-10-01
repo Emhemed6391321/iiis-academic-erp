@@ -20,6 +20,7 @@ use App\Models\Branch;
 use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\StudyYear;
+use App\Models\SystemAuditTrail;
 
 class StudentFileController extends Controller
 {
@@ -29,6 +30,23 @@ class StudentFileController extends Controller
 
     public function show(Student $student): JsonResponse
     {
+        $user = Auth::user();
+        if ($user && $user->cannot('view', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك الاطلاع على ملف طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_FILE_VIEWED',
+            modelType: Student::class,
+            modelId: $student->id,
+            description: "عرض الملف الأكاديمي الشامل للطالب: {$student->full_name} ({$student->academic_number}).",
+            branchId: $student->branch_id,
+            severity: 'INFO'
+        );
+
         $student->load([
             'branch',
             'department',
@@ -83,6 +101,14 @@ class StudentFileController extends Controller
 
     public function getTimeline(Student $student): JsonResponse
     {
+        $user = Auth::user();
+        if ($user && $user->cannot('view', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك الاطلاع على سجل أحداث طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         $timeline = StudentStatusHistory::where('student_id', $student->id)
             ->with('changedBy:id,name')
             ->orderBy('event_date', 'desc')
@@ -266,6 +292,14 @@ class StudentFileController extends Controller
 
     public function getAttendance(Student $student): JsonResponse
     {
+        $user = Auth::user();
+        if ($user && $user->cannot('view', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك الاطلاع على حضور طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         $records = StudentAttendance::where('student_id', $student->id)
             ->with('recorder:id,name')
             ->latest('record_date')
@@ -282,6 +316,14 @@ class StudentFileController extends Controller
 
     public function addAttendance(Request $request, Student $student): JsonResponse
     {
+        $user = Auth::user();
+        if ($user && $user->cannot('update', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك رصد حضور لطالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         $request->validate([
             'record_date'    => 'required|date',
             'status'         => 'required|in:PRESENT,ABSENT,LATE,EXCUSED',
@@ -326,6 +368,14 @@ class StudentFileController extends Controller
             ], 422);
         }
 
+        $user = Auth::user();
+        if ($user && $user->cannot('create', [StudentDocument::class, $student])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك رفع مستندات لطالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         $isReplacement = false;
         $existing = StudentDocument::where('student_id', $student->id)
             ->where('document_type', $request->document_type)
@@ -334,46 +384,29 @@ class StudentFileController extends Controller
 
         if ($existing) {
             $isReplacement = true;
-            Storage::disk('public')->delete($existing->file_path);
+            if (str_starts_with($existing->file_path, 'secure_vault/')) {
+                Storage::disk('local')->delete($existing->file_path);
+            } else {
+                Storage::disk('public')->delete($existing->file_path);
+            }
             $existing->delete();
         }
 
-        $path = null;
-        $originalName = null;
-        $fileSize = null;
-        $mimeType = null;
-        $hash = null;
+        $vault = app(\App\Services\SecureFileVaultService::class);
+        $fileInput = $request->hasFile('document') ? $request->file('document') : $request->document_base64;
+        $originalName = $request->hasFile('document') ? $request->file('document')->getClientOriginalName() : 'doc_' . time() . '.png';
 
-        if ($request->hasFile('document')) {
-            $file = $request->file('document');
-            $originalName = $file->getClientOriginalName();
-            $fileSize = $file->getSize();
-            $mimeType = $file->getMimeType();
-            $path = $file->store("students/{$student->id}/docs", 'public');
-            $hash = hash_file('sha256', $file->getRealPath());
-        } elseif (!empty($request->document_base64)) {
-            $base64 = $request->document_base64;
-            if (preg_match('/^data:([a-zA-Z0-9\/\+\-\.]+);base64,/', $base64, $matches)) {
-                $mimeType = $matches[1];
-                $data = base64_decode(substr($base64, strpos($base64, ',') + 1));
-                if ($data !== false) {
-                    $ext = 'png';
-                    if (str_contains($mimeType, 'jpeg') || str_contains($mimeType, 'jpg')) $ext = 'jpg';
-                    elseif (str_contains($mimeType, 'pdf')) $ext = 'pdf';
-                    
-                    $filename = 'doc_' . time() . '_' . uniqid() . '.' . $ext;
-                    $path = "students/{$student->id}/docs/{$filename}";
-                    Storage::disk('public')->put($path, $data);
-                    $fileSize = strlen($data);
-                    $originalName = $filename;
-                    $hash = hash('sha256', $data);
-                }
-            }
+        $vaultResult = $vault->storeSecure($fileInput, 'students/documents', $student->branch_id);
+        if (!$vaultResult['success']) {
+            return response()->json(['success' => false, 'message' => $vaultResult['error']], 422);
         }
 
-        if (!$path) {
-            return response()->json(['success' => false, 'message' => 'فشل معالجة أو حفظ ملف المستند.'], 422);
-        }
+        $path = $vaultResult['path'];
+        $mimeType = $vaultResult['mime'];
+        $hash = $vaultResult['hash'];
+        $fileSize = $request->hasFile('document') 
+            ? $request->file('document')->getSize() 
+            : (int)(strlen($request->document_base64) * 0.75);
 
         $isRequired = in_array($request->document_type, [
             'NATIONAL_ID_CARD',
@@ -425,7 +458,7 @@ class StudentFileController extends Controller
             'success'  => true,
             'message'  => ($isReplacement ? 'تم استبدال وتحديث المستند بنجاح.' : 'تم رفع وإرفاق المستند بملف الطالب بنجاح.'),
             'document' => $doc,
-            'url'      => Storage::url($path),
+            'url'      => $doc->file_url,
         ]);
     }
 
@@ -435,10 +468,22 @@ class StudentFileController extends Controller
             return response()->json(['success' => false, 'message' => 'هذا المستند لا ينتمي لهذا الطالب.'], 403);
         }
 
+        $user = Auth::user();
+        if ($user && $user->cannot('delete', $document)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك حذف مستندات لطالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
         $typeLabel = $document->type_label;
         $filePath = $document->file_path;
 
-        Storage::disk('public')->delete($filePath);
+        if (str_starts_with((string)$filePath, 'secure_vault/')) {
+            Storage::disk('local')->delete($filePath);
+        } else {
+            Storage::disk('public')->delete($filePath);
+        }
         $document->delete();
 
         $this->logEvent(
@@ -593,6 +638,16 @@ class StudentFileController extends Controller
             'approved_at' => now(),
         ]);
 
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_DATA_APPROVED',
+            modelType: Student::class,
+            modelId: $student->id,
+            description: "اعتماد وتوثيق بيانات الطالب: {$student->full_name} ({$student->academic_number}).",
+            branchId: $student->branch_id,
+            newValues: ['approved_by' => $user->id, 'approved_at' => now()->toIso8601String()],
+            severity: 'CRITICAL'
+        );
+
         return response()->json(['success' => true, 'message' => 'تم اعتماد بيانات الطالب بنجاح.']);
     }
 
@@ -608,6 +663,16 @@ class StudentFileController extends Controller
         }
 
         $student->update(['approved_by' => null, 'approved_at' => null]);
+
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_DATA_APPROVAL_REVOKED',
+            modelType: Student::class,
+            modelId: $student->id,
+            description: "إلغاء وفك اعتماد بيانات الطالب: {$student->full_name} ({$student->academic_number}).",
+            branchId: $student->branch_id,
+            severity: 'WARNING'
+        );
+
         return response()->json(['success' => true, 'message' => 'تم فك اعتماد البيانات.']);
     }
 

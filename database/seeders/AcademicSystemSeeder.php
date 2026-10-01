@@ -56,7 +56,7 @@ class AcademicSystemSeeder extends Seeder
 
         $roles = [];
         foreach ($rolesData as $r) {
-            $roles[$r['name']] = Role::create($r);
+            $roles[$r['name']] = Role::firstOrCreate(['name' => $r['name']], $r);
         }
 
         // 2. Permissions
@@ -95,7 +95,7 @@ class AcademicSystemSeeder extends Seeder
 
         $permissions = [];
         foreach ($permissionsData as $p) {
-            $permissions[$p['code']] = Permission::create($p);
+            $permissions[$p['code']] = Permission::firstOrCreate(['code' => $p['code']], $p);
         }
 
         // Attach permissions to roles
@@ -169,7 +169,7 @@ class AcademicSystemSeeder extends Seeder
 
         $branches = [];
         foreach ($branchesData as $b) {
-            $branches[$b['code']] = Branch::create($b);
+            $branches[$b['code']] = Branch::firstOrCreate(['code' => $b['code']], $b);
         }
 
         // 4. Academic Structure
@@ -313,7 +313,9 @@ class AcademicSystemSeeder extends Seeder
         }
 
         // 6. Users representing the official administrative roles
-        $defaultPassword = Hash::make('Password@2026');
+        $initialPasswordPlain = env('SEED_DEFAULT_PASSWORD')
+            ?: (app()->environment('testing') ? 'Initial@Pass2026' : Str::password(18, true, true, true, false));
+        $defaultPassword = Hash::make($initialPasswordPlain);
 
         $usersData = [
             [
@@ -324,6 +326,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119780000001',
                 'phone' => '091-0000001',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الأستاذ / رئيس قسم الدراسة والامتحانات بالإدارة العامة',
@@ -333,6 +336,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119820000002',
                 'phone' => '091-0000002',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الأستاذ / رئيس قسم شؤون الطلبة بالإدارة المركزية',
@@ -342,6 +346,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119850000003',
                 'phone' => '091-0000003',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الأستاذ / مدير مكتب المعلومات والتوثيق والمنظومة',
@@ -351,6 +356,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119840000004',
                 'phone' => '091-0000004',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الشيخ / مدير إدارة الفروع والمعاهد الدينية',
@@ -360,6 +366,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119790000005',
                 'phone' => '091-0000005',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الشيخ / مدير معهد فرع طرابلس المركزي',
@@ -369,6 +376,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119800000011',
                 'phone' => '092-0000011',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الأستاذ / رئيس قسم الدراسة والامتحانات بفرع طرابلس',
@@ -378,6 +386,7 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119880000012',
                 'phone' => '092-0000012',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
             [
                 'name' => 'الأستاذ / رئيس قسم شؤون الطلبة بفرع طرابلس',
@@ -387,12 +396,13 @@ class AcademicSystemSeeder extends Seeder
                 'national_id' => '119900000013',
                 'phone' => '092-0000013',
                 'password' => $defaultPassword,
+                'must_change_password' => true,
             ],
         ];
 
         $createdUsers = [];
         foreach ($usersData as $u) {
-            $createdUsers[] = User::create($u);
+            $createdUsers[] = User::updateOrCreate(['email' => $u['email']], $u);
         }
 
         // 7. Operational Windows (Active)

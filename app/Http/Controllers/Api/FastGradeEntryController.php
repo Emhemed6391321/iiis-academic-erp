@@ -9,6 +9,7 @@ use App\Models\GradeBatch;
 use App\Models\StudentGrade;
 use App\Models\Student;
 use App\Models\Course;
+use App\Models\SystemAuditTrail;
 use App\Services\ForensicGradeLoggerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -374,7 +375,15 @@ class FastGradeEntryController extends Controller
             ], 403);
         }
 
-        DB::transaction(function () use ($batch, $user) {
+        // Four-Eyes Principle (1.8): Submitter cannot be approver
+        if ($user && $batch->submitted_by && (int)$batch->submitted_by === (int)$user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'انتهاك مبدأ الرقابة الثنائية (Four-Eyes Principle): لا يمكن للمستخدم الذي قام برفع واعتماد الدفعة فرعياً أن يعتمدها نهائياً كإدارة عامة.',
+            ], 403);
+        }
+
+        DB::transaction(function () use ($batch, $user, $request) {
             $grades = $batch->studentGrades()->orderBy('id')->get();
 
             // Compute cryptographic hash of all grades in batch
@@ -393,6 +402,18 @@ class FastGradeEntryController extends Controller
                 'approved_at' => Carbon::now(),
                 'batch_digital_hash' => $digitalHash,
             ]);
+
+            SystemAuditTrail::log(
+                eventType: 'GRADE_BATCH_HQ_APPROVED',
+                modelType: GradeBatch::class,
+                modelId: $batch->id,
+                description: "تم الاعتماد النهائي لكشف درجات الدفعة رقم #{$batch->id} وإقفال السجلات وتوليد البصمة الرقمية.",
+                branchId: $batch->branch_id,
+                oldValues: ['status' => 'BRANCH_APPROVED'],
+                newValues: ['status' => 'HQ_APPROVED', 'approved_by' => $user?->id, 'batch_digital_hash' => $digitalHash],
+                severity: 'CRITICAL',
+                request: $request
+            );
         });
 
         return response()->json([

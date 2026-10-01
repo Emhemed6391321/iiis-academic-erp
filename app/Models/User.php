@@ -18,6 +18,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'must_change_password',
+        'password_changed_at',
         'branch_id',
         'role_id',
         'national_id',
@@ -25,6 +27,8 @@ class User extends Authenticatable
         'is_active',
         'two_factor_secret',
         'two_factor_enabled',
+        'two_factor_confirmed_at',
+        'two_factor_recovery_codes',
         'last_login_at',
         'last_login_ip',
     ];
@@ -33,6 +37,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -41,7 +46,10 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+            'password_changed_at' => 'datetime',
             'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
     }
@@ -98,6 +106,23 @@ class User extends Authenticatable
     public function hasGlobalAccessScope(): bool
     {
         return $this->isHQ();
+    }
+
+    /**
+     * هل يتطلب حساب المستخدم تفعيل التحقق بخطوتين (MFA/TOTP) إلزامياً؟
+     * إلزامي لجميع أدوار GLOBAL_SCOPE و super_admin.
+     */
+    public function requiresMfa(): bool
+    {
+        return $this->isSuperAdmin() || $this->hasGlobalAccessScope();
+    }
+
+    /**
+     * هل تم تفعيل وتأكيد التحقق بخطوتين لحساب المستخدم؟
+     */
+    public function hasConfirmedMfa(): bool
+    {
+        return (bool) $this->two_factor_enabled && !empty($this->two_factor_confirmed_at);
     }
 
     /**

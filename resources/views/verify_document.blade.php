@@ -112,6 +112,11 @@
             border-color: rgba(244, 63, 94, 0.3);
         }
 
+        .status-banner.replaced {
+            background-color: var(--amber-glow);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
         .icon-box {
             width: 48px;
             height: 48px;
@@ -129,6 +134,12 @@
             border: 1px solid var(--emerald-border);
         }
 
+        .replaced .icon-box {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: var(--amber-text);
+            border: 1px solid var(--amber-border);
+        }
+
         .revoked .icon-box, .tampered .icon-box, .not_found .icon-box {
             background-color: rgba(244, 63, 94, 0.2);
             color: var(--rose-text);
@@ -141,6 +152,7 @@
         }
 
         .valid .banner-content h2 { color: var(--emerald-text); }
+        .replaced .banner-content h2 { color: var(--amber-text); }
         .revoked .banner-content h2, .tampered .banner-content h2, .not_found .banner-content h2 { color: var(--rose-text); }
 
         .banner-content p {
@@ -320,8 +332,8 @@
 
                     <div class="crypto-box">
                         <div class="title">
-                            <span>البصمة المشفرة للوثيقة (SHA-256 Signature)</span>
-                            <span class="cert-seal">🔒 مشفرة ومحمية من التعديل</span>
+                            <span>التوقيع الرقمي المعتمد (HMAC-SHA256 Digital Signature)</span>
+                            <span class="cert-seal">🔒 موقّعة رقمياً ومحمية من التعديل</span>
                         </div>
                         <code>{{ $result['document']['full_hash'] }}</code>
                     </div>
@@ -329,6 +341,32 @@
                     <div class="privacy-badge">
                         <span>🛡️</span>
                         <span>تم حجب البيانات المدنية والخاصة (الرقم الوطني والهاتف) لحماية خصوصية حامل الوثيقة وفق معايير الأمان المعتمدة.</span>
+                    </div>
+                </div>
+
+            @elseif($result['exists'] && ($result['status'] === 'REPLACED'))
+                <div class="status-banner replaced">
+                    <div class="icon-box">↺</div>
+                    <div class="banner-content">
+                        <h2>وثيقة مستبدلة رسمياً بإصدار أحدث</h2>
+                        <p>{{ $result['message'] }}</p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">نوع الوثيقة</div>
+                            <div class="value">{{ $result['document']['document_title'] ?? 'وثيقة رسمية' }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">اسم الطالب</div>
+                            <div class="value">{{ $result['document']['student_name'] ?? '—' }}</div>
+                        </div>
+                        <div class="info-item full-width">
+                            <div class="label">سبب وحالة الاستبدال الإداري</div>
+                            <div class="value" style="color: var(--amber-text);">{{ $result['replacement_note'] ?? 'تم استبدال الوثيقة بوثيقة أحدث' }}</div>
+                        </div>
                     </div>
                 </div>
 

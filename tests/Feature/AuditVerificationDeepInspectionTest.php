@@ -126,7 +126,8 @@ class AuditVerificationDeepInspectionTest extends TestCase
 
     public function test_shielded_routes_blocked_for_external_callers(): void
     {
-        $response = $this->withHeader('X-Simulate-External', '1')
+        $response = $this->actingAs($this->hqAdmin)
+            ->withHeader('X-Simulate-External', '1')
             ->getJson('/api/v1/exams/pending-batches');
 
         $response->assertStatus(423)

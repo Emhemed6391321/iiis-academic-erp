@@ -38,7 +38,7 @@ class MetricsCacheService
             $approvedGradeBatches = GradeBatch::where('status', 'HQ_APPROVED')->count();
 
             // Properties & Contracts KPIs
-            $totalProperties    = \App\Models\BranchProperty::count();
+            $totalProperties    = \App\Models\Property::count();
             $activeContracts    = \App\Models\BranchContract::where('status', 'ACTIVE')->count();
             $expiringContracts  = \App\Models\BranchContract::where('status', 'ACTIVE')
                 ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(30)])

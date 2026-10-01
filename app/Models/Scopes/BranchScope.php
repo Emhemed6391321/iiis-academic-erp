@@ -18,9 +18,10 @@ class BranchScope implements Scope
         if (Auth::check()) {
             $user = Auth::user();
             
-            // If user does not have global scope and belongs to a specific branch
-            if (!$user->hasGlobalAccessScope() && !empty($user->branch_id)) {
-                $builder->where($model->getTable() . '.branch_id', $user->branch_id);
+            // If user does not have global scope, isolate strictly to their branch
+            if (!$user->hasGlobalAccessScope()) {
+                $branchId = $user->branch_id ?? -1;
+                $builder->where($model->getTable() . '.branch_id', $branchId);
             }
         }
     }

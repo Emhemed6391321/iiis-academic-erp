@@ -14,15 +14,12 @@ use Carbon\Carbon;
 
 class LoginController extends Controller
 {
-    /**
-     * Maximum login attempts before lockout.
-     */
-    protected int $maxAttempts = 5;
+    protected \App\Services\LoginSecurityService $securityService;
 
-    /**
-     * Lockout duration in minutes.
-     */
-    protected int $decayMinutes = 1;
+    public function __construct(\App\Services\LoginSecurityService $securityService)
+    {
+        $this->securityService = $securityService;
+    }
 
     /**
      * Show the official login form.
@@ -49,34 +46,40 @@ class LoginController extends Controller
             'password.required' => 'يرجى إدخال كلمة المرور الرسمية.',
         ]);
 
-        $throttleKey = $this->throttleKey($request);
+        $ip = $request->ip();
+        $loginInput = trim($credentials['email']);
 
-        // 1. Check Rate Limiter (Brute-force protection)
-        if (RateLimiter::tooManyAttempts($throttleKey, $this->maxAttempts)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
-            $this->logAuditAttempt($request, null, 'LOCKED_OUT', "تجاوز محاولات الدخول المسموح بها. حظر مؤقت لمدة {$seconds} ثانية.");
+        // 1. Check Progressive Lockout (Per-account and Per-IP)
+        $lockout = $this->securityService->checkLockout($loginInput, $ip);
+        if ($lockout['is_locked']) {
+            $this->logAuditAttempt($request, null, 'LOCKED_OUT', $lockout['message']);
 
             return back()->withErrors([
-                'email' => "تم حظر المحاولات مؤقتاً لحماية الحساب. يرجى الانتظار {$seconds} ثانية قبل إعادة المحاولة.",
+                'email' => $lockout['message'],
             ])->onlyInput('email');
         }
 
         // 2. Find User by email or national_id
-        $loginInput = trim($credentials['email']);
         $user = User::where('email', $loginInput)
             ->orWhere('national_id', $loginInput)
             ->first();
 
         // 3. Verify user existence and password
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            RateLimiter::hit($throttleKey, $this->decayMinutes * 60);
+            $this->securityService->recordFailedAttempt($loginInput, $ip);
 
             $this->logAuditAttempt($request, $user ? $user->id : null, 'FAILED_CREDENTIALS', 'محاولة تسجيل دخول فاشلة ببيانات غير صحيحة.');
 
-            $attemptsLeft = RateLimiter::remaining($throttleKey, $this->maxAttempts);
+            // Re-check lockout in case this attempt tripped the threshold
+            $postLockout = $this->securityService->checkLockout($loginInput, $ip);
+            if ($postLockout['is_locked']) {
+                return back()->withErrors([
+                    'email' => $postLockout['message'],
+                ])->onlyInput('email');
+            }
 
             return back()->withErrors([
-                'email' => "بيانات الاعتماد غير صحيحة. المتبقي: {$attemptsLeft} محاولات قبل الإغلاق الأمني المؤقت.",
+                'email' => 'بيانات الاعتماد غير صحيحة. يرجى التحقق من صحة البريد وكلمة المرور.',
             ])->onlyInput('email');
         }
 
@@ -90,22 +93,38 @@ class LoginController extends Controller
         }
 
         // 5. Successful Authentication
-        RateLimiter::clear($throttleKey);
+        $this->securityService->clearAttempts($loginInput, $ip);
 
         $remember = $request->boolean('remember');
         Auth::login($user, $remember);
 
         // Prevent session fixation attack
         $request->session()->regenerate();
+        $request->session()->put('last_user_activity', time());
 
         // Update user's last login metadata
         $user->update([
             'last_login_at' => Carbon::now(),
-            'last_login_ip' => $request->ip(),
+            'last_login_ip' => $ip,
         ]);
 
         // Forensic audit logging
         $this->logAuditAttempt($request, $user->id, 'LOGIN_SUCCESS', 'تسجيل دخول آمن وناجح للمنظومة.');
+
+        // 6. Mandatory MFA enforcement for GLOBAL_SCOPE and super_admin
+        if ($user->requiresMfa()) {
+            if (!$user->hasConfirmedMfa()) {
+                return redirect()->route('mfa.setup');
+            }
+            // Require 2FA challenge
+            $request->session()->put('mfa_verified', false);
+            return redirect()->route('mfa.challenge');
+        }
+
+        // 7. Mandatory first-time password change
+        if ($user->must_change_password) {
+            return redirect()->route('password.change');
+        }
 
         return redirect()->intended('/');
     }

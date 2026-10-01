@@ -17,9 +17,18 @@ class ShieldedFeatureMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Allow bypass ONLY in local/testing environments with matching secret
-        $canBypass = app()->environment('local', 'testing')
-            && $request->header('X-Bypass-Shield') === config('app.dev_bypass_secret', '__UNSET__');
+        // Strictly forbid outside local/testing environments
+        if (!app()->environment('local', 'testing')) {
+            return response()->json([
+                'status'  => 'shielded',
+                'message' => 'هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «منهل».',
+                'feature' => 'STUDY_AND_EXAMS_SHIELDED',
+            ], 423);
+        }
+
+        $bypassSecret = config('app.dev_bypass_secret', '__UNSET__');
+        $canBypass = ($bypassSecret !== '__UNSET__' && !empty($bypassSecret))
+            && hash_equals((string) $bypassSecret, (string) $request->header('X-Bypass-Shield'));
 
         if (!$canBypass) {
             return response()->json([
