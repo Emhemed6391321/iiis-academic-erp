@@ -43,8 +43,8 @@ class SettingsController extends Controller
         }
 
         $activeYearId = $activeYear ? $activeYear->id : 1;
-        $startDate = $activeYear ? $activeYear->start_date->format('Y-m-d') : '2026-09-01';
-        $endDate = $activeYear ? $activeYear->end_date->format('Y-m-d') : '2027-06-30';
+        $startDate = ($activeYear && $activeYear->start_date) ? (is_string($activeYear->start_date) ? $activeYear->start_date : $activeYear->start_date->format('Y-m-d')) : '2026-09-01';
+        $endDate = ($activeYear && $activeYear->end_date) ? (is_string($activeYear->end_date) ? $activeYear->end_date : $activeYear->end_date->format('Y-m-d')) : '2027-06-30';
 
         // Weekend days
         $weekendsSetting = DB::table('system_central_settings')->where('setting_key', 'weekend_days')->value('setting_value');

@@ -20206,6 +20206,18 @@
                     report: null,
                     loading: false
                 },
+                archiveStudentModal: {
+                    open: false,
+                    loading: false,
+                    student: null,
+                    reason: ''
+                },
+                deleteStudentModal: {
+                    open: false,
+                    loading: false,
+                    student: null,
+                    confirmationText: ''
+                },
 
 
                 rolesList: [],
@@ -21953,6 +21965,130 @@
                             console.error('Print iframe trigger error:', err);
                         }
                     }, 450);
+                },
+
+                openArchiveStudentModal(st) {
+                    this.archiveModal.student = st;
+                    this.archiveModal.reason = '';
+                    this.archiveModal.loading = false;
+                    this.archiveModal.open = true;
+                },
+
+                async submitArchiveStudent() {
+                    if (!this.archiveModal.student) return;
+                    this.archiveModal.loading = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const res = await fetch(`/api/v1/students/${this.archiveModal.student.id}/archive`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify({ reason: this.archiveModal.reason })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تمت أرشفة قيد الطالب بنجاح');
+                            this.archiveModal.open = false;
+                            if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.archiveModal.student.id) {
+                                this.studentFile.student.is_archived = true;
+                                this.studentFile.student.archive_reason = this.archiveModal.reason;
+                                this.studentFile.student.archived_at = new Date().toISOString();
+                            }
+                            if (typeof this.loadRegistry === 'function') {
+                                this.loadRegistry();
+                            }
+                        } else {
+                            this.showToast(data.message || 'تعذر أرشفة الطالب');
+                        }
+                    } catch (e) {
+                        console.error('Archive error:', e);
+                        this.showToast('حدث خطأ أثناء أرشفة الطالب');
+                    } finally {
+                        this.archiveModal.loading = false;
+                    }
+                },
+
+                async restoreStudentFromArchive(st) {
+                    if (!st) return;
+                    if (!confirm(`هل أنت متأكد من استرجاع الطالب «${st.full_name || st.name || ''}» من الأرشيف الأكاديمي وإعادته للقيد النشط؟`)) {
+                        return;
+                    }
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const res = await fetch(`/api/v1/students/${st.id}/restore`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم استرجاع الطالب من الأرشيف بنجاح');
+                            if (this.studentFile && this.studentFile.student && this.studentFile.student.id === st.id) {
+                                this.studentFile.student.is_archived = false;
+                                this.studentFile.student.archive_reason = null;
+                                this.studentFile.student.archived_at = null;
+                            }
+                            if (typeof this.loadRegistry === 'function') {
+                                this.loadRegistry();
+                            }
+                        } else {
+                            this.showToast(data.message || 'تعذر استرجاع الطالب من الأرشيف');
+                        }
+                    } catch (e) {
+                        console.error('Restore error:', e);
+                        this.showToast('حدث خطأ أثناء استرجاع الطالب');
+                    }
+                },
+
+                openDeleteStudentModal(st) {
+                    this.deleteStudentModal.student = st;
+                    this.deleteStudentModal.confirmationText = '';
+                    this.deleteStudentModal.loading = false;
+                    this.deleteStudentModal.open = true;
+                },
+
+                async submitDeleteStudentPermanently() {
+                    if (!this.deleteStudentModal.student) return;
+                    if (this.deleteStudentModal.confirmationText !== 'حذف نهائي') {
+                        this.showToast('يرجى كتابة جملة التأكيد "حذف نهائي" للمتابعة');
+                        return;
+                    }
+                    this.deleteStudentModal.loading = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const res = await fetch(`/api/v1/students/${this.deleteStudentModal.student.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم حذف الطالب نهائياً من المنظومة');
+                            this.deleteStudentModal.open = false;
+                            if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.deleteStudentModal.student.id) {
+                                this.studentFileModal.open = false;
+                            }
+                            if (typeof this.loadRegistry === 'function') {
+                                this.loadRegistry();
+                            }
+                        } else {
+                            this.showToast(data.message || 'تعذر حذف الطالب (مقتصر على صلاحية المدير العام)');
+                        }
+                    } catch (e) {
+                        console.error('Delete student error:', e);
+                        this.showToast('حدث خطأ أثناء حذف الطالب');
+                    } finally {
+                        this.deleteStudentModal.loading = false;
+                    }
                 },
 
 

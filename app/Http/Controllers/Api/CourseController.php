@@ -32,7 +32,10 @@ class CourseController extends Controller
 
         // Attach digital books info to each course
         $courseIds = $courses->pluck('id')->toArray();
-        $books = DB::table('course_books')->whereIn('course_id', $courseIds)->get()->keyBy('course_id');
+        $books = collect();
+        if (\Illuminate\Support\Facades\Schema::hasTable('course_books')) {
+            $books = DB::table('course_books')->whereIn('course_id', $courseIds)->get()->keyBy('course_id');
+        }
 
         $coursesData = $courses->map(function ($c) use ($books) {
             $cArr = $c->toArray();
