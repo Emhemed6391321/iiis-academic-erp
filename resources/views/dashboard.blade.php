@@ -938,7 +938,7 @@
         </aside>
 
         <!-- ج. مساحة العمل المركزية (Main Central Workspace) -->
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main class="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
             <div x-show="currentSection === 'dashboard'" class="space-y-6">
                 
                 <!-- 1. ترويسة القيادة والموقف الميداني الفوري (Executive Mission Control Header) -->
