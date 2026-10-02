@@ -319,7 +319,7 @@
     </script>
 </head>
 <body :style="'font-family: ' + currentFontFamily + ' !important;'" 
-      class="min-h-screen flex flex-col antialiased selection:bg-[#2b78a5] selection:text-white transition-colors duration-200"
+      class="h-screen flex flex-col antialiased selection:bg-[#2b78a5] selection:text-white transition-colors duration-200 overflow-hidden"
       :class="[
           'theme-' + selectedThemeColor,
           darkMode ? 'bg-[#0b1120] text-slate-100' : 'bg-[#f6f7fb] text-[#1f2937]'
@@ -609,7 +609,7 @@
     </header>
 
     <!-- 2. MAIN LAYOUT: CLASSIFIED SIDEBAR + WORKSPACE -->
-    <div class="flex-1 flex overflow-hidden">
+    <div class="flex-1 flex overflow-hidden min-h-0">
         
         <!-- ب. الشريط الجانبي المصنف (Categorized Sidebar - 8 Sections) -->
         <aside class="transition-sidebar flex flex-col border-l select-none overflow-y-auto z-30"
