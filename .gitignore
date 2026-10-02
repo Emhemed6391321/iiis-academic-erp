@@ -48,3 +48,6 @@ Thumbs.db
 
 # ملفات الـ Kilo Editor
 /.kilo/
+
+*.bak
+*.original_monolith_bak

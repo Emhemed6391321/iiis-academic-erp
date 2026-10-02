@@ -41,7 +41,7 @@ Route::middleware(['auth', 'enforce.mfa', 'force.password_change'])->group(funct
         $allAcademicYears = \App\Models\AcademicYear::orderBy('id', 'desc')->get();
         $currentAcademicYear = \App\Models\AcademicYear::where('is_current', true)->first() ?: $allAcademicYears->first();
 
-        return view('dashboard', [
+        return view('dashboard.index', [
             'initialSection'      => $request->query('section', 'dashboard'),
             'initialAction'       => $request->query('action', ''),
             'initialCourseId'     => $request->query('course_id', $request->query('id', 1)),
