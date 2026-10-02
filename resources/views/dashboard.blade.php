@@ -1946,13 +1946,6 @@
                                                     <span>الملف</span>
                                                 </button>
 
-                                                <!-- كشف الدرجات -->
-                                                <button @click="viewStudentTranscript(st.id)"
-                                                        title="كشف الدرجات الدراسي"
-                                                        class="px-2 py-1 rounded-[8px] border text-[10px] font-semibold transition-colors cursor-pointer"
-                                                        :class="darkMode ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700' : 'bg-[#f6f7fb] hover:bg-slate-100 text-slate-700 border-[#e8ebf2]'">
-                                                    درجات
-                                                </button>
 
                                                 <!-- تعديل -->
                                                 <button @click="openEditStudentModal(st)"
@@ -4038,114 +4031,63 @@
                         </div>
                     </div>
 
-                    <!-- 4. السجل الدراسي والدرجات والامتحانات (RBAC Protected) -->
-                    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 relative z-10">
-                        <div class="flex items-center justify-between pb-2 border-b border-slate-200 mb-3">
-                            <h4 class="font-black text-xs text-slate-900">رابعاً: سجل الدرجات والنتائج والتقييم الأكاديمي</h4>
-                            <template x-if="confidentialReportModal.report.can_view_grades !== false">
-                                <span class="text-[10px] font-bold text-slate-600" x-text="'المعدل العام التراكمي: ' + (confidentialReportModal.report.grades_summary.average_score || '—') + '%'"></span>
-                            </template>
-                        </div>
-
-                        <!-- في حالة توفر الصلاحية للكنترول والامتحانات -->
-                        <template x-if="confidentialReportModal.report.can_view_grades !== false">
-                            <table class="w-full text-right text-[10px] border border-slate-300">
-                                <thead class="bg-slate-200 text-slate-800 font-bold">
-                                    <tr>
-                                        <th class="p-1.5 border border-slate-300">رمز المادة</th>
-                                        <th class="p-1.5 border border-slate-300">اسم المادة والمقرر</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">الفصل</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">أعمال السنة (30)</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">النصفي (20)</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">النهائي (50)</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">المجموع (100)</th>
-                                        <th class="p-1.5 border border-slate-300 text-center">النتيجة</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-if="confidentialReportModal.report.grades_summary.records.length === 0">
-                                        <tr><td colspan="8" class="p-2 text-center text-slate-400">لا توجد درجات مرصودة حتى الآن</td></tr>
-                                    </template>
-                                    <template x-for="g in confidentialReportModal.report.grades_summary.records" :key="g.course_code">
-                                        <tr class="border-b border-slate-200">
-                                            <td class="p-1.5 border border-slate-200 font-mono font-bold" x-text="g.course_code"></td>
-                                            <td class="p-1.5 border border-slate-200 font-semibold" x-text="g.course_name"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.semester"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.coursework_grade ?? '—'"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.midterm_grade ?? '—'"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.final_grade ?? '—'"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-mono font-bold text-[#2b78a5]" x-text="g.total_grade ?? '—'"></td>
-                                            <td class="p-1.5 border border-slate-200 text-center font-bold" :class="g.is_passed ? 'text-emerald-700' : 'text-rose-700'" x-text="g.is_passed ? 'ناجح' : (g.total_grade !== null ? 'راسب' : 'قيد الرصد')"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </template>
-
-                        <!-- في حالة عدم توفر صلاحية الكنترول -->
-                        <template x-if="confidentialReportModal.report.can_view_grades === false">
-                            <div class="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
-                                <span>🔒</span>
-                                <span class="font-bold">سجل الدرجات والنتائج وكشوف الامتحانات محجوب ويقتصر الاطلاع عليه حصرياً على موظفي ومسؤولي وحدة الكنترول والامتحانات وفق مصفوفة الصلاحيات.</span>
+                    <!-- 4. سجل الحضور والانضباط + السلوكيات + الأعذار في شبكة مقسمة -->
+                    <div class="space-y-2 relative z-10">
+                        <h4 class="font-black text-xs text-slate-900 pb-1 border-b border-slate-200">رابعاً: سجل الحضور والانضباط والسلوكيات والأعذار المعتمدة</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <!-- إحصائيات الحضور -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل الحضور والغياب</h5>
+                                <div class="space-y-1.5 text-[10px]">
+                                    <div class="flex justify-between"><span>نسبة الحضور:</span><strong class="text-emerald-700 font-mono font-black" x-text="confidentialReportModal.report.attendance_summary.RATE + '%'"></strong></div>
+                                    <div class="flex justify-between"><span>أيام الحضور:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.PRESENT"></strong></div>
+                                    <div class="flex justify-between"><span>أيام الغياب بدون عذر:</span><strong class="text-rose-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.ABSENT"></strong></div>
+                                    <div class="flex justify-between"><span>الغياب بعذر معتمد:</span><strong class="text-amber-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.EXCUSED"></strong></div>
+                                    <div class="flex justify-between"><span>مرات التأخير:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.LATE"></strong></div>
+                                </div>
                             </div>
-                        </template>
+
+                            <!-- سجل السلوكيات والمخالفات -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل المخالفات التأديبية</h5>
+                                <template x-if="confidentialReportModal.report.behaviors_record.length === 0">
+                                    <div class="text-slate-400 text-[10px] text-center py-4">سجل سلوكي نظيف (لا توجد مخالفات) ✅</div>
+                                </template>
+                                <div class="space-y-1 max-h-24 overflow-y-auto">
+                                    <template x-for="b in confidentialReportModal.report.behaviors_record" :key="b.date">
+                                        <div class="p-1.5 rounded bg-rose-50 border border-rose-200 text-[9px]">
+                                            <div class="font-bold text-rose-900" x-text="b.date + ' • ' + b.type"></div>
+                                            <div class="text-slate-600" x-text="b.action_taken"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- سجل الأعذار والإجازات -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأعذار والإجازات المعتمدة</h5>
+                                <template x-if="confidentialReportModal.report.excuses_record.length === 0">
+                                    <div class="text-slate-400 text-[10px] text-center py-4">لا توجد طلبات أعذار مسجلة</div>
+                                </template>
+                                <div class="space-y-1 max-h-24 overflow-y-auto">
+                                    <template x-for="e in confidentialReportModal.report.excuses_record" :key="e.start_date">
+                                        <div class="p-1.5 rounded bg-amber-50 border border-amber-200 text-[9px]">
+                                            <div class="font-bold text-amber-900" x-text="e.start_date + ' إلى ' + e.end_date"></div>
+                                            <div class="text-slate-600" x-text="e.reason + ' (' + (e.status === 'APPROVED' ? 'معتمد' : 'قيد المراجعة') + ')'"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- 5. سجل الحضور والانضباط + السلوكيات + الأعذار في شبكة مقسمة -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 relative z-10">
-                        
-                        <!-- إحصائيات الحضور -->
-                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                            <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل الحضور والغياب</h5>
-                            <div class="space-y-1.5 text-[10px]">
-                                <div class="flex justify-between"><span>نسبة الحضور:</span><strong class="text-emerald-700 font-mono font-black" x-text="confidentialReportModal.report.attendance_summary.RATE + '%'"></strong></div>
-                                <div class="flex justify-between"><span>أيام الحضور:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.PRESENT"></strong></div>
-                                <div class="flex justify-between"><span>أيام الغياب بدون عذر:</span><strong class="text-rose-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.ABSENT"></strong></div>
-                                <div class="flex justify-between"><span>الغياب بعذر معتمد:</span><strong class="text-amber-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.EXCUSED"></strong></div>
-                                <div class="flex justify-between"><span>مرات التأخير:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.LATE"></strong></div>
-                            </div>
-                        </div>
-
-                        <!-- سجل السلوكيات والمخالفات -->
-                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                            <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل المخالفات التأديبية</h5>
-                            <template x-if="confidentialReportModal.report.behaviors_record.length === 0">
-                                <div class="text-slate-400 text-[10px] text-center py-4">سجل سلوكي نظيف (لا توجد مخالفات) ✅</div>
-                            </template>
-                            <div class="space-y-1 max-h-24 overflow-y-auto">
-                                <template x-for="b in confidentialReportModal.report.behaviors_record" :key="b.date">
-                                    <div class="p-1.5 rounded bg-rose-50 border border-rose-200 text-[9px]">
-                                        <div class="font-bold text-rose-900" x-text="b.date + ' • ' + b.type"></div>
-                                        <div class="text-slate-600" x-text="b.action_taken"></div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- سجل الأعذار والإجازات -->
-                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                            <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأعذار والإجازات المعتمدة</h5>
-                            <template x-if="confidentialReportModal.report.excuses_record.length === 0">
-                                <div class="text-slate-400 text-[10px] text-center py-4">لا توجد طلبات أعذار مسجلة</div>
-                            </template>
-                            <div class="space-y-1 max-h-24 overflow-y-auto">
-                                <template x-for="e in confidentialReportModal.report.excuses_record" :key="e.start_date">
-                                    <div class="p-1.5 rounded bg-amber-50 border border-amber-200 text-[9px]">
-                                        <div class="font-bold text-amber-900" x-text="e.start_date + ' إلى ' + e.end_date"></div>
-                                        <div class="text-slate-600" x-text="e.reason + ' (' + (e.status === 'APPROVED' ? 'معتمد' : 'قيد المراجعة') + ')'"></div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- 6. التنقلات والوثائق المعتمدة والملاحظات -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 relative z-10">
-                        
-                        <!-- سجل الوثائق والمستندات المعتمدة -->
-                        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                            <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأرشيف والمستندات الثبوتية المعتمدة</h5>
+                    <!-- 5. التنقلات والوثائق المعتمدة والملاحظات -->
+                    <div class="space-y-2 relative z-10">
+                        <h4 class="font-black text-xs text-slate-900 pb-1 border-b border-slate-200">خامساً: الأرشيف والمستندات الثبوتية وسجل التنقلات</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <!-- سجل الوثائق والمستندات المعتمدة -->
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأرشيف والمستندات الثبوتية المعتمدة</h5>
                             <div class="space-y-1 max-h-24 overflow-y-auto text-[10px]">
                                 <template x-for="doc in confidentialReportModal.report.documents_archive" :key="doc.id">
                                     <div class="flex items-center justify-between p-1 rounded bg-white border border-slate-200">
@@ -5684,18 +5626,11 @@
                                             </button>
                                         </div>
 
-                                        <div class="grid grid-cols-2 gap-1.5">
-                                            <!-- كشف الدرجات -->
-                                            <button @click="currentSection = 'transcripts'; loadTranscript(studentFile.student.id)"
-                                                    class="px-2 py-1.5 rounded-[10px] text-[11px] font-bold border flex items-center justify-center gap-1 transition-all"
-                                                    :class="darkMode ? 'border-slate-700 hover:bg-slate-800 text-slate-300' : 'border-[#e8ebf2] hover:bg-[#f6f7fb] text-slate-700'">
-                                                <span>كشف الدرجات</span>
-                                            </button>
-
+                                        <div>
                                             <!-- سجل الحضور والانضباط -->
                                             <button @click="openStudentAttendanceHistoryModal(studentFile.student)"
-                                                    class="px-2 py-1.5 rounded-[10px] text-[11px] font-bold border border-blue-200 dark:border-blue-800 text-[#2b78a5] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center gap-1 transition-all cursor-pointer">
-                                                <span>سجل الحضور ⏱️</span>
+                                                    class="w-full px-2 py-1.5 rounded-[10px] text-[11px] font-bold border border-blue-200 dark:border-blue-800 text-[#2b78a5] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center gap-1 transition-all cursor-pointer">
+                                                <span>سجل الحضور والانضباط ⏱️</span>
                                             </button>
                                         </div>
                                     </div>
