@@ -21968,33 +21968,33 @@
                 },
 
                 openArchiveStudentModal(st) {
-                    this.archiveModal.student = st;
-                    this.archiveModal.reason = '';
-                    this.archiveModal.loading = false;
-                    this.archiveModal.open = true;
+                    this.archiveStudentModal.student = st;
+                    this.archiveStudentModal.reason = '';
+                    this.archiveStudentModal.loading = false;
+                    this.archiveStudentModal.open = true;
                 },
 
                 async submitArchiveStudent() {
-                    if (!this.archiveModal.student) return;
-                    this.archiveModal.loading = true;
+                    if (!this.archiveStudentModal.student) return;
+                    this.archiveStudentModal.loading = true;
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const res = await fetch(`/api/v1/students/${this.archiveModal.student.id}/archive`, {
+                        const res = await fetch(`/api/v1/students/${this.archiveStudentModal.student.id}/archive`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': token
                             },
-                            body: JSON.stringify({ reason: this.archiveModal.reason })
+                            body: JSON.stringify({ reason: this.archiveStudentModal.reason })
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
                             this.showToast(data.message || 'تمت أرشفة قيد الطالب بنجاح');
-                            this.archiveModal.open = false;
-                            if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.archiveModal.student.id) {
+                            this.archiveStudentModal.open = false;
+                            if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.archiveStudentModal.student.id) {
                                 this.studentFile.student.is_archived = true;
-                                this.studentFile.student.archive_reason = this.archiveModal.reason;
+                                this.studentFile.student.archive_reason = this.archiveStudentModal.reason;
                                 this.studentFile.student.archived_at = new Date().toISOString();
                             }
                             if (typeof this.loadRegistry === 'function') {
@@ -22007,7 +22007,7 @@
                         console.error('Archive error:', e);
                         this.showToast('حدث خطأ أثناء أرشفة الطالب');
                     } finally {
-                        this.archiveModal.loading = false;
+                        this.archiveStudentModal.loading = false;
                     }
                 },
 
