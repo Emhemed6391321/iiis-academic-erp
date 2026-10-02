@@ -298,7 +298,21 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'getProfile']);
     Route::post('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'updateProfile']);
     Route::post('/user/password', [\App\Http\Controllers\Api\UserProfileController::class, 'updatePassword']);
+    Route::post('/user/2fa/toggle', [\App\Http\Controllers\Api\UserProfileController::class, 'toggleTwoFactor']);
 
     // 20. Enterprise System Health & Ops Monitoring
     Route::get('/health', [\App\Http\Controllers\Api\SystemHealthController::class, 'check']);
+
+    // 21. System Changelog (سجل الإصدارات)
+    Route::get('/changelog', [\App\Http\Controllers\Api\SystemChangelogController::class, 'index']);
+    Route::post('/changelog', [\App\Http\Controllers\Api\SystemChangelogController::class, 'store']);
+    Route::patch('/changelog/{changelog}', [\App\Http\Controllers\Api\SystemChangelogController::class, 'update']);
+    Route::delete('/changelog/{changelog}', [\App\Http\Controllers\Api\SystemChangelogController::class, 'destroy']);
+
+    // 22. Bug Reports (بلاغات الأخطاء)
+    Route::get('/bug-reports', [\App\Http\Controllers\Api\BugReportController::class, 'index']);
+    Route::post('/bug-reports', [\App\Http\Controllers\Api\BugReportController::class, 'store']);
+    Route::patch('/bug-reports/{bugReport}', [\App\Http\Controllers\Api\BugReportController::class, 'update']);
+    Route::delete('/bug-reports/{bugReport}', [\App\Http\Controllers\Api\BugReportController::class, 'destroy']);
 });
+

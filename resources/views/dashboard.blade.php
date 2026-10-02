@@ -338,7 +338,7 @@
                     </svg>
                 </button>
 
-                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" @click="currentSection = 'dashboard'">
+                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" @click="navigateTo('dashboard')">
                     <div class="w-10 h-10 rounded-[12px] flex items-center justify-center font-extrabold text-white text-xl shadow-md bg-white border border-slate-200 dark:border-slate-700 shadow-blue-900/20 overflow-hidden p-0.5">
                         <img :src="adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
                              class="w-full h-full object-contain rounded-[10px]" 
@@ -623,7 +623,7 @@
                         <span>الرئيسية</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="currentSection = 'dashboard'"
+                        <button @click="navigateTo('dashboard')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'dashboard' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="لوحة المؤشرات">
@@ -640,7 +640,7 @@
                         <span>التعليم والطلاب</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="currentSection = 'students'"
+                        <button @click="navigateTo('students')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'students' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="سجل الطلاب">
@@ -658,7 +658,7 @@
                         </button>
 
                         <!-- زر ملف الطالب — يظهر عند تحديد طالب -->
-                        <button @click="currentSection = 'student_file'"
+                        <button @click="navigateTo('student_file')"
                                 x-show="studentFile.student !== null"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative"
                                 :class="currentSection === 'student_file' ? (darkMode ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' : 'bg-amber-600 text-white shadow-md') : (darkMode ? 'hover:bg-amber-900/30 text-amber-300 border border-amber-700/40' : 'hover:bg-amber-50 text-amber-700 border border-amber-200')"
@@ -769,7 +769,7 @@
                         <span>إدارة الفروع</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="currentSection = 'branches_directory'"
+                        <button @click="navigateTo('branches_directory')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branches_directory' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="دليل الفروع">
@@ -784,7 +784,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate font-black">➕ إضافة مقر جديد</span>
                         </button>
 
-                        <button @click="currentSection = 'branch_requests'"
+                        <button @click="navigateTo('branch_requests')"
                                 class="w-full flex items-center justify-between px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branch_requests' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="طلبات الصيانة">
@@ -797,7 +797,7 @@
                                   x-text="branchOverview.pending_requests"></span>
                         </button>
 
-                        <button @click="currentSection = 'branch_contracts'"
+                        <button @click="navigateTo('branch_contracts')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branch_contracts' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="عقود المقرات">
@@ -813,7 +813,7 @@
                         <span>الإدارة والنظام</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="currentSection = 'users'"
+                        <button @click="navigateTo('users')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'users' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="المستخدمين">
@@ -821,7 +821,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">المستخدمين</span>
                         </button>
 
-                        <button @click="currentSection = 'matrix'"
+                        <button @click="navigateTo('matrix')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'matrix' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="الصلاحيات">
@@ -829,7 +829,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">مصفوفة الصلاحيات</span>
                         </button>
 
-                        <button @click="currentSection = 'audit'"
+                        <button @click="navigateTo('audit')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'audit' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="سجل التدقيق">
@@ -837,7 +837,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">سجل التدقيق</span>
                         </button>
 
-                        <button @click="currentSection = 'themes'"
+                        <button @click="navigateTo('themes')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'themes' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="المظهر والخطوط">
@@ -845,7 +845,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">المظهر والخطوط</span>
                         </button>
 
-                        <button @click="currentSection = 'profile'"
+                        <button @click="navigateTo('profile')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'profile' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="الملف الشخصي">
@@ -898,7 +898,7 @@
                     </div>
                     <div class="space-y-1">
                         <!-- دليل الإجراءات -->
-                        <button @click="currentSection = 'procedures'"
+                        <button @click="navigateTo('procedures')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
                                 :class="currentSection === 'procedures' ? (darkMode ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-lg shadow-teal-950/40' : 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="دليل الإجراءات الموحد للأنظمة">
@@ -912,7 +912,7 @@
                         </button>
 
                         <!-- التحديثات -->
-                        <button @click="currentSection = 'updates'"
+                        <button @click="navigateTo('updates')"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
                                 :class="currentSection === 'updates' ? (darkMode ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg shadow-sky-950/40' : 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-md shadow-sky-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="تحديثات النظام وسجل الإصدارات">
@@ -923,6 +923,25 @@
                             </span>
                             <span x-show="!sidebarCollapsed" class="truncate font-black">التحديثات</span>
                             <span x-show="!sidebarCollapsed" class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">v2.4</span>
+                        </button>
+
+                        <!-- بلاغات الأخطاء -->
+                        <button @click="navigateTo('bug-reports')"
+                                class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
+                                :class="currentSection === 'bug-reports' ? (darkMode ? 'bg-gradient-to-r from-rose-600 to-pink-700 text-white shadow-lg shadow-rose-950/40' : 'bg-gradient-to-r from-rose-600 to-pink-700 text-white shadow-md shadow-rose-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
+                                title="بلاغات الأخطاء وإدارة المشكلات">
+                            <span class="p-1.5 rounded-lg transition-colors" :class="currentSection === 'bug-reports' ? 'bg-white/20 text-white' : (darkMode ? 'bg-slate-800 text-rose-400' : 'bg-rose-50 text-rose-600')">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </span>
+                            <span x-show="!sidebarCollapsed" class="truncate font-black">بلاغات الأخطاء</span>
+                            <template x-if="bugReportsNavBadge > 0">
+                                <span x-show="!sidebarCollapsed"
+                                      class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse"
+                                      x-text="bugReportsNavBadge">
+                                </span>
+                            </template>
                         </button>
                     </div>
                 </div>
@@ -1490,7 +1509,7 @@
                             </button>
 
                             <!-- استيراد دفعة واحدة -->
-                            <button @click="batchImportModal.open = true"
+                            <button @click="openBatchImportModal()"
                                     class="px-3.5 py-2 rounded-[12px] text-xs font-bold border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1.5 transition-all cursor-pointer">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                                 <span>استيراد دفعة</span>
@@ -4303,6 +4322,279 @@
                     <span>طباعة بطاقة الطالب المعتمدة (A4 / PVC)</span>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- نافذة استيراد دفعة طلاب عبر CSV (BATCH IMPORT STUDENTS MODAL)              -->
+    <!-- ========================================================================= -->
+    <div x-show="batchImportModal.open"
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md"
+         x-cloak
+         @keydown.escape.window="if (!batchImportModal.submitting) batchImportModal.open = false">
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col transition-all"
+             @click.away="if (!batchImportModal.submitting) batchImportModal.open = false">
+            
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-l from-emerald-50/50 via-white to-transparent dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-900">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-lg shadow-emerald-900/25 border border-white/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-black text-base text-slate-900 dark:text-white">استيراد دفعة طلاب جديدة (CSV Batch Import)</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">معتمد v2.4</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">رفع وتدقيق وقيد مجموعة طلاب دفعة واحدة وتوليد أرقام القيد الأكاديمية آلياً</p>
+                    </div>
+                </div>
+
+                <button @click="batchImportModal.open = false" 
+                        :disabled="batchImportModal.submitting"
+                        class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                
+                <!-- Sample Download Banner -->
+                <div class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                     :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-emerald-50/50 border-emerald-100'">
+                    <div class="flex items-start gap-3">
+                        <div class="text-2xl mt-0.5">📥</div>
+                        <div>
+                            <h4 class="text-xs font-black text-slate-900 dark:text-white">هل تحتاج إلى نموذج الملف المعتمد؟</h4>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">قم بتحميل نموذج CSV الجاهز بأسماء الأعمدة الصحيحة (الرقم الوطني، الاسم، تاريخ الميلاد، ولي الأمر...) لتعبئته.</p>
+                        </div>
+                    </div>
+                    <button @click="downloadSampleImportCsv()"
+                            type="button"
+                            class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto cursor-pointer transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        <span>تحميل نموذج CSV</span>
+                    </button>
+                </div>
+
+                <!-- Error & Success Alerts -->
+                <div x-show="batchImportModal.errorMessage" 
+                     class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-start gap-2.5"
+                     x-cloak>
+                    <span class="text-base flex-shrink-0">⚠️</span>
+                    <span x-text="batchImportModal.errorMessage" class="leading-relaxed"></span>
+                </div>
+
+                <div x-show="batchImportModal.successMessage" 
+                     class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-start gap-2.5"
+                     x-cloak>
+                    <span class="text-base flex-shrink-0">🎉</span>
+                    <span x-text="batchImportModal.successMessage" class="leading-relaxed"></span>
+                </div>
+
+                <!-- Upload Section (when no results yet) -->
+                <div x-show="!batchImportModal.results" class="space-y-5">
+                    
+                    <!-- File Dropzone -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            اختر ملف بيانات الطلاب (CSV UTF-8):
+                        </label>
+                        
+                        <div class="relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer"
+                             :class="batchImportModal.file ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10' : (darkMode ? 'border-slate-700 hover:border-emerald-500 bg-slate-800/30' : 'border-slate-300 hover:border-emerald-500 bg-slate-50')">
+                            
+                            <input type="file" 
+                                   accept=".csv,.txt"
+                                   @change="handleBatchImportFile($event)"
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+
+                            <div x-show="!batchImportModal.file" class="space-y-2 pointer-events-none">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </div>
+                                <div class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    انقر لاختيار الملف أو اسحبه وأفلته هنا
+                                </div>
+                                <p class="text-[11px] text-slate-400">ملفات بتنسيق .csv بترميز UTF-8 تدعم اللغة العربية</p>
+                            </div>
+
+                            <div x-show="batchImportModal.file" class="space-y-2 pointer-events-none" x-cloak>
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-md">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                <div class="text-xs font-black text-emerald-600 dark:text-emerald-400" x-text="batchImportModal.fileName"></div>
+                                <div class="text-[11px] text-slate-400" x-text="'الحجم: ' + batchImportModal.fileSizeText"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Defaults Settings for Unspecified Columns -->
+                    <div class="p-4 rounded-2xl border space-y-4"
+                         :class="darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200/80'">
+                        <div class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                            <span>⚙️ الإعدادات الافتراضية للدفعة (في حال خلوها من ملف CSV):</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            <!-- Branch -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">الفرع الدراسي:</label>
+                                <select x-model="batchImportModal.defaultBranchId"
+                                        class="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none"
+                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'">
+                                    <template x-for="b in (branches && branches.length ? branches : branchesList)" :key="b.id">
+                                        <option :value="b.id" x-text="b.name"></option>
+                                    </template>
+                                    <option value="1" x-show="!branchesList.length && !branches.length">فرع طرابلس المركزي</option>
+                                </select>
+                            </div>
+
+                            <!-- Study Year -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">السنة الدراسية المقيدين بها:</label>
+                                <select x-model="batchImportModal.defaultStudyYearId"
+                                        class="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none"
+                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'">
+                                    <option value="1">السنة الأولى (تمهيدي شرعي)</option>
+                                    <option value="2">السنة الثانية (متوسط شرعي)</option>
+                                    <option value="3">السنة الثالثة (تخصصي عالي)</option>
+                                </select>
+                            </div>
+
+                            <!-- Study Type -->
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">نظام القيد:</label>
+                                <select x-model="batchImportModal.defaultStudyType"
+                                        class="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none"
+                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'">
+                                    <option value="REGULAR">نظامي (منتظم بالحضور)</option>
+                                    <option value="INTISAB">انتساب (امتحانات فقط)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rules Checklist -->
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1 pr-1">
+                        <div class="font-bold text-slate-700 dark:text-slate-300">قواعد التحقق الصارمة أثناء الاستيراد:</div>
+                        <div>• يجب أن يتكون الرقم الوطني من 12 خانة رقمية بالضبط.</div>
+                        <div>• يمنع استيراد طالب أقل من 15 سنة وفق تاريخ ميلاده.</div>
+                        <div>• الأسماء الرباعية واسم الأم بالكامل حقول إجبارية.</div>
+                        <div>• يفحص النظام تلقائياً عدم تكرار الرقم الوطني داخل الملف ومع قاعدة البيانات المركزية.</div>
+                    </div>
+                </div>
+
+                <!-- Results Section (when completed) -->
+                <div x-show="batchImportModal.results" class="space-y-6" x-cloak>
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 text-center">
+                            <div class="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400"
+                                 x-text="batchImportModal.results ? batchImportModal.results.imported_count : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">تم قيدهم بنجاح وتوليد أرقامهم</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border text-center"
+                             :class="(batchImportModal.results && batchImportModal.results.errors_count > 0) ? 'bg-rose-500/10 border-rose-500/20' : 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'">
+                            <div class="text-3xl font-black font-mono"
+                                 :class="(batchImportModal.results && batchImportModal.results.errors_count > 0) ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'"
+                                 x-text="batchImportModal.results ? batchImportModal.results.errors_count : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">صفوف مرفوضة بها أخطاء</div>
+                        </div>
+                    </div>
+
+                    <!-- Imported List Table -->
+                    <div x-show="batchImportModal.results && batchImportModal.results.imported && batchImportModal.results.imported.length > 0">
+                        <h4 class="text-xs font-black text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
+                            <span>✓ قائمة الطلاب المقيدين الجدد:</span>
+                        </h4>
+                        <div class="rounded-xl border overflow-x-auto max-h-48 scrollbar-thin"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold sticky top-0">
+                                    <tr>
+                                        <th class="p-2.5">الرقم الدراسي</th>
+                                        <th class="p-2.5">الاسم الكامل</th>
+                                        <th class="p-2.5">الرقم الوطني</th>
+                                        <th class="p-2.5">الفرع</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="st in (batchImportModal.results ? batchImportModal.results.imported : [])" :key="st.id">
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <td class="p-2.5 font-mono font-bold text-[#2b78a5] dark:text-sky-400" x-text="st.academic_number"></td>
+                                            <td class="p-2.5 font-bold" x-text="st.full_name"></td>
+                                            <td class="p-2.5 font-mono text-slate-500" x-text="st.national_id"></td>
+                                            <td class="p-2.5 text-slate-500" x-text="st.branch_name"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Errors List Table -->
+                    <div x-show="batchImportModal.results && batchImportModal.results.errors && batchImportModal.results.errors.length > 0">
+                        <h4 class="text-xs font-black text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-1.5">
+                            <span>⚠️ تفاصيل الصفوف المرفوضة والمستبعدة:</span>
+                        </h4>
+                        <div class="rounded-xl border overflow-x-auto max-h-48 scrollbar-thin"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 font-bold sticky top-0">
+                                    <tr>
+                                        <th class="p-2.5">السطر #</th>
+                                        <th class="p-2.5">الاسم / الرقم الوطني</th>
+                                        <th class="p-2.5">سبب الرفض وعدم القيد</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="(err, i) in (batchImportModal.results ? batchImportModal.results.errors : [])" :key="i">
+                                        <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-950/20">
+                                            <td class="p-2.5 font-mono font-bold text-rose-600" x-text="err.row || (i+1)"></td>
+                                            <td class="p-2.5 font-semibold text-slate-700 dark:text-slate-300" x-text="(err.name || '') + ' (' + (err.national_id || '—') + ')'"></td>
+                                            <td class="p-2.5 text-rose-600 dark:text-rose-400 font-medium leading-relaxed" x-text="err.error"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900">
+                <button @click="batchImportModal.open = false" 
+                        type="button"
+                        :disabled="batchImportModal.submitting"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs cursor-pointer">
+                    إغلاق
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <button x-show="batchImportModal.results"
+                            @click="resetBatchImport()"
+                            type="button"
+                            class="px-4 py-2.5 rounded-xl border border-emerald-300 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-50 transition-colors cursor-pointer"
+                            x-cloak>
+                        استيراد ملف إضافي
+                    </button>
+
+                    <button x-show="!batchImportModal.results"
+                            @click="submitBatchImport()"
+                            type="button"
+                            :disabled="batchImportModal.submitting || !batchImportModal.file"
+                            class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-black shadow-md flex items-center gap-2 transition-all cursor-pointer text-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg x-show="batchImportModal.submitting" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span x-text="batchImportModal.submitting ? 'جارٍ رفع وتدقيق الدفعة...' : 'بدء الاستيراد والمعالجة'">بدء الاستيراد والمعالجة</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -9064,46 +9356,46 @@
                             <span>3. ترحيل بيانات الطلاب وترفيع الطلاب</span>
                         </button>
 
-                        <button @click="settingsTab = 'calendar'"
+                        <button @click="settingsTab = 'calendar'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'calendar' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                             <span>4. التقويم وإحصائيات أيام الدراسة</span>
                         </button>
 
-                        <button @click="settingsTab = 'schedules'"
+                        <button @click="settingsTab = 'schedules'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'schedules' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                             <span>5. جدولة الدراسة والامتحانات</span>
                         </button>
 
-                        <button @click="settingsTab = 'services'"
+                        <button @click="settingsTab = 'services'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'services' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                            <span>4. الخدمات الطلابية والتسجيل</span>
+                            <span>6. الخدمات الطلابية والتسجيل</span>
                         </button>
 
-                        <button @click="settingsTab = 'admin_periods'"
+                        <button @click="settingsTab = 'admin_periods'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'admin_periods' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            <span>5. الفترات الإدارية والطعون</span>
+                            <span>7. الفترات الإدارية والطعون</span>
                         </button>
 
-                        <button @click="settingsTab = 'results_gateways'"
+                        <button @click="settingsTab = 'results_gateways'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'results_gateways' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
-                            <span>6. بوابات إعلان النتائج</span>
+                            <span>8. بوابات إعلان النتائج</span>
                         </button>
 
-                        <button @click="settingsTab = 'positions'"
+                        <button @click="settingsTab = 'positions'; loadSettingsData();"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 whitespace-nowrap"
                                 :class="settingsTab === 'positions' ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md' : (darkMode ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-600')">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-                            <span>7. الهيكل التنظيمي والمناصب</span>
+                            <span>9. الهيكل التنظيمي والمناصب</span>
                         </button>
                     </div>
 
@@ -15541,12 +15833,41 @@
             <!-- ========================================================================= -->
             <!-- 12. تحديثات النظام وسجل الإصدارات (SYSTEM UPDATES & CHANGELOG) -->
             <!-- ========================================================================= -->
-            <div x-show="currentSection === 'updates'" 
+            <div x-show="currentSection === 'updates'"
                  class="space-y-6"
                  x-data="{
                     activeUpdateTag: 'all',
                     updateSearch: '',
-                    releases: [
+                    releases: [],
+                    changelogStats: { total: 0, features: 0, fixes: 0, security: 0, latest_version: '2.4.1' },
+                    changelogLoading: false,
+                    changelogPage: 1,
+                    changelogLastPage: 1,
+                    async loadChangelog() {
+                        this.changelogLoading = true;
+                        try {
+                            const params = new URLSearchParams({
+                                per_page: 20,
+                                page: this.changelogPage,
+                            });
+                            if (this.activeUpdateTag !== 'all') params.set('type', this.activeUpdateTag);
+                            if (this.updateSearch.trim()) params.set('search', this.updateSearch.trim());
+                            const res = await fetch('/api/v1/changelog?' + params, { headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content || '' } });
+                            const data = await res.json();
+                            if (data.success) {
+                                this.releases = data.data;
+                                this.changelogStats = data.stats;
+                                this.changelogLastPage = data.meta?.last_page || 1;
+                            }
+                        } catch(e) { console.error('Changelog load error:', e); }
+                        finally { this.changelogLoading = false; }
+                    },
+                    get filteredReleases() {
+                        return this.releases;
+                    }
+                 }"
+                 @x-init.once="loadChangelog()"
+                 x-init="$watch('activeUpdateTag', () => { changelogPage = 1; loadChangelog(); }); $watch('updateSearch', () => { changelogPage = 1; loadChangelog(); })">
                         {
                             version: 'v2.4.0',
                             codename: 'الإصدار المعتمد للإنتاج (Enterprise Live)',
@@ -15666,18 +15987,18 @@
                                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></div>
                                 <div class="text-right">
                                     <div class="text-[10px] text-slate-400 font-bold">الإصدار المعتمد</div>
-                                    <div class="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">v2.4.0 Live</div>
+                                    <div class="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400" x-text="'v' + changelogStats.latest_version + ' Live'">v2.4.1 Live</div>
                                 </div>
                             </div>
 
                             <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3"
                                  :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
-                                <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black text-xs font-mono">
-                                    99.98%
+                                <div class="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black text-xs font-mono" x-text="changelogStats.total">
+                                    —
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-[10px] text-slate-400 font-bold">حالة الاستقرار</div>
-                                    <div class="text-xs font-black">جاهزية تشغيلية كاملة</div>
+                                    <div class="text-[10px] text-slate-400 font-bold">إجمالي الإصدارات</div>
+                                    <div class="text-xs font-black" x-text="changelogStats.features + ' ميزة، ' + changelogStats.fixes + ' إصلاح'">جاهزية تشغيلية كاملة</div>
                                 </div>
                             </div>
                         </div>
@@ -15747,7 +16068,110 @@
 
                 <!-- Releases Timeline -->
                 <div class="relative pl-0 md:pr-4 space-y-8 before:absolute before:top-4 before:bottom-4 before:right-0 md:before:right-8 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
-                    <template x-for="rel in filteredReleases" :key="rel.version">
+
+                    <!-- Loading skeleton -->
+                    <div x-show="changelogLoading" class="space-y-4">
+                        <template x-for="i in 3">
+                            <div class="p-6 rounded-2xl border animate-pulse" :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
+                                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/4 mb-3"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <template x-for="rel in filteredReleases" :key="rel.id">
+                        <div class="relative md:pr-12">
+                            <!-- Timeline Dot Icon -->
+                            <div class="hidden md:flex absolute top-5 -right-3.5 w-7 h-7 rounded-full border-2 items-center justify-center text-xs shadow-md z-10"
+                                 :class="rel.id === filteredReleases[0]?.id
+                                     ? 'bg-emerald-500 border-white text-white dark:border-slate-900 animate-pulse'
+                                     : (darkMode ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-white border-slate-300 text-slate-500')">
+                                <span x-show="rel.id === filteredReleases[0]?.id">★</span>
+                                <span x-show="rel.id !== filteredReleases[0]?.id">●</span>
+                            </div>
+
+                            <!-- Release Card -->
+                            <div class="rounded-2xl border p-6 space-y-4 transition-all"
+                                 :class="rel.id === filteredReleases[0]?.id
+                                     ? (darkMode ? 'bg-slate-900 border-emerald-500/40 shadow-xl shadow-emerald-950/20' : 'bg-white border-emerald-400 shadow-lg shadow-emerald-900/5')
+                                     : (darkMode ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm')">
+
+                                <!-- Release Header -->
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b"
+                                     :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white" x-text="'v' + rel.version"></span>
+                                        <span class="text-sm font-bold text-slate-600 dark:text-slate-300" x-text="rel.title"></span>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <!-- Type Badge -->
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                              :class="{
+                                                'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30': rel.type === 'feature',
+                                                'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30': rel.type === 'fix',
+                                                'bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30': rel.type === 'security',
+                                                'bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30': rel.type === 'performance',
+                                                'bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-500/30': rel.type === 'ui',
+                                                'bg-slate-500/20 text-slate-600 dark:text-slate-400 border border-slate-500/30': rel.type === 'breaking',
+                                              }"
+                                              x-text="rel.type === 'feature' ? '✨ ميزة جديدة' : rel.type === 'fix' ? '🐛 إصلاح' : rel.type === 'security' ? '🔒 أمان' : rel.type === 'performance' ? '⚡ أداء' : rel.type === 'ui' ? '🎨 واجهة' : '⚠️ تغيير جذري'">
+                                        </span>
+                                        <!-- Impact Badge -->
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                                              :class="{
+                                                'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700': rel.impact === 'low',
+                                                'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800': rel.impact === 'medium',
+                                                'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800': rel.impact === 'high',
+                                                'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800': rel.impact === 'critical',
+                                              }"
+                                              x-text="rel.impact === 'low' ? 'أثر منخفض' : rel.impact === 'medium' ? 'أثر متوسط' : rel.impact === 'high' ? 'أثر عالي' : 'أثر حرج'">
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-mono" x-text="rel.deployed_at ? rel.deployed_at.substring(0,10) : ''"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Release Description -->
+                                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium" x-text="rel.description"></p>
+
+                                <!-- Footer: author, commit, modules -->
+                                <div class="flex flex-wrap items-center gap-3 text-[10px] text-slate-400 pt-1 border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                    <span class="flex items-center gap-1" x-show="rel.author">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <span x-text="rel.author"></span>
+                                    </span>
+                                    <span class="flex items-center gap-1 font-mono" x-show="rel.commit_hash">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                                        <span x-text="rel.commit_hash ? rel.commit_hash.substring(0,7) : ''"></span>
+                                    </span>
+                                    <span class="flex items-center gap-1" x-show="rel.branch">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 3v12m0 0a3 3 0 106 0m-6 0a3 3 0 000 6 3 3 0 000-6zM18 3v6m0 0a3 3 0 100 6 3 3 0 000-6z"/></svg>
+                                        <span x-text="rel.branch"></span>
+                                    </span>
+                                    <template x-if="rel.affected_modules && rel.affected_modules.length">
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                            <span x-text="rel.affected_modules.join(' · ')"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Empty State -->
+                    <div x-show="!changelogLoading && filteredReleases.length === 0"
+                         class="p-12 text-center rounded-2xl border text-slate-400"
+                         :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
+                        <div class="text-4xl mb-3">📦</div>
+                        <div class="text-sm font-bold text-slate-700 dark:text-slate-300">لا توجد تحديثات تطابق الفلتر الحالي</div>
+                        <p class="text-xs text-slate-400 mt-1">جرّب مسح نص البحث أو اختيار وسام "الكل".</p>
+                    </div>
+                </div>
+
+            </div>
+
                         <div class="relative md:pr-12">
                             <!-- Timeline Dot Icon -->
                             <div class="hidden md:flex absolute top-5 -right-3.5 w-7 h-7 rounded-full border-2 items-center justify-center text-xs shadow-md z-10"
@@ -15833,6 +16257,232 @@
 
             </div>
 
+
+
+            <!-- ========================================================================= -->
+            <!-- 13. قسم إدارة بلاغات الأخطاء (BUG REPORTS MANAGEMENT)                   -->
+            <!-- ========================================================================= -->
+            <div x-show="currentSection === 'bug-reports'"
+                 class="space-y-6"
+                 x-data="{
+                    bugsList: [],
+                    bugsStats: {pending:0,in_progress:0,resolved:0,dismissed:0,total:0,avg_rating:0},
+                    bugsLoading: false,
+                    bugsPage: 1,
+                    bugsLastPage: 1,
+                    bugsFilterStatus: '',
+                    bugsFilterCategory: '',
+                    bugsSearch: '',
+                    bugsUpdatingId: null,
+                    async loadBugs() {
+                        this.bugsLoading = true;
+                        try {
+                            const p = new URLSearchParams({per_page:20, page:this.bugsPage});
+                            if (this.bugsFilterStatus) p.set('status', this.bugsFilterStatus);
+                            if (this.bugsFilterCategory) p.set('category', this.bugsFilterCategory);
+                            if (this.bugsSearch.trim()) p.set('search', this.bugsSearch.trim());
+                            const res = await fetch('/api/v1/bug-reports?' + p, {headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||''}});
+                            const data = await res.json();
+                            if (data.success) {
+                                this.bugsList = data.data;
+                                this.bugsStats = data.stats;
+                                this.bugsLastPage = data.meta?.last_page || 1;
+                                bugReportsNavBadge = data.stats.pending;
+                            }
+                        } catch(e) { console.error('Bug reports load error:', e); }
+                        finally { this.bugsLoading = false; }
+                    },
+                    async updateStatus(id, newStatus) {
+                        this.bugsUpdatingId = id;
+                        try {
+                            const res = await fetch('/api/v1/bug-reports/' + id, {
+                                method: 'PATCH',
+                                headers: {'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||''},
+                                body: JSON.stringify({status: newStatus}),
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                const idx = this.bugsList.findIndex(b => b.id === id);
+                                if (idx !== -1) {
+                                    this.bugsList[idx].status = data.data.status;
+                                    this.bugsList[idx].resolved_at = data.data.resolved_at;
+                                }
+                                await this.loadBugs();
+                            }
+                        } catch(e) {} finally { this.bugsUpdatingId = null; }
+                    },
+                    getStatusClass(status) {
+                        return {
+                            pending: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+                            in_progress: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800',
+                            resolved: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+                            dismissed: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700',
+                        }[status] || '';
+                    },
+                    getStatusLabel(status) {
+                        return {pending:'قيد الانتظار',in_progress:'تحت المعالجة',resolved:'تمت المعالجة',dismissed:'مرفوض'}[status]||status;
+                    },
+                    getCatLabel(cat) {
+                        return {ui:'واجهة',data:'بيانات',performance:'أداء',access:'صلاحيات',calculation:'حسابات',other:'أخرى'}[cat]||cat;
+                    },
+                    ratingStars(r) { return '★'.repeat(r) + '☆'.repeat(5-r); }
+                 }"
+                 x-init="loadBugs(); $watch('bugsFilterStatus', () => { bugsPage=1; loadBugs(); }); $watch('bugsFilterCategory', () => { bugsPage=1; loadBugs(); }); $watch('bugsSearch', () => { bugsPage=1; loadBugs(); })">
+
+                <!-- Header -->
+                <div class="p-6 md:p-8 rounded-[24px] border relative overflow-hidden"
+                     :class="darkMode ? 'bg-gradient-to-br from-slate-900 via-rose-950/10 to-slate-900 border-slate-800 shadow-[0_16px_36px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-rose-50/20 to-pink-50/20 border-[#e8ebf2] shadow-[0_16px_36px_rgba(15,23,42,0.05)]'">
+                    <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-rose-900/30 flex-shrink-0">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">إدارة بلاغات الأخطاء</h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">جميع البلاغات المُرسلة من المستخدمين مع إمكانية تغيير حالة المعالجة</p>
+                            </div>
+                        </div>
+                        <!-- Stats KPIs -->
+                        <div class="flex flex-wrap gap-3">
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all" @click="bugsFilterStatus=''; bugsPage=1; loadBugs()"
+                                 :class="darkMode ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200 shadow-sm'">
+                                <div class="text-2xl font-black font-mono text-slate-800 dark:text-white" x-text="bugsStats.total">0</div>
+                                <div class="text-[10px] text-slate-400 font-bold">إجمالي<br>البلاغات</div>
+                            </div>
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all" @click="bugsFilterStatus='pending'; bugsPage=1; loadBugs()"
+                                 :class="darkMode ? 'bg-amber-950/20 border-amber-800/50' : 'bg-amber-50 border-amber-200 shadow-sm'">
+                                <div class="text-2xl font-black font-mono text-amber-600 dark:text-amber-400" x-text="bugsStats.pending">0</div>
+                                <div class="text-[10px] text-amber-700 dark:text-amber-400 font-bold">قيد<br>الانتظار</div>
+                            </div>
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all" @click="bugsFilterStatus='in_progress'; bugsPage=1; loadBugs()"
+                                 :class="darkMode ? 'bg-blue-950/20 border-blue-800/50' : 'bg-blue-50 border-blue-200 shadow-sm'">
+                                <div class="text-2xl font-black font-mono text-blue-600 dark:text-blue-400" x-text="bugsStats.in_progress">0</div>
+                                <div class="text-[10px] text-blue-700 dark:text-blue-400 font-bold">تحت<br>المعالجة</div>
+                            </div>
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3 cursor-pointer transition-all" @click="bugsFilterStatus='resolved'; bugsPage=1; loadBugs()"
+                                 :class="darkMode ? 'bg-emerald-950/20 border-emerald-800/50' : 'bg-emerald-50 border-emerald-200 shadow-sm'">
+                                <div class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400" x-text="bugsStats.resolved">0</div>
+                                <div class="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">تمت<br>المعالجة</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="p-4 rounded-[20px] border flex flex-col sm:flex-row gap-3"
+                     :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                    <div class="flex-1 relative">
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        <input x-model="bugsSearch" type="text" placeholder="البحث في البلاغات..."
+                               class="w-full pr-9 pl-3 py-2 text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-rose-500/30 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                    </div>
+                    <select x-model="bugsFilterStatus"
+                            class="px-3 py-2 text-sm rounded-xl border bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/30">
+                        <option value="">جميع الحالات</option>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="in_progress">تحت المعالجة</option>
+                        <option value="resolved">تمت المعالجة</option>
+                        <option value="dismissed">مرفوض</option>
+                    </select>
+                    <select x-model="bugsFilterCategory"
+                            class="px-3 py-2 text-sm rounded-xl border bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/30">
+                        <option value="">جميع التصنيفات</option>
+                        <option value="ui">واجهة المستخدم</option>
+                        <option value="data">بيانات غير صحيحة</option>
+                        <option value="performance">بطء في الأداء</option>
+                        <option value="access">مشكلة صلاحيات</option>
+                        <option value="calculation">خطأ في الحسابات</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+
+                <!-- Bug Reports Table -->
+                <div class="rounded-[20px] border overflow-hidden"
+                     :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+
+                    <!-- Loading -->
+                    <div x-show="bugsLoading" class="p-12 text-center">
+                        <div class="inline-block w-8 h-8 border-4 border-rose-500/30 border-t-rose-500 rounded-full animate-spin"></div>
+                        <p class="text-xs text-slate-400 mt-3">جاري تحميل البلاغات...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div x-show="!bugsLoading && bugsList.length === 0" class="p-12 text-center">
+                        <div class="text-5xl mb-4">🎉</div>
+                        <p class="font-black text-slate-700 dark:text-slate-300">لا توجد بلاغات في هذه الفئة</p>
+                        <p class="text-xs text-slate-400 mt-1">ممتاز! يبدو أن كل شيء يعمل بشكل جيد.</p>
+                    </div>
+
+                    <!-- Table -->
+                    <div x-show="!bugsLoading && bugsList.length > 0" class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="border-b" :class="darkMode ? 'border-slate-800 bg-slate-900/80' : 'border-slate-100 bg-slate-50'">
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400 w-8">#</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">البلاغ</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">الصفحة</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">التقييم</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">النوع</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">الحالة</th>
+                                    <th class="px-4 py-3 text-right font-black text-slate-500 dark:text-slate-400">الإجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y" :class="darkMode ? 'divide-slate-800' : 'divide-slate-100'">
+                                <template x-for="bug in bugsList" :key="bug.id">
+                                    <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td class="px-4 py-4 font-mono text-slate-400" x-text="bug.id"></td>
+                                        <td class="px-4 py-4 max-w-xs">
+                                            <div class="font-bold text-slate-800 dark:text-slate-200 truncate" x-text="bug.title"></div>
+                                            <div class="text-slate-400 mt-0.5 text-[11px] line-clamp-2" x-text="bug.description"></div>
+                                            <div class="text-slate-300 dark:text-slate-600 mt-1 text-[10px]" x-text="bug.reporter ? bug.reporter.name : 'مجهول'"></div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="font-medium text-slate-700 dark:text-slate-300" x-text="bug.section_name"></div>
+                                            <div class="text-slate-400 text-[10px] font-mono" x-text="bug.created_at ? bug.created_at.substring(0,10) : ''"></div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="text-amber-500 tracking-tighter text-sm font-bold" x-text="ratingStars(bug.rating)"></div>
+                                            <div class="text-slate-400 text-[10px]" x-text="bug.rating + '/5'"></div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-0.5 rounded-lg border text-[11px] font-bold"
+                                                  :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-600'"
+                                                  x-text="getCatLabel(bug.category)"></span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="px-2.5 py-1 rounded-full border text-[11px] font-bold"
+                                                  :class="getStatusClass(bug.status)"
+                                                  x-text="getStatusLabel(bug.status)"></span>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <select @change="updateStatus(bug.id, $event.target.value)"
+                                                    :disabled="bugsUpdatingId === bug.id"
+                                                    :value="bug.status"
+                                                    class="px-2 py-1.5 rounded-lg border text-xs font-bold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500/30 disabled:opacity-50">
+                                                <option value="pending">قيد الانتظار</option>
+                                                <option value="in_progress">تحت المعالجة</option>
+                                                <option value="resolved">تمت المعالجة</option>
+                                                <option value="dismissed">رفض</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div x-show="bugsLastPage > 1" class="p-4 flex items-center justify-between border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                        <button @click="bugsPage--; loadBugs()" :disabled="bugsPage <= 1"
+                                class="px-4 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-40"
+                                :class="darkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'">السابق</button>
+                        <span class="text-xs text-slate-400" x-text="'صفحة ' + bugsPage + ' من ' + bugsLastPage"></span>
+                        <button @click="bugsPage++; loadBugs()" :disabled="bugsPage >= bugsLastPage"
+                                class="px-4 py-2 rounded-xl border text-xs font-bold transition-all disabled:opacity-40"
+                                :class="darkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'">التالي</button>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
@@ -17648,6 +18298,10 @@
 
                 sidebarCollapsed: false,
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
+                bugReportsNavBadge: 0,
+                navigationCount: 0,
+                showTransitionGif: false,
+                pendingSection: null,
                 selectedCourseId: {{ $initialCourseId ?? 1 }},
                 settingsTab: '{{ $initialSettingsTab ?? "years" }}',
                 selectedAcademicYearId: '{{ $currentAcademicYear ? $currentAcademicYear->id : 1 }}',
@@ -17665,6 +18319,31 @@
 
                 showComingSoonModal: false,
                 comingSoonTitle: 'قسم الدراسة والامتحانات',
+                // ─── Navigation with GIF Transition ───────────────────────────────
+                navigateTo(section) {
+                    if (section === this.currentSection) return;
+                    this.navigationCount++;
+                    if (this.navigationCount % 5 === 0) {
+                        this.pendingSection = section;
+                        this.showTransitionGif = true;
+                        this.$nextTick(() => {
+                            const gif = document.getElementById('section-transition-gif');
+                            if (gif) {
+                                const src = gif.src;
+                                gif.src = '';
+                                gif.src = src;
+                            }
+                        });
+                        setTimeout(() => {
+                            this.currentSection = this.pendingSection;
+                            this.pendingSection = null;
+                            setTimeout(() => { this.showTransitionGif = false; }, 400);
+                        }, 1800);
+                    } else {
+                        this.currentSection = section;
+                    }
+                },
+
                 openComingSoon(title) {
                     this.comingSoonTitle = title || 'قسم الدراسة والامتحانات';
                     this.showComingSoonModal = true;
@@ -18112,6 +18791,21 @@
                     card: null
                 },
 
+                batchImportModal: {
+                    open: false,
+                    submitting: false,
+                    file: null,
+                    fileName: '',
+                    fileSizeText: '',
+                    defaultBranchId: 1,
+                    defaultDepartmentId: 1,
+                    defaultStudyYearId: 1,
+                    defaultStudyType: 'REGULAR',
+                    errorMessage: '',
+                    successMessage: '',
+                    results: null
+                },
+
                 // ==========================================
                 // 2. EDIT STUDENT STATE
                 // ==========================================
@@ -18535,6 +19229,132 @@
                 // ==========================================
                 // 1. STUDENT REGISTRATION & CARDS METHODS
                 // ==========================================
+                openBatchImportModal() {
+                    this.batchImportModal.open = true;
+                    this.batchImportModal.submitting = false;
+                    this.batchImportModal.file = null;
+                    this.batchImportModal.fileName = '';
+                    this.batchImportModal.fileSizeText = '';
+                    this.batchImportModal.results = null;
+                    this.batchImportModal.errorMessage = '';
+                    this.batchImportModal.successMessage = '';
+                    this.batchImportModal.defaultBranchId = (this.branchesList && this.branchesList[0]) ? this.branchesList[0].id : 1;
+                    this.batchImportModal.defaultDepartmentId = (this.courseDepartments && this.courseDepartments[0]) ? this.courseDepartments[0].id : 1;
+                    this.batchImportModal.defaultStudyYearId = 1;
+                    this.batchImportModal.defaultStudyType = 'REGULAR';
+                },
+
+                handleBatchImportFile(event) {
+                    const file = event.target.files ? event.target.files[0] : null;
+                    if (!file) return;
+                    
+                    if (!file.name.toLowerCase().endsWith('.csv') && !file.name.toLowerCase().endsWith('.txt')) {
+                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف بيانات بتنسيق CSV (.csv).';
+                        this.batchImportModal.file = null;
+                        this.batchImportModal.fileName = '';
+                        return;
+                    }
+
+                    this.batchImportModal.errorMessage = '';
+                    this.batchImportModal.file = file;
+                    this.batchImportModal.fileName = file.name;
+                    const sizeInKb = (file.size / 1024).toFixed(1);
+                    this.batchImportModal.fileSizeText = sizeInKb + ' كيلوبايت';
+                },
+
+                async submitBatchImport() {
+                    if (!this.batchImportModal.file) {
+                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف CSV أولاً لبدء الاستيراد.';
+                        return;
+                    }
+
+                    this.batchImportModal.submitting = true;
+                    this.batchImportModal.errorMessage = '';
+                    this.batchImportModal.successMessage = '';
+                    this.batchImportModal.results = null;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', this.batchImportModal.file);
+                        formData.append('default_branch_id', this.batchImportModal.defaultBranchId);
+                        formData.append('default_department_id', this.batchImportModal.defaultDepartmentId);
+                        formData.append('default_study_year_id', this.batchImportModal.defaultStudyYearId);
+                        formData.append('default_study_type', this.batchImportModal.defaultStudyType);
+
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        
+                        const res = await fetch('/api/students/import-batch', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: formData
+                        });
+
+                        const data = await res.json();
+
+                        if (res.ok && data.success) {
+                            this.batchImportModal.results = {
+                                imported_count: data.imported_count || 0,
+                                errors_count: data.errors_count || 0,
+                                imported: data.imported || [],
+                                errors: data.errors || []
+                            };
+
+                            this.batchImportModal.successMessage = data.message || `تم بنجاح استيراد ${data.imported_count} طالب!`;
+                            this.showToast(`تم استيراد ${data.imported_count} طالب بنجاح!`);
+                            
+                            // Refresh student registry and students list
+                            if (typeof this.loadRegistry === 'function') {
+                                await this.loadRegistry(1);
+                            }
+                            if (typeof this.loadStudents === 'function') {
+                                await this.loadStudents();
+                            }
+                        } else {
+                            this.batchImportModal.errorMessage = data.message || 'حدث خطأ أثناء معالجة ملف الاستيراد.';
+                            if (data.errors && Array.isArray(data.errors)) {
+                                this.batchImportModal.results = {
+                                    imported_count: data.imported_count || 0,
+                                    errors_count: data.errors.length,
+                                    imported: data.imported || [],
+                                    errors: data.errors
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Batch import error:', err);
+                        this.batchImportModal.errorMessage = 'فشل الاتصال بالخادم أثناء رفع الملف. يرجى إعادة المحاولة.';
+                    } finally {
+                        this.batchImportModal.submitting = false;
+                    }
+                },
+
+                downloadSampleImportCsv() {
+                    const headers = 'الرقم الوطني,الاسم الأول,اسم الأب,اسم الجد,اللقب,اسم الأم,تاريخ الميلاد,الجنس,رقم الهاتف,هاتف ولي الأمر,مكان الميلاد,العنوان';
+                    const sample1 = '120060012345,أحمد,محمد,علي,الورفلي,فاطمة,2006-05-15,ذكر,0912345678,0923456789,طرابلس,حي الأندلس';
+                    const sample2 = '220070054321,مريم,عبدالله,سالم,التاجوري,عائشة,2007-09-20,أنثى,0918765432,0928765432,تاجوراء,النشيع';
+                    const csvContent = '\uFEFF' + headers + '\n' + sample1 + '\n' + sample2 + '\n';
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.setAttribute('download', 'نموذج_استيراد_الطلاب_المعتمد.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                resetBatchImport() {
+                    this.batchImportModal.file = null;
+                    this.batchImportModal.fileName = '';
+                    this.batchImportModal.fileSizeText = '';
+                    this.batchImportModal.results = null;
+                    this.batchImportModal.errorMessage = '';
+                    this.batchImportModal.successMessage = '';
+                },
+
                 openCreateStudentModal() {
                     this.createStudentModal.open = true;
                     this.createStudentModal.activeTab = 'personal';
@@ -24221,5 +25041,247 @@ async loadBranchOperations() {
             } catch (_) {}
         });
     </script>
+
+    <!-- Bug Report FAB -->
+    <div id="bug-report-fab-root"
+         x-data="{
+            fabOpen: false,
+            fabSubmitting: false,
+            fabStep: 1,
+            fabRating: 0,
+            fabForm: { section_key: '', section_name: '', category: 'other', rating: 0, title: '', description: '' },
+            fabErrors: {},
+            async openFab() {
+                this.fabOpen = true;
+                this.fabStep = 1;
+                this.fabRating = 0;
+                this.fabErrors = {};
+                this.fabForm.description = '';
+                this.fabForm.title = '';
+                this.fabForm.category = 'other';
+                try {
+                    const appEl = document.querySelector('[x-data]');
+                    const al = window.Alpine ? window.Alpine.$data(appEl) : null;
+                    const sec = al && al.currentSection ? al.currentSection : 'general';
+                    const labels = {dashboard:'لوحة القيادة',students:'سجل الطلاب',attendance:'الحضور والغياب',exams:'الامتحانات',payroll:'الرواتب',correspondence:'المراسلات',users:'المستخدمون',updates:'سجل الإصدارات',procedures:'دليل الإجراءات','bug-reports':'البلاغات',branches:'الفروع',settings:'الإعدادات',profile:'الملف الشخصي'};
+                    this.fabForm.section_key = sec;
+                    this.fabForm.section_name = labels[sec] || sec;
+                } catch(e) { this.fabForm.section_key = 'general'; this.fabForm.section_name = 'عام'; }
+            },
+            setRating(val) { this.fabRating = val; this.fabForm.rating = val; },
+            nextStep() {
+                if (!this.fabRating) { this.fabErrors.rating = 'يرجى اختيار تقييم.'; return; }
+                this.fabErrors = {};
+                this.fabStep = 2;
+            },
+            async submitFab() {
+                this.fabErrors = {};
+                if (!this.fabForm.title.trim()) { this.fabErrors.title = 'يرجى كتابة عنوان مختصر.'; return; }
+                if (this.fabForm.description.trim().length < 10) { this.fabErrors.description = 'يرجى وصف المشكلة (10 أحرف على الأقل).'; return; }
+                this.fabSubmitting = true;
+                try {
+                    const res = await fetch('/api/v1/bug-reports', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||''},
+                        body: JSON.stringify({...this.fabForm, rating: this.fabRating}),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.fabStep = 3;
+                        try {
+                            const al = window.Alpine ? window.Alpine.$data(document.querySelector('[x-data]')) : null;
+                            if (al) al.bugReportsNavBadge = (al.bugReportsNavBadge||0) + 1;
+                        } catch(_){}
+                        setTimeout(() => { this.fabOpen = false; }, 3500);
+                    } else {
+                        if (data.errors) this.fabErrors = data.errors;
+                        else this.fabErrors.general = data.message || 'حدث خطأ، يرجى المحاولة لاحقاً.';
+                    }
+                } catch(e) { this.fabErrors.general = 'تعذر الاتصال بالخادم.'; }
+                finally { this.fabSubmitting = false; }
+            }
+         }">
+
+        <!-- FAB Button -->
+        <button @click="openFab()"
+                id="bug-report-fab-btn"
+                class="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-tr from-rose-600 to-pink-600 text-white shadow-2xl shadow-rose-900/40 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 group"
+                title="التبليغ عن خطأ في هذه الصفحة" aria-label="التبليغ عن خطأ">
+            <svg class="w-6 h-6 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="absolute inset-0 rounded-2xl ring-2 ring-rose-400/50 animate-ping opacity-75 pointer-events-none"></span>
+        </button>
+
+        <!-- Modal -->
+        <div x-show="fabOpen" x-cloak
+             class="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 sm:p-6"
+             @keydown.escape.window="fabOpen = false">
+            <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="fabOpen = false"></div>
+            <div class="relative bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 w-full max-w-md shadow-2xl overflow-hidden"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-end="opacity-0 scale-95">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-rose-600 to-pink-600 p-5 text-white">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-sm">التبليغ عن مشكلة</h3>
+                                <p class="text-xs text-rose-200" x-text="fabForm.section_name ? 'الصفحة: ' + fabForm.section_name : ''"></p>
+                            </div>
+                        </div>
+                        <button @click="fabOpen = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors text-sm font-bold">x</button>
+                    </div>
+                    <!-- Progress -->
+                    <div class="flex items-center gap-1 mt-4">
+                        <template x-for="s in [1,2,3]" :key="s">
+                            <div class="flex items-center gap-1">
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black transition-all"
+                                     :class="fabStep >= s ? 'bg-white text-rose-600' : 'bg-white/30 text-white'">
+                                    <span x-show="fabStep > s">v</span>
+                                    <span x-show="fabStep <= s" x-text="s"></span>
+                                </div>
+                                <div x-show="s < 3" class="h-0.5 w-6 rounded-full transition-all" :class="fabStep > s ? 'bg-white' : 'bg-white/30'"></div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                <!-- Body -->
+                <div class="p-6 space-y-5">
+                    <!-- Step 1: Rating + Category -->
+                    <div x-show="fabStep === 1" class="space-y-4">
+                        <div>
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 text-center">كيف تقيّم هذه الصفحة؟</p>
+                            <div class="flex items-center justify-center gap-2">
+                                <template x-for="star in [1,2,3,4,5]" :key="star">
+                                    <button @click="setRating(star)"
+                                            class="text-4xl transition-all duration-150 hover:scale-125 focus:outline-none"
+                                            :class="fabRating >= star ? 'text-amber-400' : 'text-slate-200 dark:text-slate-700'">
+                                        &#9733;
+                                    </button>
+                                </template>
+                            </div>
+                            <p class="text-center mt-2 text-xs font-bold h-4">
+                                <span x-show="fabRating===1" class="text-rose-500">سيء جداً</span>
+                                <span x-show="fabRating===2" class="text-orange-500">سيء</span>
+                                <span x-show="fabRating===3" class="text-amber-500">مقبول</span>
+                                <span x-show="fabRating===4" class="text-emerald-500">جيد</span>
+                                <span x-show="fabRating===5" class="text-emerald-600">ممتاز</span>
+                            </p>
+                            <p x-show="fabErrors.rating" class="text-rose-500 text-xs mt-1 text-center" x-text="fabErrors.rating"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">نوع المشكلة</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <template x-for="item in [{v:'ui',i:'🎨',l:'واجهة'},{v:'data',i:'📊',l:'بيانات'},{v:'performance',i:'⚡',l:'أداء'},{v:'access',i:'🔐',l:'صلاحيات'},{v:'calculation',i:'🔢',l:'حسابات'},{v:'other',i:'💬',l:'أخرى'}]" :key="item.v">
+                                    <button @click="fabForm.category = item.v"
+                                            class="p-2 rounded-xl border text-center text-xs font-bold transition-all"
+                                            :class="fabForm.category === item.v ? 'bg-rose-500/15 border-rose-500/50 text-rose-600 dark:text-rose-400' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-rose-300'">
+                                        <div x-text="item.i" class="text-base mb-0.5"></div>
+                                        <div x-text="item.l"></div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <button @click="nextStep()" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-sm hover:opacity-90 transition-opacity">
+                            التالي
+                        </button>
+                    </div>
+
+                    <!-- Step 2: Details Form -->
+                    <div x-show="fabStep === 2" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عنوان المشكلة <span class="text-rose-500">*</span></label>
+                            <input x-model="fabForm.title" type="text" maxlength="120"
+                                   placeholder="مثال: زر الحفظ لا يعمل في شاشة القيد"
+                                   class="w-full px-3 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-400 transition-all"
+                                   :class="fabErrors.title ? 'border-rose-400' : ''">
+                            <p x-show="fabErrors.title" class="text-rose-500 text-xs mt-1" x-text="fabErrors.title"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">وصف المشكلة <span class="text-rose-500">*</span></label>
+                            <textarea x-model="fabForm.description" rows="4" maxlength="2000"
+                                      placeholder="صف ما حدث بالتفصيل، وهل تتكرر المشكلة..."
+                                      class="w-full px-3 py-2.5 rounded-xl border text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/30 focus:border-rose-400 transition-all resize-none"
+                                      :class="fabErrors.description ? 'border-rose-400' : ''"></textarea>
+                            <div class="flex justify-between mt-1">
+                                <p x-show="fabErrors.description" class="text-rose-500 text-xs" x-text="fabErrors.description"></p>
+                                <span class="text-xs text-slate-400 mr-auto" x-text="fabForm.description.length + '/2000'"></span>
+                            </div>
+                        </div>
+                        <p x-show="fabErrors.general" class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-xs" x-text="fabErrors.general"></p>
+                        <div class="flex gap-3">
+                            <button @click="fabStep = 1" class="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                رجوع
+                            </button>
+                            <button @click="submitFab()" :disabled="fabSubmitting"
+                                    class="flex-1 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+                                <svg x-show="fabSubmitting" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                                <span x-text="fabSubmitting ? 'جاري الإرسال...' : 'إرسال البلاغ'"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Success -->
+                    <div x-show="fabStep === 3" class="text-center py-4 space-y-4">
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/15 mx-auto flex items-center justify-center">
+                            <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-black text-slate-800 dark:text-slate-200">شكراً لك!</h4>
+                            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">تم استلام بلاغك وسيراجعه الفريق التقني قريباً.</p>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                            سيتم إغلاق هذه النافذة تلقائياً خلال لحظات...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================ -->
+    <!-- Section Transition GIF Overlay (fires every 5th navigation)  -->
+    <!-- ============================================================ -->
+    <div x-show="showTransitionGif"
+         x-cloak
+         id="section-transition-overlay"
+         class="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-400"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        <!-- Dark backdrop with blur -->
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        <!-- GIF container -->
+        <div class="relative z-10 flex flex-col items-center gap-6">
+            <img id="section-transition-gif"
+                 src="/images/transition.gif"
+                 alt="جاري الانتقال..."
+                 class="w-72 h-72 object-contain drop-shadow-2xl"
+                 style="image-rendering: auto;">
+            <!-- Subtle loading label -->
+            <div class="flex items-center gap-2 opacity-60">
+                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:0ms"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:150ms"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:300ms"></div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
