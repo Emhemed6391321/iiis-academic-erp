@@ -6,6 +6,68 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Cairo', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
 }
+
+/* ============================================================
+   📱 RESPONSIVE & TOUCH UTILITIES (MOBILE & TABLET UI/UX)
+   ============================================================ */
+
+/* 1. Momentum & Touch Scrolling */
+.touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+}
+.touch-scroll::-webkit-scrollbar {
+    height: 4px;
+    width: 4px;
+}
+.touch-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.touch-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 9999px;
+}
+
+/* 2. RTL Sticky Column with Elevation Shadow */
+.sticky-first-col-rtl {
+    position: sticky;
+    right: 0;
+    z-index: 20;
+}
+.sticky-first-col-rtl::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -10px;
+    bottom: 0;
+    width: 10px;
+    background: linear-gradient(to left, rgba(15, 23, 42, 0.08), transparent);
+    pointer-events: none;
+}
+
+/* 3. Mobile Touch Target (48x48px min) */
+.touch-target {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+/* 4. Bottom Sheet Sheet Animation on Mobile */
+@media (max-width: 640px) {
+    .modal-bottom-sheet {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-top-left-radius: 24px !important;
+        border-top-right-radius: 24px !important;
+        max-height: 90vh !important;
+        width: 100% !important;
+    }
+}
+

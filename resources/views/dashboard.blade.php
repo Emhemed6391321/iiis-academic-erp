@@ -21757,8 +21757,35 @@ async initApp() {
                     return Array.from(new Set(cities));
                 },
 
+                async loadBranchOperations() {
+                    try {
+                        const [dirRes, ovRes] = await Promise.all([
+                            fetch('/api/v1/branches/directory', { headers: { 'Accept': 'application/json' } }),
+                            fetch('/api/v1/branches/overview', { headers: { 'Accept': 'application/json' } })
+                        ]);
+                        if (dirRes.ok) {
+                            const dirData = await dirRes.json();
+                            if (dirData.status === 'success' && Array.isArray(dirData.data)) {
+                                this.branchesList = dirData.data;
+                                this.branches = dirData.data;
+                                if (this.leafletMap) {
+                                    this.renderBranchMarkers();
+                                }
+                            }
+                        }
+                        if (ovRes.ok) {
+                            const ovData = await ovRes.json();
+                            if (ovData.status === 'success' && ovData.data) {
+                                this.branchOverview = ovData.data.summary || ovData.data;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error loading branch operations:', e);
+                    }
+                },
+
                 filteredBranches() {
-                    let list = this.branchesList;
+                    let list = this.branchesList || [];
                     if (this.branchSearchQuery) {
                         const q = this.branchSearchQuery.toLowerCase().trim();
                         list = list.filter(b => (b.name && b.name.toLowerCase().includes(q)) ||
@@ -21938,14 +21965,14 @@ async initApp() {
                 },
 
                 openBranchDetailsById(id) {
-                    const b = this.branchesList.find(item => item.id == id);
+                    const b = (this.branchesList || []).find(item => item.id == id);
                     if (b) this.openBranchDetails(b);
                 },
 
                 openNewAssessmentModal(branchId = null) {
                     if (branchId) {
                         this.assessmentForm.branch_id = branchId;
-                    } else if (this.branchesList.length) {
+                    } else if (this.branchesList && this.branchesList.length) {
                         this.assessmentForm.branch_id = this.branchesList[0].id;
                     }
                     this.assessmentForm.assessment_date = new Date().toISOString().split('T')[0];
@@ -21987,7 +22014,7 @@ async initApp() {
                             this.showToast('تم اعتماد وحفظ تقرير التقييم الميداني بنجاح بنسبة: ' + data.data.total_score + '%');
                             
                             // Update local branch score
-                            const b = this.branchesList.find(item => item.id == branchId);
+                            const b = (this.branchesList || []).find(item => item.id == branchId);
                             if (b) {
                                 b.latest_score = data.data.total_score;
                                 b.latest_rating = data.data.rating_grade;
@@ -22111,7 +22138,7 @@ async initApp() {
 
                 async uploadBranchPhoto() {
                     const branch = this.branchDetailsData && this.branchDetailsData.branch;
-                    if (!branch) {
+                    if (!branch || !branch.id) {
                         alert('يرجى فتح ملف الفرع أولاً.');
                         return;
                     }
@@ -22121,6 +22148,11 @@ async initApp() {
                         return;
                     }
                     const file = fileInput.files[0];
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('حجم الصورة كبير جداً، الحد الأقصى المسموح به هو 10 ميجابايت.');
+                        return;
+                    }
+
                     const formData = new FormData();
                     formData.append('photo', file);
                     formData.append('caption', this.branchPhotoCaption || '');
@@ -22133,25 +22165,36 @@ async initApp() {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'X-CSRF-TOKEN': csrfToken
                             },
                             body: formData
                         });
                         const data = await res.json();
-                        if (res.ok && data.status === 'success') {
-                            this.showToast('تم رفع وتوثيق صورة الفرع بنجاح.');
+                        if (res.ok && (data.status === 'success' || data.success)) {
+                            this.showToast('تم رفع وتوثيق صورة الفرع بنجاح 📸');
                             this.branchPhotoCaption = '';
                             fileInput.value = '';
+                            const freshPhotos = data.photos || (data.data && data.data.photos) || [];
                             if (this.branchDetailsData && this.branchDetailsData.branch) {
-                                this.branchDetailsData.branch.photos = data.data.photos || [];
+                                if (freshPhotos.length > 0) {
+                                    this.branchDetailsData.branch.photos = freshPhotos;
+                                } else if (data.photo || (data.data && data.data.photo)) {
+                                    const p = data.photo || data.data.photo;
+                                    if (!Array.isArray(this.branchDetailsData.branch.photos)) {
+                                        this.branchDetailsData.branch.photos = [];
+                                    }
+                                    this.branchDetailsData.branch.photos.push(p);
+                                }
                             }
                             await this.loadBranchOperations();
                         } else {
-                            alert('تعذر رفع الصورة: ' + (data.message || 'يرجى مراجعة حجم ونوع الملف'));
+                            const err = data.errors ? Object.values(data.errors).flat().join('\n') : (data.message || 'تعذر رفع الصورة');
+                            alert('تعذر رفع الصورة: ' + err);
                         }
                     } catch (e) {
-                        console.error(e);
-                        alert('تعذر الاتصال بالخادم لرفع الصورة');
+                        console.error('Error uploading branch photo:', e);
+                        alert('تعذر رفع الصورة: يرجى التحقق من اتصال الشبكة وصيغة الملف.');
                     } finally {
                         this.isUploadingBranchPhoto = false;
                     }
@@ -22159,7 +22202,7 @@ async initApp() {
 
                 async deleteBranchPhoto(photoIndex) {
                     const branch = this.branchDetailsData && this.branchDetailsData.branch;
-                    if (!branch) return;
+                    if (!branch || !branch.id) return;
                     if (!confirm('هل أنت متأكد من حذف هذه الصورة من معرض الفرع؟')) return;
 
                     try {
@@ -22168,21 +22211,25 @@ async initApp() {
                             method: 'DELETE',
                             headers: {
                                 'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'X-CSRF-TOKEN': csrfToken
                             }
                         });
                         const data = await res.json();
-                        if (res.ok && data.status === 'success') {
+                        if (res.ok && (data.status === 'success' || data.success)) {
                             this.showToast('تم حذف الصورة من المعرض بنجاح.');
-                            if (this.branchDetailsData && this.branchDetailsData.branch) {
-                                this.branchDetailsData.branch.photos = data.data.photos || [];
+                            const freshPhotos = data.photos || (data.data && data.data.photos);
+                            if (freshPhotos) {
+                                this.branchDetailsData.branch.photos = freshPhotos;
+                            } else if (this.branchDetailsData.branch.photos) {
+                                this.branchDetailsData.branch.photos.splice(photoIndex, 1);
                             }
                             await this.loadBranchOperations();
                         } else {
                             alert('تعذر حذف الصورة: ' + (data.message || 'خطأ غير متوقع'));
                         }
                     } catch (e) {
-                        console.error(e);
+                        console.error('Error deleting photo:', e);
                         alert('تعذر الاتصال بالخادم لحذف الصورة');
                     }
                 },

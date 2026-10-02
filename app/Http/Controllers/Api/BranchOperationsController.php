@@ -629,13 +629,13 @@ class BranchOperationsController extends Controller
         $branch = Branch::findOrFail($id);
 
         $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'photo' => 'required|file|image|mimes:jpeg,png,jpg,webp,gif,svg,jfif,bmp|max:10240',
             'caption' => 'nullable|string|max:150',
             'category' => 'nullable|string|max:50',
         ], [
             'photo.required' => 'يرجى اختيار صورة للرفع.',
             'photo.image' => 'الملف المحدد يجب أن يكون صورة صالحة.',
-            'photo.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
+            'photo.max' => 'حجم الصورة لا يجب أن يتجاوز 10 ميجابايت.',
         ]);
 
         $file = $request->file('photo');
@@ -647,7 +647,7 @@ class BranchOperationsController extends Controller
         $newPhoto = [
             'url' => $url,
             'caption' => $request->input('caption', 'صورة من مرافق الفرع'),
-            'category' => $request->input('category', 'general'),
+            'category' => $request->input('category', 'exterior'),
             'uploaded_at' => now()->toDateTimeString(),
         ];
         $photos[] = $newPhoto;
@@ -667,12 +667,19 @@ class BranchOperationsController extends Controller
             $branch->id
         );
 
+        $freshPhotos = $branch->fresh()->photos ?: [];
+
         return response()->json([
             'status' => 'success',
             'message' => 'تم رفع الصورة وإضافتها إلى معرض صور الفرع بنجاح.',
             'photo' => $newPhoto,
-            'photos' => $branch->fresh()->photos,
+            'photos' => $freshPhotos,
             'branch' => $branch->fresh(),
+            'data' => [
+                'photo' => $newPhoto,
+                'photos' => $freshPhotos,
+                'branch' => $branch->fresh(),
+            ]
         ]);
     }
 
@@ -692,10 +699,15 @@ class BranchOperationsController extends Controller
         array_splice($photos, $photoIndex, 1);
         $branch->update(['photos' => array_values($photos)]);
 
+        $freshPhotos = $branch->fresh()->photos ?: [];
+
         return response()->json([
             'status' => 'success',
             'message' => 'تم حذف الصورة من المعرض بنجاح.',
-            'photos' => $branch->fresh()->photos,
+            'photos' => $freshPhotos,
+            'data' => [
+                'photos' => $freshPhotos,
+            ]
         ]);
     }
 
