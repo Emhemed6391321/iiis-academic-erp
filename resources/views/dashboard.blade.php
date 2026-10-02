@@ -12639,7 +12639,15 @@
                                 class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
                                 :class="adminSettings.activeTab === 'audit' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
                             <span>📜</span>
-                            <span>سجل العمليات والتتبع التاريخي</span>
+                            <span>سجل العمليات والتتبع</span>
+                        </button>
+
+                        <button @click="adminSettings.activeTab = 'backups'; loadBackupsList()"
+                                class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
+                                :class="adminSettings.activeTab === 'backups' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
+                            <span>🛡️</span>
+                            <span>النسخ الاحتياطي والتعافي</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-emerald-500/20 text-emerald-600" x-text="adminSettings.backupsList.length"></span>
                         </button>
                     </div>
                 </div>
@@ -13121,6 +13129,171 @@
                                             <td class="py-3 px-3 font-mono text-[10px] text-slate-400" x-text="log.ip_address || '127.0.0.1'"></td>
                                         </tr>
                                     </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 7: ENTERPRISE BACKUPS & DISASTER RECOVERY -->
+                <div x-show="adminSettings.activeTab === 'backups'" class="space-y-6">
+                    <!-- Metrics Summary Banner -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="p-5 rounded-[18px] border flex items-center gap-4"
+                             :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                                📦
+                            </div>
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400">النسخ الاحتياطية المكتملة</div>
+                                <div class="text-xl font-black mt-0.5" :class="darkMode ? 'text-white' : 'text-slate-800'" x-text="adminSettings.backupsSummary.total_completed_backups || adminSettings.backupsList.length || 0"></div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-[18px] border flex items-center gap-4"
+                             :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                                💾
+                            </div>
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400">إجمالي الحجم المشفر</div>
+                                <div class="text-xl font-black mt-0.5" :class="darkMode ? 'text-white' : 'text-slate-800'" x-text="adminSettings.backupsSummary.total_storage_human || '0 MB'"></div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-[18px] border flex items-center gap-4"
+                             :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                ⏰
+                            </div>
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400">آخر نسخة احتياطية</div>
+                                <div class="text-xs font-bold mt-1" :class="darkMode ? 'text-amber-400' : 'text-amber-700'" x-text="adminSettings.backupsSummary.last_backup_at || 'لا يوجد'"></div>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-[18px] border flex items-center gap-4"
+                             :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                            <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                                🔐
+                            </div>
+                            <div>
+                                <div class="text-[11px] font-bold text-slate-400">خوارزمية التشفير</div>
+                                <div class="text-xs font-mono font-bold mt-1 text-purple-600 dark:text-purple-400">AES-256-CBC</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions & Ledger Table -->
+                    <div class="p-6 rounded-[20px] border space-y-6"
+                         :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                            <div>
+                                <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-slate-800'">🛡️ سجل توثيق النسخ الاحتياطية وإدارة الاستعادة (Backups Ledger)</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">تشفير كامل لقاعدة البيانات ومجلدات التخزين والمستندات مع التحقق من الـ SHA-256 Checksum</p>
+                            </div>
+
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <button @click="loadBackupsList()" 
+                                        class="px-3 py-2 rounded-xl text-xs font-bold border transition-colors flex items-center gap-1.5"
+                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'">
+                                    <span>🔄</span>
+                                    <span>تحديث السجل</span>
+                                </button>
+
+                                <button @click="triggerManualBackup()" 
+                                        class="px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white shadow-lg shadow-emerald-900/20 flex items-center gap-2 transition-all"
+                                        :disabled="adminSettings.isCreatingBackup">
+                                    <span x-show="adminSettings.isCreatingBackup" class="animate-spin">⏳</span>
+                                    <span x-show="!adminSettings.isCreatingBackup">🚀</span>
+                                    <span x-text="adminSettings.isCreatingBackup ? 'جارِ إنشاء النسخة وتشفيرها...' : 'إنشاء نسخة احتياطية فورية الآن'"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead>
+                                    <tr class="border-b" :class="darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'">
+                                        <th class="py-3 px-3">#</th>
+                                        <th class="py-3 px-3">اسم الملف والأرشيف</th>
+                                        <th class="py-3 px-3">النوع والمصدر</th>
+                                        <th class="py-3 px-3">الحجم</th>
+                                        <th class="py-3 px-3">بصمة التشفير (SHA-256 Seal)</th>
+                                        <th class="py-3 px-3">التاريخ والوقت</th>
+                                        <th class="py-3 px-3">الحالة</th>
+                                        <th class="py-3 px-3 text-center">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(b, idx) in adminSettings.backupsList" :key="b.id">
+                                        <tr class="border-b transition-colors hover:bg-slate-500/5"
+                                            :class="darkMode ? 'border-slate-800/60' : 'border-slate-100'">
+                                            <td class="py-3 px-3 font-mono font-bold" x-text="b.id"></td>
+                                            <td class="py-3 px-3 font-mono text-[11px] font-bold" :class="darkMode ? 'text-amber-400' : 'text-amber-800'" x-text="b.file_name"></td>
+                                            <td class="py-3 px-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                      :class="b.type === 'manual' ? 'bg-blue-500/10 text-blue-500' : 'bg-purple-500/10 text-purple-500'"
+                                                      x-text="b.type === 'manual' ? '👤 يدوي' : '⏰ تلقائي مجدول'"></span>
+                                            </td>
+                                            <td class="py-3 px-3 font-mono font-bold" x-text="b.file_size_bytes ? (b.file_size_bytes > 1048576 ? (b.file_size_bytes/1048576).toFixed(2) + ' MB' : (b.file_size_bytes/1024).toFixed(1) + ' KB') : '0 B'"></td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center gap-1">
+                                                    <span class="font-mono text-[10px] text-slate-400 truncate max-w-[120px]" x-text="b.sha256_checksum" :title="b.sha256_checksum"></span>
+                                                    <button @click="navigator.clipboard.writeText(b.sha256_checksum); showToast('تم نسخ بصمة SHA-256')" class="text-slate-400 hover:text-amber-500 text-[10px]" title="نسخ البصمة">📋</button>
+                                                </div>
+                                            </td>
+                                            <td class="py-3 px-3 font-mono text-[11px] text-slate-400" x-text="b.created_at ? b.created_at.substring(0, 19).replace('T', ' ') : '-'"></td>
+                                            <td class="py-3 px-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                      :class="{
+                                                          'bg-emerald-500/10 text-emerald-600': b.status === 'completed',
+                                                          'bg-amber-500/10 text-amber-600': b.status === 'processing' || b.status === 'pending',
+                                                          'bg-rose-500/10 text-rose-600': b.status === 'failed'
+                                                      }"
+                                                      x-text="b.status === 'completed' ? '✓ مكتملة ومشفرة' : (b.status === 'failed' ? '✕ فشلت' : '⏳ جاري المعالجة')"></span>
+                                            </td>
+                                            <td class="py-3 px-3">
+                                                <div class="flex items-center justify-center gap-1.5">
+                                                    <!-- Download -->
+                                                    <a :href="'/api/v1/backups/' + b.id + '/download'" 
+                                                       class="p-1.5 rounded-lg border text-blue-600 hover:bg-blue-500/10 transition-colors"
+                                                       title="تحميل الأرشيف المشفر">
+                                                        📥
+                                                    </a>
+
+                                                    <!-- Verify Integrity -->
+                                                    <button @click="verifyBackupIntegrity(b.id)" 
+                                                            class="p-1.5 rounded-lg border text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+                                                            title="فحص نزاهة وبصمة التشفير">
+                                                        🔍
+                                                    </button>
+
+                                                    <!-- Restore -->
+                                                    <button @click="restoreBackupItem(b)" 
+                                                            class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-500/10 transition-colors"
+                                                            title="استعادة حالة النظام من هذه النسخة">
+                                                        🔄
+                                                    </button>
+
+                                                    <!-- Delete -->
+                                                    <button @click="deleteBackupItem(b.id)" 
+                                                            class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                                            title="حذف النسخة">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="!adminSettings.backupsList || adminSettings.backupsList.length === 0">
+                                        <td colspan="8" class="text-center py-8 text-slate-400">
+                                            لا توجد نسخ احتياطية مسجلة حالياً. اضغط على «إنشاء نسخة احتياطية فورية الآن» لبدء أول نسخة مشفرة.
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -19519,6 +19692,10 @@
                     users: [],
                     branches: [],
                     auditLogs: [],
+                    backupsList: [],
+                    backupsSummary: {},
+                    isLoadingBackups: false,
+                    isCreatingBackup: false,
                     showOrgUnitModal: false,
                     showPositionModal: false,
                     showPlacementModal: false,
@@ -20200,6 +20377,19 @@
                     this.branchImportModal.results = null;
                     this.branchImportModal.errorMessage = '';
                     this.branchImportModal.successMessage = '';
+                async initApp() {
+                    if (typeof this.initAppearance === 'function') {
+                        this.initAppearance();
+                    }
+                    if (typeof this.initOfflineAttendanceEngine === 'function') {
+                        this.initOfflineAttendanceEngine();
+                    }
+                    if (typeof this.loadAdminSettingsMaster === 'function') {
+                        await this.loadAdminSettingsMaster();
+                    }
+                    if (this.currentSection === 'dashboard' && typeof this.loadDashboard === 'function') {
+                        await this.loadDashboard(false);
+                    }
                 },
 
                 openCreateStudentModal() {
@@ -25645,7 +25835,8 @@ async loadBranchOperations() {
                         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const formData = new FormData();
                         for (const key in this.adminSettings.profile) {
-                            formData.append(key, this.adminSettings.profile[key] || '');
+                            const val = this.adminSettings.profile[key];
+                            formData.append(key, val !== null && val !== undefined ? val : '');
                         }
                         if (this.adminSettings.logoFile) {
                             formData.append('logo', this.adminSettings.logoFile);
@@ -25658,7 +25849,8 @@ async loadBranchOperations() {
                             method: 'POST',
                             headers: { 
                                 'Accept': 'application/json',
-                                'X-CSRF-TOKEN': csrf
+                                'X-CSRF-TOKEN': csrf,
+                                'X-Requested-With': 'XMLHttpRequest'
                             },
                             body: formData
                         });
@@ -25666,10 +25858,13 @@ async loadBranchOperations() {
                         if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حفظ وتطبيق البيانات المركزية للجهة');
                             if (json.profile) {
-                                this.adminSettings.profile = json.profile;
+                                this.adminSettings.profile = { ...this.adminSettings.profile, ...json.profile };
                             }
                             this.adminSettings.logoFile = null;
                             this.adminSettings.stampFile = null;
+                            this.adminSettings.logoPreviewUrl = null;
+                            this.adminSettings.stampPreviewUrl = null;
+                            await this.loadAdminSettingsMaster();
                         } else {
                             const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
                             this.showToast(errs || json.message || 'تعذر حفظ البيانات');
@@ -25887,6 +26082,118 @@ async loadBranchOperations() {
                         }
                     } catch (e) {
                         this.showToast('تعذر حفظ مسميات التوقيعات');
+                    }
+                },
+
+                // ============================================================
+                // BACKUP & DISASTER RECOVERY METHODS
+                // ============================================================
+                async loadBackupsList() {
+                    this.adminSettings.isLoadingBackups = true;
+                    try {
+                        const res = await fetch('/api/v1/backups?per_page=50', {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const json = await res.json();
+                        if (res.ok && json.status === 'success') {
+                            this.adminSettings.backupsList = json.data || [];
+                            this.adminSettings.backupsSummary = json.summary || {};
+                        }
+                    } catch (e) {
+                        console.error('Error loading backups list:', e);
+                    } finally {
+                        this.adminSettings.isLoadingBackups = false;
+                    }
+                },
+
+                async triggerManualBackup() {
+                    this.adminSettings.isCreatingBackup = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/backups/manual?sync=1', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
+                        });
+                        const json = await res.json();
+                        if (res.ok && json.status === 'success') {
+                            this.showToast(json.message || 'تم إنشاء وتشفير النسخة الاحتياطية بنجاح');
+                            await this.loadBackupsList();
+                        } else {
+                            this.showToast(json.message || 'تعذر إنشاء النسخة الاحتياطية');
+                        }
+                    } catch (e) {
+                        this.showToast('حدث خطأ أثناء تنفيذ النسخ الاحتياطي');
+                    } finally {
+                        this.adminSettings.isCreatingBackup = false;
+                    }
+                },
+
+                async verifyBackupIntegrity(id) {
+                    try {
+                        const res = await fetch(`/api/v1/backups/${id}/verify`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const json = await res.json();
+                        if (json.status === 'success') {
+                            alert('✓ نتيجة الفحص الأمني:\n' + json.data.message + '\n\nبصمة SHA-256 المسجلة:\n' + json.data.stored_hash);
+                        } else {
+                            alert('⚠️ تحذير: ' + (json.data?.message || 'فشلت مطابقة البصمة الرقمية'));
+                        }
+                    } catch (e) {
+                        this.showToast('تعذر إجراء فحص النزاهة');
+                    }
+                },
+
+                async restoreBackupItem(backup) {
+                    const prompt = confirm(`⚠️ تحذير عالي الأهمية:\nهل أنت متأكد من استعادة النظام من النسخة الاحتياطية:\n[${backup.file_name}]؟\n\nسيتم استبدال الحالة الحالية بقاعدة البيانات والملفات المؤرشفة في النسخة.`);
+                    if (!prompt) return;
+
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/backups/${backup.id}/restore`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
+                        });
+                        const json = await res.json();
+                        if (res.ok && json.status === 'success') {
+                            alert('✓ ' + json.message);
+                            location.reload();
+                        } else {
+                            alert('✕ فشلت الاستعادة: ' + (json.message || 'خطأ غير معروف'));
+                        }
+                    } catch (e) {
+                        this.showToast('تعذر إتمام عملية الاستعادة');
+                    }
+                },
+
+                async deleteBackupItem(id) {
+                    if (!confirm('هل أنت متأكد من حذف هذه النسخة الاحتياطية من السيرفر نهائياً؟')) return;
+
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/backups/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
+                        });
+                        const json = await res.json();
+                        if (res.ok && json.status === 'success') {
+                            this.showToast(json.message || 'تم حذف النسخة الاحتياطية');
+                            await this.loadBackupsList();
+                        } else {
+                            this.showToast(json.message || 'تعذر حذف النسخة');
+                        }
+                    } catch (e) {
+                        this.showToast('تعذر حذف النسخة');
                     }
                 },
 

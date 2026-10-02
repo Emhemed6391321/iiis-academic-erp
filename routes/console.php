@@ -29,3 +29,13 @@ Schedule::command('branches:audit-contract-compliance')
     ->dailyAt('07:00')
     ->withoutOverlapping()
     ->runInBackground();
+
+// 4. منظومة النسخ الاحتياطي المشفر اليومي للأرشيف وقاعدة البيانات مع التدوير الآلي
+Schedule::command('iiis:backup-run --type=scheduled')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->onFailure(function () {
+        \Illuminate\Support\Facades\Log::critical('CRITICAL ALERT: Scheduled automated enterprise backup failed at 02:00 AM!');
+    })
+    ->runInBackground();
+

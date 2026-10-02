@@ -106,7 +106,7 @@ class EnterpriseOpsAndHealthTest extends TestCase
         $backupsDir = storage_path('app/backups');
         $this->assertTrue(File::exists($backupsDir));
 
-        $snapshots = File::directories($backupsDir);
+        $snapshots = array_filter(File::directories($backupsDir), fn($d) => str_contains($d, 'snapshot'));
         $this->assertNotEmpty($snapshots);
 
         $latestSnapshot = end($snapshots);

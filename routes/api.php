@@ -326,5 +326,17 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::post('/bug-reports', [\App\Http\Controllers\Api\BugReportController::class, 'store']);
     Route::patch('/bug-reports/{bugReport}', [\App\Http\Controllers\Api\BugReportController::class, 'update']);
     Route::delete('/bug-reports/{bugReport}', [\App\Http\Controllers\Api\BugReportController::class, 'destroy']);
+
+    // =========================================================================
+    // 23. Enterprise Backup & Disaster Recovery (منظومة النسخ الاحتياطي المشفر)
+    // =========================================================================
+    Route::prefix('backups')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\BackupController::class, 'index']);
+        Route::post('/manual', [\App\Http\Controllers\Api\BackupController::class, 'createManualBackup']);
+        Route::get('/{id}/download', [\App\Http\Controllers\Api\BackupController::class, 'downloadBackup'])->where('id', '[0-9]+');
+        Route::get('/{id}/verify', [\App\Http\Controllers\Api\BackupController::class, 'verifyIntegrity'])->where('id', '[0-9]+');
+        Route::post('/{id}/restore', [\App\Http\Controllers\Api\BackupController::class, 'restoreBackup'])->where('id', '[0-9]+');
+        Route::delete('/{id}', [\App\Http\Controllers\Api\BackupController::class, 'destroy'])->where('id', '[0-9]+');
+    });
 });
 
