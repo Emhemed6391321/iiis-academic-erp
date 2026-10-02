@@ -130,6 +130,37 @@
         [x-cloak] { display: none !important; }
         .transition-sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 
+        /* ── CRITICAL LAYOUT GUARANTEE (لا يعتمد على Tailwind) ── */
+        html, body {
+            height: 100%;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        body > header {
+            flex-shrink: 0;
+        }
+        body > div.layout-wrapper {
+            flex: 1 1 0%;
+            min-height: 0;
+            display: flex;
+            overflow: hidden;
+        }
+        body > div.layout-wrapper > aside {
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        body > div.layout-wrapper > main {
+            flex: 1 1 0%;
+            min-width: 0;
+            overflow-y: auto;
+        }
+        /* ─────────────────────────────────────────────────────── */
+
+
         /* Leaflet Map Custom Styling */
         .leaflet-popup-content-wrapper {
             background: #ffffff;
@@ -609,7 +640,7 @@
     </header>
 
     <!-- 2. MAIN LAYOUT: CLASSIFIED SIDEBAR + WORKSPACE -->
-    <div class="flex-1 flex overflow-hidden min-h-0">
+    <div class="layout-wrapper flex-1 flex overflow-hidden min-h-0">
         
         <!-- ب. الشريط الجانبي المصنف (Categorized Sidebar - 8 Sections) -->
         <aside class="transition-sidebar flex flex-col border-l select-none overflow-y-auto z-30"
