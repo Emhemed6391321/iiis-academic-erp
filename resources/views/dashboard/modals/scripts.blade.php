@@ -32,6 +32,19 @@
                 ],
 
                 sidebarCollapsed: false,
+                mobileSidebarOpen: false,
+                toggleSidebar() {
+                    if (window.innerWidth < 1024) {
+                        this.mobileSidebarOpen = !this.mobileSidebarOpen;
+                    } else {
+                        this.sidebarCollapsed = !this.sidebarCollapsed;
+                    }
+                },
+                closeMobileSidebar() {
+                    if (window.innerWidth < 1024) {
+                        this.mobileSidebarOpen = false;
+                    }
+                },
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
                 bugReportsNavBadge: 0,
                 selectedCourseId: {{ $initialCourseId ?? 1 }},

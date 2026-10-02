@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'bug-reports'"
+            <div x-show="currentSection === 'bug-reports' || currentSection === 'bug_reports'"
                  class="space-y-6"
                  x-data="{
                     bugsList: [],

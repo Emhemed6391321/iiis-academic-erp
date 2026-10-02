@@ -127,39 +127,79 @@
         [x-cloak] { display: none !important; }
         .transition-sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* ── CRITICAL LAYOUT GUARANTEE (لا يعتمد على Tailwind) ── */
+        /* ── CRITICAL LAYOUT GUARANTEE (Mobile & Desktop Responsive) ── */
         html, body {
             height: 100%;
             max-height: 100vh;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
         body {
             display: flex;
             flex-direction: column;
             height: 100vh;
+            width: 100%;
+            overflow: hidden;
         }
         body > header {
             flex-shrink: 0;
             width: 100%;
+            z-index: 35;
         }
-        body > div.layout-wrapper {
+        .layout-wrapper {
             flex: 1 1 0%;
             min-height: 0;
             display: flex !important;
             flex-direction: row !important;
             overflow: hidden;
             width: 100%;
+            position: relative;
         }
-        body > div.layout-wrapper > aside {
-            flex-shrink: 0;
-            height: 100%;
-            overflow-y: auto;
+
+        /* Desktop: Sidebar in-flow */
+        @media (min-width: 1024px) {
+            .sidebar-container {
+                position: relative !important;
+                transform: none !important;
+                height: 100% !important;
+                flex-shrink: 0 !important;
+                display: flex !important;
+            }
+            .layout-wrapper > main {
+                flex: 1 1 0% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+            }
         }
-        body > div.layout-wrapper > main {
-            flex: 1 1 0%;
-            min-width: 0;
-            height: 100%;
-            overflow-y: auto;
+
+        /* Mobile (< 1024px): Sidebar as off-canvas drawer */
+        @media (max-width: 1023px) {
+            .sidebar-container {
+                position: fixed !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                right: 0 !important;
+                height: 100vh !important;
+                width: 18rem !important; /* 288px */
+                max-width: 85vw !important;
+                z-index: 50 !important;
+                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+            .sidebar-container.translate-x-full {
+                transform: translateX(100%) !important;
+            }
+            .sidebar-container.translate-x-0 {
+                transform: translateX(0) !important;
+            }
+            .layout-wrapper > main {
+                width: 100% !important;
+                flex: 1 1 100% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+            }
         }
         /* ─────────────────────────────────────────────────────── */
 

@@ -1,11 +1,37 @@
-﻿        <!-- ب. الشريط الجانبي المصنف (Categorized Sidebar - 8 Sections) -->
-        <aside class="transition-sidebar flex flex-col border-l select-none overflow-y-auto z-30"
+        <!-- خلفية معتمة للهواتف (Mobile Backdrop) -->
+        <div x-show="mobileSidebarOpen" 
+             x-cloak
+             x-transition:enter="transition-opacity ease-linear duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="mobileSidebarOpen = false"
+             class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden">
+        </div>
+
+        <!-- ب. الشريط الجانبي المصنف (Categorized Sidebar - 8 Sections) -->
+        <aside class="sidebar-container transition-sidebar flex flex-col border-l select-none overflow-y-auto z-50 lg:z-30 shrink-0"
                :class="[
-                   sidebarCollapsed ? 'w-20' : 'w-72',
+                   sidebarCollapsed ? 'lg:w-20' : 'lg:w-72',
+                   mobileSidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full lg:translate-x-0',
                    darkMode ? 'bg-[#151f32] border-slate-800 text-slate-300' : 'bg-white border-[#e8ebf2] text-slate-600'
-               ]">
+               ]"
+               @click.outside="closeMobileSidebar()">
             
-                        <div class="p-3 space-y-5">
+            <!-- رأس القائمة للهواتف (Mobile Header with Close Button) -->
+            <div class="lg:hidden flex items-center justify-between p-3.5 border-b"
+                 :class="darkMode ? 'border-slate-800 bg-slate-900/80 text-white' : 'border-[#e8ebf2] bg-slate-50 text-slate-800'">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-black">القائمة الرئيسية للمنظومة</span>
+                </div>
+                <button @click="mobileSidebarOpen = false" class="p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-3 space-y-5" @click="if ($event.target.closest('button')) closeMobileSidebar()">
                 
                 <!-- 1. الرئيسية والقيادة -->
                 <div>

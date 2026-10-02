@@ -1,12 +1,12 @@
-﻿    <!-- 1. STICKY TOP NAVIGATION BAR (الشريط العلوي) -->
+    <!-- 1. STICKY TOP NAVIGATION BAR (الشريط العلوي) -->
     <header class="sticky top-0 z-40 border-b backdrop-blur-md transition-colors"
             :class="darkMode ? 'bg-[#151f32]/95 border-slate-800 text-slate-100' : 'bg-white/95 border-[#e8ebf2] text-[#1f2937] shadow-sm'">
         <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
             
             <!-- Brand & Sidebar Toggle -->
             <div class="flex items-center space-x-3 space-x-reverse flex-shrink-0">
-                <button @click="sidebarCollapsed = !sidebarCollapsed" 
-                        class="p-2 rounded-xl transition-colors"
+                <button @click="toggleSidebar()" 
+                        class="p-2 rounded-xl transition-colors cursor-pointer"
                         :class="darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600'"
                         title="طي / توسيع القائمة الجانبية">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

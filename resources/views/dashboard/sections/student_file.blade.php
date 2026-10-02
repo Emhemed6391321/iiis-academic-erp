@@ -1,10 +1,37 @@
-﻿            <div x-show="currentSection === 'student_file'" class="space-y-5">
+            <div x-show="currentSection === 'student_file'" class="space-y-5">
                 
                 <!-- Loading State -->
                 <div x-show="studentFile.loading" class="flex items-center justify-center py-20">
                     <div class="flex flex-col items-center gap-3">
                         <svg class="w-10 h-10 text-[#2b78a5] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         <span class="text-sm text-slate-400">جاري تحميل ملف الطالب...</span>
+                    </div>
+                </div>
+
+                <!-- Empty / Unselected State (عند فتح صفحة الملف دون تحديد طالب مسبقاً) -->
+                <div x-show="!studentFile.loading && !studentFile.student" class="p-8 md:p-12 rounded-[24px] border text-center max-w-2xl mx-auto my-12"
+                     :class="darkMode ? 'bg-slate-900/90 border-slate-800 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-700 shadow-sm'">
+                    <div class="w-20 h-20 mx-auto rounded-3xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-4xl mb-4 shadow-inner">
+                        📁
+                    </div>
+                    <h3 class="text-xl font-black mb-2" :class="darkMode ? 'text-white' : 'text-slate-900'">
+                        لم يتم تحديد ملف طالب للعرض
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+                        لعرض الملف الأكاديمي الشامل، يرجى اختيار أحد الطلاب من سجل الطلاب العام أو البحث بواسطة رقم القيد أو الاسم الرباعي.
+                    </p>
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <button @click="currentSection = 'students'; closeMobileSidebar();"
+                                class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                            <span>👥</span>
+                            <span>الانتقال إلى سجل الطلاب</span>
+                        </button>
+                        <button @click="openSearchModal()"
+                                class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer"
+                                :class="darkMode ? 'text-slate-300' : 'text-slate-700'">
+                            <span>🔍</span>
+                            <span>البحث السريع (Ctrl + K)</span>
+                        </button>
                     </div>
                 </div>
 
