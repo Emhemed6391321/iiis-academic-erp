@@ -1,4 +1,6 @@
-﻿            <div x-show="currentSection === 'attendance'" class="space-y-6">
+            <div x-show="currentSection === 'attendance'" 
+                 x-init="$watch('currentSection', val => { if (val === 'attendance') loadAttendanceSheet(); })"
+                 class="space-y-6">
                 
                 <!-- الترويسة الرئيسية للقسم -->
                 <div class="p-6 rounded-[22px] border transition-all relative overflow-hidden"
@@ -53,7 +55,7 @@
                     </div>
 
                     <!-- تبويبات القسم الفرعية -->
-                    <div class="flex items-center gap-2 mt-6 pt-4 border-t overflow-x-auto pb-1"
+                    <div class="flex items-center gap-2 mt-6 pt-4 border-t overflow-x-auto pb-2 scrollbar-thin flex-nowrap"
                          :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                         <button @click="attendance.activeTab = 'sheet'; loadAttendanceSheet()"
                                 class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap"
@@ -97,7 +99,7 @@
                     <!-- شريط الفلاتر واختيار الفصل والتاريخ -->
                     <div class="p-5 rounded-[20px] border transition-all space-y-4"
                          :class="darkMode ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-xs'">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
                             
                             <!-- الفرع -->
                             <div>
@@ -164,7 +166,7 @@
                         </div>
 
                         <!-- شريط بطاقات الإحصاءات السريعة للفصل الحالي -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 pt-3 border-t"
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2.5 pt-3 border-t"
                              :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                             <div class="p-2.5 rounded-xl border flex flex-col items-center justify-center text-center"
                                  :class="darkMode ? 'bg-slate-800/40 border-slate-700/50' : 'bg-slate-50 border-slate-200'">
@@ -238,8 +240,8 @@
                         </div>
 
                         <!-- جدول الطلاب -->
-                        <div x-show="!attendance.sheet.loading" class="overflow-x-auto">
-                            <table class="w-full text-right text-xs">
+                        <div x-show="!attendance.sheet.loading" class="w-full overflow-x-auto scrollbar-thin">
+                            <table class="w-full text-right text-xs min-w-[760px]">
                                 <thead>
                                     <tr class="border-b text-[11px] font-black uppercase tracking-wider"
                                         :class="darkMode ? 'bg-slate-800/80 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
@@ -416,7 +418,7 @@
                     </div>
 
                     <!-- قائمة بطاقات انصراف الطلاب -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         <template x-for="st in attendance.sheet.students.filter(s => s.status === 'PRESENT' || s.status === 'LATE')" :key="st.student_id">
                             <div class="p-4 rounded-[18px] border transition-all space-y-3"
                                  :class="st.departure_status === 'DEPARTED' ? (darkMode ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-slate-50 border-slate-200 opacity-70') : (st.departure_status === 'EARLY_DEPARTURE' ? (darkMode ? 'bg-purple-950/20 border-purple-800' : 'bg-purple-50 border-purple-200') : (darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-xs'))">
@@ -505,8 +507,8 @@
                     <!-- جدول الطلاب المعرضين للخطر والإنذارات -->
                     <div class="rounded-[20px] border overflow-hidden transition-all"
                          :class="darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-xs'">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-right text-xs">
+                        <div class="w-full overflow-x-auto scrollbar-thin">
+                            <table class="w-full text-right text-xs min-w-[760px]">
                                 <thead>
                                     <tr class="border-b text-[11px] font-black uppercase tracking-wider"
                                         :class="darkMode ? 'bg-slate-800/80 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
@@ -572,7 +574,7 @@
                 <div x-show="attendance.activeTab === 'stats'" class="space-y-5">
                     
                     <!-- مؤشرات إحصائية -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                         <div class="p-5 rounded-[20px] border transition" :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-xs'">
                             <span class="text-xs font-bold text-slate-400">نسبة الحضور الإجمالية</span>
                             <div class="text-3xl font-black text-[#2b78a5] dark:text-blue-400 font-mono mt-2" x-text="(attendance.stats.data?.stats?.attendance_rate || 0) + '%'"></div>
@@ -602,8 +604,8 @@
                     <div class="p-5 rounded-[20px] border transition-all space-y-4"
                          :class="darkMode ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-xs'">
                         <h3 class="text-sm font-black text-slate-900 dark:text-white">مقارنة نسبة الحضور والانضباط بين فروع المعهد</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-right text-xs">
+                        <div class="w-full overflow-x-auto scrollbar-thin">
+                            <table class="w-full text-right text-xs min-w-[500px]">
                                 <thead>
                                     <tr class="border-b text-[11px] font-black" :class="darkMode ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-600'">
                                         <th class="p-2.5">الفرع</th>
@@ -644,7 +646,7 @@
                     <!-- إعداد وتصفية التقرير المطلوب -->
                     <div class="p-5 rounded-[20px] border transition-all space-y-4"
                          :class="darkMode ? 'bg-slate-900/70 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-xs'">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-400 mb-1">نوع التقرير / الكشف</label>
                                 <select x-model="attendance.reports.report_type" @change="generateAttendanceReport()"

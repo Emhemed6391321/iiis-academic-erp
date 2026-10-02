@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'settings'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'settings') loadSettingsData(); })">
+            <div x-show="currentSection === 'settings'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'settings') loadSettingsData(); })">
                 
                 <!-- بطاقة رأس الصفحة -->
                 <div class="p-6 md:p-8 rounded-[20px] border space-y-6 transition-all duration-300"
@@ -458,7 +458,7 @@
                         </div>
 
                         <!-- نتائج المحاكاة التجريبية -->
-                        <div x-show="progressionSimulationData" class="p-6 rounded-[20px] border space-y-5"
+                        <div x-show="progressionSimulationData && progressionSimulationData.isLoaded" class="p-6 rounded-[20px] border space-y-5"
                              :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
                             
                             <div class="flex items-center justify-between pb-3 border-b" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
@@ -478,25 +478,25 @@
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" x-show="progressionSimulationData && progressionSimulationData.summary">
                                 <div class="p-4 rounded-xl border bg-emerald-50/70 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-200">
                                     <span class="text-xs font-bold block mb-1">الناجحون والمرفّعون</span>
-                                    <div class="text-2xl font-black font-mono" x-text="progressionSimulationData.summary.promoted_count + ' طالباً'"></div>
+                                    <div class="text-2xl font-black font-mono" x-text="(progressionSimulationData?.summary?.promoted_count || 0) + ' طالباً'"></div>
                                     <span class="text-[10px] text-emerald-700 mt-1 block">للسنة الدراسية الأعلى</span>
                                 </div>
 
                                 <div class="p-4 rounded-xl border bg-blue-50/70 border-blue-200 text-[#14268d] dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-200">
                                     <span class="text-xs font-bold block mb-1">الخريجون (السنة 3)</span>
-                                    <div class="text-2xl font-black font-mono" x-text="progressionSimulationData.summary.graduated_count + ' طالباً'"></div>
+                                    <div class="text-2xl font-black font-mono" x-text="(progressionSimulationData?.summary?.graduated_count || 0) + ' طالباً'"></div>
                                     <span class="text-[10px] text-blue-700 mt-1 block">منح الشهادة التخصصية</span>
                                 </div>
 
                                 <div class="p-4 rounded-xl border bg-amber-50/70 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-200">
                                     <span class="text-xs font-bold block mb-1">طلاب الدور الثاني</span>
-                                    <div class="text-2xl font-black font-mono" x-text="progressionSimulationData.summary.second_round_count + ' طالباً'"></div>
+                                    <div class="text-2xl font-black font-mono" x-text="(progressionSimulationData?.summary?.second_round_count || 0) + ' طالباً'"></div>
                                     <span class="text-[10px] text-amber-700 mt-1 block">رسوب في مادة أو مادتين</span>
                                 </div>
 
                                 <div class="p-4 rounded-xl border bg-rose-50/70 border-rose-200 text-rose-900 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-200">
                                     <span class="text-xs font-bold block mb-1">المعيدون (رسوب)</span>
-                                    <div class="text-2xl font-black font-mono" x-text="progressionSimulationData.summary.held_back_count + ' طالباً'"></div>
+                                    <div class="text-2xl font-black font-mono" x-text="(progressionSimulationData?.summary?.held_back_count || 0) + ' طالباً'"></div>
                                     <span class="text-[10px] text-rose-700 mt-1 block">إعادة القيد بنفس السنة</span>
                                 </div>
                             </div>
@@ -513,7 +513,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y" :class="darkMode ? 'divide-slate-800' : 'divide-slate-100'">
-                                        <template x-for="st in (progressionSimulationData.preview ? (progressionSimulationData.preview.promoted || []).concat(progressionSimulationData.preview.graduated || []).concat(progressionSimulationData.preview.second_round || []).slice(0, 10) : [])" :key="st.student_id">
+                                        <template x-for="st in (progressionSimulationData?.preview ? (progressionSimulationData.preview.promoted || []).concat(progressionSimulationData.preview.graduated || []).concat(progressionSimulationData.preview.second_round || []).slice(0, 10) : [])" :key="st.student_id">
                                             <tr class="hover:bg-slate-500/5">
                                                 <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-200" x-text="st.name"></td>
                                                 <td class="py-2.5 px-3 text-slate-500" x-text="st.branch + ' — ' + (st.department || '')"></td>

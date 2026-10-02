@@ -5533,7 +5533,21 @@ async loadBranchOperations() {
                 branchExceptionForm: { window_id: null, branch_id: '', extended_until: '', reason: '' },
                 isSimulating: false,
                 isExecutingRollover: false,
-                progressionSimulationData: null,
+                progressionSimulationData: {
+                    summary: {
+                        promoted_count: 0,
+                        graduated_count: 0,
+                        second_round_count: 0,
+                        held_back_count: 0
+                    },
+                    preview: {
+                        promoted: [],
+                        graduated: [],
+                        second_round: [],
+                        held_back: []
+                    },
+                    isLoaded: false
+                },
 
                 saveStudentServicesConfig() {
                     return this.saveStudentServices();
@@ -5688,7 +5702,7 @@ async loadBranchOperations() {
                         });
                         const resJson = await res.json();
                         if (resJson.status === 'success') {
-                            this.progressionSimulationData = resJson.data;
+                            this.progressionSimulationData = { ...resJson.data, isLoaded: true };
                             this.showToast('تمت المحاكاة وفحص نتائج الطلاب بنجاح 📊');
                         } else {
                             this.showToast(resJson.message || 'تعذر تشغيل المحاكاة');
