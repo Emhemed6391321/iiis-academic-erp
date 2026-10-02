@@ -72,6 +72,32 @@
     <!-- النوافذ المنبثقة والنصوص البرمجية (Modals & Scripts) -->
     @include('dashboard.modals.all_modals')
     @include('dashboard.modals.scripts')
-
+    <div id="debug-overlay" dir="ltr" style="position: fixed; bottom: 10px; left: 10px; background: rgba(0,0,0,0.9); color: #00ff00; padding: 12px; z-index: 99999; font-family: monospace; font-size: 11px; max-width: 700px; max-height: 400px; overflow-y: auto; border: 2px solid #00ff00; border-radius: 8px; pointer-events: none;">
+        Loading debug info...
+    </div>
+    <script>
+    function updateDebug() {
+        const overlay = document.getElementById('debug-overlay');
+        if (!overlay) return;
+        const main = document.querySelector('main');
+        if (!main) { overlay.innerText = 'No main element!'; return; }
+        const children = Array.from(main.children);
+        let html = '<b>Visible elements in main:</b><br>';
+        children.forEach((c, idx) => {
+            const rect = c.getBoundingClientRect();
+            const style = window.getComputedStyle(c);
+            if (rect.height > 5 || style.display !== 'none') {
+                const xShow = c.getAttribute('x-show') || 'NO_X_SHOW';
+                const firstTag = c.tagName;
+                const firstText = (c.innerText || '').slice(0, 35).replace(/\n/g, ' ');
+                html += `[${idx}] &lt;${firstTag}&gt; top:${Math.round(rect.top)} h:${Math.round(rect.height)} disp:${style.display} xShow:${xShow} txt:${firstText}<br>`;
+            }
+        });
+        overlay.innerHTML = html;
+    }
+    window.addEventListener('load', () => setTimeout(updateDebug, 1000));
+    window.addEventListener('click', () => setTimeout(updateDebug, 300));
+    setInterval(updateDebug, 2000);
+    </script>
 </body>
 </html>
