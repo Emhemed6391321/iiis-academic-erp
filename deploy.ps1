@@ -28,7 +28,7 @@ if ($status) {
 # 2. Deploy on remote server
 Write-Host "`n[2/3] Connecting to VPS (102.203.201.67) and applying updates..." -ForegroundColor Yellow
 
-$remoteCmd = "cd /var/www/iiis_erp && git pull origin main && /usr/local/bin/frankenphp php-cli artisan view:clear && /usr/local/bin/frankenphp php-cli artisan cache:clear && /usr/local/bin/frankenphp php-cli artisan config:clear && systemctl restart iiis-erp.service"
+$remoteCmd = "cd /var/www/iiis_erp && git pull origin main && /usr/local/bin/frankenphp php-cli artisan migrate --force && /usr/local/bin/frankenphp php-cli artisan view:clear && /usr/local/bin/frankenphp php-cli artisan route:clear && /usr/local/bin/frankenphp php-cli artisan cache:clear && /usr/local/bin/frankenphp php-cli artisan config:clear && systemctl restart iiis-erp.service"
 
 ssh root@102.203.201.67 "$remoteCmd"
 
