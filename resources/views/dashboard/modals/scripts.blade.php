@@ -52,6 +52,110 @@
                 selectedAcademicYearId: '{{ $currentAcademicYear ? $currentAcademicYear->id : 1 }}',
                 activeAcademicYearName: '{{ $currentAcademicYear ? $currentAcademicYear->name : "2026-2027" }}',
 
+                // =========================================================================
+                // USER PROFILE STATE & METHODS
+                // =========================================================================
+                userProfile: {
+                    loading: false,
+                    saving: false,
+                    passwordSaving: false,
+                    successMessage: '',
+                    errorMessage: '',
+                    passwordSuccessMessage: '',
+                    passwordErrorMessage: '',
+                    data: {
+                        id: {{ Auth::id() ?? 1 }},
+                        name: '{{ addslashes(Auth::user()->name ?? "المدير العام للمعهد التخصصي") }}',
+                        email: '{{ addslashes(Auth::user()->email ?? "admin@iiis.sch.ly") }}',
+                        phone: '{{ addslashes(Auth::user()->phone ?? "091-0000000") }}',
+                        national_id: '{{ addslashes(Auth::user()->national_id ?? "119000000000") }}',
+                        role_name: '{{ addslashes(Auth::user()->role->display_name ?? "المدير العام") }}',
+                        scope_type: '{{ addslashes(Auth::user()->role->scope_type ?? "GLOBAL_SCOPE") }}',
+                        branch_name: '{{ addslashes(Auth::user()->branch->name ?? "الإدارة المركزية العامة") }}',
+                        created_at: '{{ Auth::user()->created_at ? Auth::user()->created_at->format("Y-m-d") : "2026-01-01" }}'
+                    },
+                    form: {
+                        name: '{{ addslashes(Auth::user()->name ?? "المدير العام للمعهد التخصصي") }}',
+                        email: '{{ addslashes(Auth::user()->email ?? "admin@iiis.sch.ly") }}',
+                        phone: '{{ addslashes(Auth::user()->phone ?? "091-0000000") }}',
+                        national_id: '{{ addslashes(Auth::user()->national_id ?? "119000000000") }}'
+                    },
+                    passwordForm: {
+                        current_password: '',
+                        password: '',
+                        password_confirmation: ''
+                    }
+                },
+
+                async saveUserProfile() {
+                    this.userProfile.saving = true;
+                    this.userProfile.successMessage = '';
+                    this.userProfile.errorMessage = '';
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const res = await fetch('/api/v1/profile', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify(this.userProfile.form)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.userProfile.data.name = this.userProfile.form.name;
+                            this.userProfile.data.email = this.userProfile.form.email;
+                            this.userProfile.data.phone = this.userProfile.form.phone;
+                            this.userProfile.data.national_id = this.userProfile.form.national_id;
+                            this.userProfile.successMessage = data.message || 'تم تحديث البيانات بنجاح';
+                            setTimeout(() => { this.userProfile.successMessage = ''; }, 4000);
+                        } else {
+                            this.userProfile.errorMessage = data.message || 'تعذر حفظ البيانات';
+                            setTimeout(() => { this.userProfile.errorMessage = ''; }, 4000);
+                        }
+                    } catch (e) {
+                        this.userProfile.errorMessage = 'حدث خطأ في الاتصال بالخادم';
+                        setTimeout(() => { this.userProfile.errorMessage = ''; }, 4000);
+                    } finally {
+                        this.userProfile.saving = false;
+                    }
+                },
+
+                async updateUserPassword() {
+                    this.userProfile.passwordSaving = true;
+                    this.userProfile.passwordSuccessMessage = '';
+                    this.userProfile.passwordErrorMessage = '';
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                        const res = await fetch('/api/v1/profile/password', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': token
+                            },
+                            body: JSON.stringify(this.userProfile.passwordForm)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.userProfile.passwordSuccessMessage = data.message || 'تم تحديث كلمة المرور بنجاح';
+                            this.userProfile.passwordForm.current_password = '';
+                            this.userProfile.passwordForm.password = '';
+                            this.userProfile.passwordForm.password_confirmation = '';
+                            setTimeout(() => { this.userProfile.passwordSuccessMessage = ''; }, 4000);
+                        } else {
+                            this.userProfile.passwordErrorMessage = data.message || 'تعذر تحديث كلمة المرور';
+                            setTimeout(() => { this.userProfile.passwordErrorMessage = ''; }, 4000);
+                        }
+                    } catch (e) {
+                        this.userProfile.passwordErrorMessage = 'حدث خطأ في الاتصال بالخادم';
+                        setTimeout(() => { this.userProfile.passwordErrorMessage = ''; }, 4000);
+                    } finally {
+                        this.userProfile.passwordSaving = false;
+                    }
+                },
+
                 // Offline-First Queue & Sync Engine State
                 networkOnline: navigator.onLine,
                 offlineSyncPendingCount: 0,
