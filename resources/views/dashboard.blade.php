@@ -24989,6 +24989,7 @@ async loadBranchOperations() {
                 async saveAdminInstituteProfile() {
                     this.adminSettings.isSaving = true;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const formData = new FormData();
                         for (const key in this.adminSettings.profile) {
                             formData.append(key, this.adminSettings.profile[key] || '');
@@ -25002,20 +25003,26 @@ async loadBranchOperations() {
 
                         const res = await fetch('/api/v1/admin/settings/institute-profile', {
                             method: 'POST',
-                            headers: { 'Accept': 'application/json' },
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
                             body: formData
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
-                            this.showToast(json.message || 'تم حفظ وتطبيق البيانات المركزية');
-                            this.adminSettings.profile = json.profile || this.adminSettings.profile;
+                        if (res.ok && (json.status === 'success' || json.success)) {
+                            this.showToast(json.message || 'تم حفظ وتطبيق البيانات المركزية للجهة');
+                            if (json.profile) {
+                                this.adminSettings.profile = json.profile;
+                            }
                             this.adminSettings.logoFile = null;
                             this.adminSettings.stampFile = null;
                         } else {
-                            this.showToast(json.message || 'تعذر حفظ البيانات');
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر حفظ البيانات');
                         }
                     } catch (e) {
-                        this.showToast('حدث خطأ أثناء حفظ بيانات المعهد');
+                        this.showToast('حدث خطأ أثناء حفظ بيانات المعهد المركزية');
                     } finally {
                         this.adminSettings.isSaving = false;
                     }
@@ -25032,21 +25039,24 @@ async loadBranchOperations() {
 
                 async saveAdminOrgUnit() {
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/admin/settings/org-unit/save', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify(this.adminSettings.orgUnitForm)
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حفظ الوحدة التنظيمية');
                             this.adminSettings.showOrgUnitModal = false;
                             await this.loadAdminSettingsMaster();
                         } else {
-                            this.showToast(json.message || 'تعذر حفظ الوحدة');
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر حفظ الوحدة التنظيمية');
                         }
                     } catch (e) {
                         this.showToast('تعذر حفظ الوحدة التنظيمية');
@@ -25056,12 +25066,16 @@ async loadBranchOperations() {
                 async deleteAdminOrgUnit(id) {
                     if (!confirm('هل أنت متأكد من حذف هذه الوحدة التنظيمية من الهيكل؟')) return;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch(`/api/v1/admin/settings/org-unit/${id}`, {
                             method: 'DELETE',
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حذف الوحدة التنظيمية');
                             await this.loadAdminSettingsMaster();
                         } else {
@@ -25083,21 +25097,24 @@ async loadBranchOperations() {
 
                 async saveAdminJobPosition() {
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/admin/settings/job-position/save', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify(this.adminSettings.positionForm)
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حفظ الصفة الوظيفية');
                             this.adminSettings.showPositionModal = false;
                             await this.loadAdminSettingsMaster();
                         } else {
-                            this.showToast(json.message || 'تعذر حفظ الصفة');
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر حفظ الصفة الوظيفية');
                         }
                     } catch (e) {
                         this.showToast('تعذر حفظ الصفة الوظيفية');
@@ -25107,13 +25124,17 @@ async loadBranchOperations() {
                 async deleteAdminJobPosition(id) {
                     if (!confirm('هل أنت متأكد من حذف هذه الصفة الوظيفية؟')) return;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch(`/api/v1/admin/settings/job-position/${id}`, {
                             method: 'DELETE',
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
-                            this.showToast(json.message || 'تم حذف الصفة');
+                        if (res.ok && (json.status === 'success' || json.success)) {
+                            this.showToast(json.message || 'تم حذف الصفة الوظيفية');
                             await this.loadAdminSettingsMaster();
                         } else {
                             this.showToast(json.message || 'تعذر الحذف');
@@ -25144,21 +25165,24 @@ async loadBranchOperations() {
 
                 async saveAdminPlacement() {
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/admin/settings/placement/save', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify(this.adminSettings.placementForm)
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم تسجيل التسكين الوظيفي بنجاح');
                             this.adminSettings.showPlacementModal = false;
                             await this.loadAdminSettingsMaster();
                         } else {
-                            this.showToast(json.message || 'تعذر تسجيل التسكين');
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر تسجيل التسكين الوظيفي');
                         }
                     } catch (e) {
                         this.showToast('تعذر تسجيل التسكين الوظيفي');
@@ -25168,12 +25192,16 @@ async loadBranchOperations() {
                 async deleteAdminPlacement(id) {
                     if (!confirm('هل أنت متأكد من حذف سجل التسكين هذا؟')) return;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch(`/api/v1/admin/settings/placement/${id}`, {
                             method: 'DELETE',
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حذف التسكين');
                             await this.loadAdminSettingsMaster();
                         } else {
@@ -25186,20 +25214,23 @@ async loadBranchOperations() {
 
                 async saveAdminSignatories() {
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/admin/settings/signatories/save', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify({ signatories: this.adminSettings.signatories })
                         });
                         const json = await res.json();
-                        if (json.status === 'success') {
+                        if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حفظ وتطبيق التوقيعات الرسمية');
                             await this.loadAdminSettingsMaster();
                         } else {
-                            this.showToast(json.message || 'تعذر حفظ التوقيعات');
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر حفظ التوقيعات');
                         }
                     } catch (e) {
                         this.showToast('تعذر حفظ مسميات التوقيعات');
@@ -25209,11 +25240,13 @@ async loadBranchOperations() {
                 async saveCentralSettings() {
                     this.isSaving = true;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/settings/central-settings', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify({ settings: this.systemCentralSettings })
                         });
@@ -25230,11 +25263,13 @@ async loadBranchOperations() {
                 async saveStudentServices() {
                     this.isSaving = true;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/settings/student-services', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify({ services: this.studentServicesList })
                         });
@@ -25251,11 +25286,13 @@ async loadBranchOperations() {
                 async saveAdminPeriods() {
                     this.isSaving = true;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/settings/admin-periods', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify({ periods: this.adminPeriodsList })
                         });
@@ -25272,11 +25309,13 @@ async loadBranchOperations() {
                 async saveResultsGateways() {
                     this.isSaving = true;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/settings/results-gateways', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify({ gateways: this.resultsGateways })
                         });
@@ -25296,11 +25335,13 @@ async loadBranchOperations() {
                         return;
                     }
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/settings/positions', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
                             },
                             body: JSON.stringify(this.newPositionForm)
                         });
@@ -25319,9 +25360,13 @@ async loadBranchOperations() {
                 async deletePosition(id) {
                     if (!confirm('هل أنت متأكد من حذف هذا المنصب الإداري؟')) return;
                     try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch(`/api/v1/settings/positions/${id}`, {
                             method: 'DELETE',
-                            headers: { 'Accept': 'application/json' }
+                            headers: { 
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            }
                         });
                         const resJson = await res.json();
                         const isOk = resJson.status === 'success' || resJson.success;

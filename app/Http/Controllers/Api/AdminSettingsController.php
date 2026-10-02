@@ -46,7 +46,18 @@ class AdminSettingsController extends Controller
         $branches = Branch::select('id', 'name', 'code', 'city')->get();
 
         $auditLogs = SystemAuditTrail::with('user')
-            ->whereIn('table_name', ['AdministrativeSetting', 'OrganizationalUnit', 'JobPosition', 'EmployeePlacement', 'OfficialDocumentSignatory'])
+            ->where(function ($query) {
+                $query->where('event_type', 'like', '%setting%')
+                    ->orWhere('event_type', 'like', '%org_unit%')
+                    ->orWhere('event_type', 'like', '%job_position%')
+                    ->orWhere('event_type', 'like', '%placement%')
+                    ->orWhere('event_type', 'like', '%signator%')
+                    ->orWhereJsonContains('payload->model_type', 'AdministrativeSetting')
+                    ->orWhereJsonContains('payload->model_type', 'OrganizationalUnit')
+                    ->orWhereJsonContains('payload->model_type', 'JobPosition')
+                    ->orWhereJsonContains('payload->model_type', 'EmployeePlacement')
+                    ->orWhereJsonContains('payload->model_type', 'OfficialDocumentSignatory');
+            })
             ->orderByDesc('id')
             ->limit(50)
             ->get();
@@ -77,7 +88,7 @@ class AdminSettingsController extends Controller
             'institute_name'         => 'required|string|max:255',
             'branch_label'           => 'nullable|string|max:255',
             'phone'                  => 'nullable|string|max:100',
-            'email'                  => 'nullable|email|max:255',
+            'email'                  => 'nullable|string|max:255',
             'address'                => 'nullable|string|max:500',
             'website'                => 'nullable|string|max:255',
             'pobox'                  => 'nullable|string|max:100',
@@ -126,7 +137,7 @@ class AdminSettingsController extends Controller
             'code'        => 'required|string|max:50',
             'name'        => 'required|string|max:255',
             'type'        => 'required|string|in:general_admin,department,section,unit,committee,office',
-            'parent_id'   => 'nullable|integer|exists:organizational_units,id',
+            'parent_id'   => 'nullable',
             'sort_order'  => 'nullable|integer',
             'is_active'   => 'nullable|boolean',
             'notes'       => 'nullable|string|max:1000',
@@ -134,7 +145,9 @@ class AdminSettingsController extends Controller
 
         $userId = auth()->id() ?? 1;
         $id = $request->input('id');
-        $oldValues = $id ? OrganizationalUnit::find($id)->toArray() : null;
+        $oldValues = $id ? OrganizationalUnit::find($id)?->toArray() : null;
+
+        $parentId = !empty($validated['parent_id']) ? (int)$validated['parent_id'] : null;
 
         $unit = OrganizationalUnit::updateOrCreate(
             ['id' => $id],
@@ -142,7 +155,7 @@ class AdminSettingsController extends Controller
                 'code'        => $validated['code'],
                 'name'        => $validated['name'],
                 'type'        => $validated['type'],
-                'parent_id'   => $validated['parent_id'] ?? null,
+                'parent_id'   => $parentId,
                 'sort_order'  => $validated['sort_order'] ?? 0,
                 'is_active'   => $request->boolean('is_active', true),
                 'notes'       => $validated['notes'] ?? null,
@@ -210,7 +223,7 @@ class AdminSettingsController extends Controller
             'id'                     => 'nullable|integer|exists:job_positions,id',
             'code'                   => 'required|string|max:50',
             'title'                  => 'required|string|max:255',
-            'organizational_unit_id' => 'nullable|integer|exists:organizational_units,id',
+            'organizational_unit_id' => 'nullable',
             'level_order'            => 'nullable|integer',
             'is_active'              => 'nullable|boolean',
             'description'            => 'nullable|string|max:1000',
@@ -218,14 +231,16 @@ class AdminSettingsController extends Controller
 
         $userId = auth()->id() ?? 1;
         $id = $request->input('id');
-        $oldValues = $id ? JobPosition::find($id)->toArray() : null;
+        $oldValues = $id ? JobPosition::find($id)?->toArray() : null;
+
+        $orgUnitId = !empty($validated['organizational_unit_id']) ? (int)$validated['organizational_unit_id'] : null;
 
         $pos = JobPosition::updateOrCreate(
             ['id' => $id],
             [
                 'code'                   => $validated['code'],
                 'title'                  => $validated['title'],
-                'organizational_unit_id' => $validated['organizational_unit_id'] ?? null,
+                'organizational_unit_id' => $orgUnitId,
                 'level_order'            => $validated['level_order'] ?? 1,
                 'is_active'              => $request->boolean('is_active', true),
                 'description'            => $validated['description'] ?? null,
@@ -292,8 +307,8 @@ class AdminSettingsController extends Controller
             'id'                     => 'nullable|integer|exists:employee_placements,id',
             'user_id'                => 'required|integer|exists:users,id',
             'job_position_id'        => 'required|integer|exists:job_positions,id',
-            'organizational_unit_id' => 'nullable|integer|exists:organizational_units,id',
-            'branch_id'              => 'nullable|integer|exists:branches,id',
+            'organizational_unit_id' => 'nullable',
+            'branch_id'              => 'nullable',
             'start_date'             => 'required|date',
             'end_date'               => 'nullable|date|after_or_equal:start_date',
             'is_current'             => 'nullable|boolean',
@@ -304,9 +319,12 @@ class AdminSettingsController extends Controller
 
         $userId = auth()->id() ?? 1;
         $id = $request->input('id');
-        $oldValues = $id ? EmployeePlacement::find($id)->toArray() : null;
+        $oldValues = $id ? EmployeePlacement::find($id)?->toArray() : null;
 
-        // If setting as current, we can optionally mark other placements for this position/user as historic
+        $orgUnitId = !empty($validated['organizational_unit_id']) ? (int)$validated['organizational_unit_id'] : null;
+        $branchId = !empty($validated['branch_id']) ? (int)$validated['branch_id'] : null;
+
+        // If setting as current, mark other placements for this position/user as historic
         if ($request->boolean('is_current', true) && $validated['status'] === 'active') {
             EmployeePlacement::where('user_id', $validated['user_id'])
                 ->where('job_position_id', $validated['job_position_id'])
@@ -319,8 +337,8 @@ class AdminSettingsController extends Controller
             [
                 'user_id'                => $validated['user_id'],
                 'job_position_id'        => $validated['job_position_id'],
-                'organizational_unit_id' => $validated['organizational_unit_id'] ?? null,
-                'branch_id'              => $validated['branch_id'] ?? null,
+                'organizational_unit_id' => $orgUnitId,
+                'branch_id'              => $branchId,
                 'start_date'             => $validated['start_date'],
                 'end_date'               => $validated['end_date'] ?? null,
                 'is_current'             => $request->boolean('is_current', true),
@@ -382,8 +400,8 @@ class AdminSettingsController extends Controller
             'signatories.*.document_code'         => 'required|string',
             'signatories.*.slot_key'              => 'required|string',
             'signatories.*.slot_label'            => 'required|string',
-            'signatories.*.job_position_id'       => 'nullable|integer|exists:job_positions,id',
-            'signatories.*.user_id'               => 'nullable|integer|exists:users,id',
+            'signatories.*.job_position_id'       => 'nullable',
+            'signatories.*.user_id'               => 'nullable',
             'signatories.*.custom_title_override' => 'nullable|string|max:255',
             'signatories.*.is_active'             => 'nullable|boolean',
         ]);
@@ -391,6 +409,9 @@ class AdminSettingsController extends Controller
         $userId = auth()->id() ?? 1;
 
         foreach ($validated['signatories'] as $sigData) {
+            $posId = !empty($sigData['job_position_id']) ? (int)$sigData['job_position_id'] : null;
+            $uId = !empty($sigData['user_id']) ? (int)$sigData['user_id'] : null;
+
             OfficialDocumentSignatory::updateOrCreate(
                 [
                     'document_code' => $sigData['document_code'],
@@ -398,8 +419,8 @@ class AdminSettingsController extends Controller
                 ],
                 [
                     'slot_label'            => $sigData['slot_label'],
-                    'job_position_id'       => $sigData['job_position_id'] ?? null,
-                    'user_id'               => $sigData['user_id'] ?? null,
+                    'job_position_id'       => $posId,
+                    'user_id'               => $uId,
                     'custom_title_override' => $sigData['custom_title_override'] ?? null,
                     'is_active'             => $sigData['is_active'] ?? true,
                 ]

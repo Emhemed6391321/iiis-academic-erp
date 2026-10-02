@@ -163,19 +163,19 @@ class AdminSettingsService
     public static function recordAudit(string $action, string $entityType, ?int $entityId, ?array $oldValues, ?array $newValues, ?int $userId = null, ?string $notes = null): void
     {
         try {
-            SystemAuditTrail::create([
-                'user_id'     => $userId ?? auth()->id() ?? 1,
-                'action_type' => $action,
-                'table_name'  => $entityType,
-                'record_id'   => $entityId ?? 0,
-                'old_values'  => $oldValues ? json_encode($oldValues, JSON_UNESCAPED_UNICODE) : null,
-                'new_values'  => $newValues ? json_encode($newValues, JSON_UNESCAPED_UNICODE) : null,
-                'ip_address'  => request()->ip() ?? '127.0.0.1',
-                'user_agent'  => request()->userAgent() ?? 'System / AdminSettingsService',
-                'notes'       => $notes,
-            ]);
+            SystemAuditTrail::log(
+                $action,
+                $notes ?? "إجراء إداري على {$entityType}",
+                [],
+                $userId,
+                null,
+                $entityType,
+                $entityId,
+                $oldValues ?? [],
+                $newValues ?? [],
+                'INFO'
+            );
         } catch (\Throwable $e) {
-            // Ignore audit trail fail if table structure is slightly different
             \Illuminate\Support\Facades\Log::warning('Audit trail error: ' . $e->getMessage());
         }
     }
