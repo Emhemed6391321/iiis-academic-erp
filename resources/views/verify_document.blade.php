@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>منظومة التحقق الرقمي الرسمي — المعهد التخصصي للعلوم والمهن</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-color: #0b1120;
@@ -42,7 +45,7 @@
             align-items: center;
             justify-content: center;
             padding: 24px 16px;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 60%),
                 radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
         }
@@ -107,7 +110,9 @@
             border-color: rgba(16, 185, 129, 0.3);
         }
 
-        .status-banner.revoked, .status-banner.tampered, .status-banner.not_found {
+        .status-banner.revoked,
+        .status-banner.tampered,
+        .status-banner.not_found {
             background-color: var(--rose-glow);
             border-color: rgba(244, 63, 94, 0.3);
         }
@@ -140,7 +145,9 @@
             border: 1px solid var(--amber-border);
         }
 
-        .revoked .icon-box, .tampered .icon-box, .not_found .icon-box {
+        .revoked .icon-box,
+        .tampered .icon-box,
+        .not_found .icon-box {
             background-color: rgba(244, 63, 94, 0.2);
             color: var(--rose-text);
             border: 1px solid var(--rose-border);
@@ -151,9 +158,19 @@
             font-weight: 700;
         }
 
-        .valid .banner-content h2 { color: var(--emerald-text); }
-        .replaced .banner-content h2 { color: var(--amber-text); }
-        .revoked .banner-content h2, .tampered .banner-content h2, .not_found .banner-content h2 { color: var(--rose-text); }
+        .valid .banner-content h2 {
+            color: var(--emerald-text);
+        }
+
+        .replaced .banner-content h2 {
+            color: var(--amber-text);
+        }
+
+        .revoked .banner-content h2,
+        .tampered .banner-content h2,
+        .not_found .banner-content h2 {
+            color: var(--rose-text);
+        }
 
         .banner-content p {
             font-size: 13px;
@@ -268,6 +285,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div class="container">
@@ -291,7 +309,8 @@
                     <div class="info-grid">
                         <div class="info-item full-width">
                             <div class="label">نوع الوثيقة الصادرة</div>
-                            <div class="value" style="color: #38bdf8; font-size: 16px;">{{ $result['document']['document_title'] }}</div>
+                            <div class="value" style="color: #38bdf8; font-size: 16px;">
+                                {{ $result['document']['document_title'] }}</div>
                         </div>
 
                         <div class="info-item">
@@ -301,7 +320,8 @@
 
                         <div class="info-item">
                             <div class="label">الرقم الأكاديمي</div>
-                            <div class="value" style="font-family: 'JetBrains Mono', monospace;">{{ $result['document']['student_code'] }}</div>
+                            <div class="value" style="font-family: 'JetBrains Mono', monospace;">
+                                {{ $result['document']['student_code'] }}</div>
                         </div>
 
                         <div class="info-item">
@@ -321,7 +341,8 @@
 
                         <div class="info-item">
                             <div class="label">تاريخ الإصدار الرسمي</div>
-                            <div class="value" style="font-family: 'JetBrains Mono', monospace;">{{ $result['document']['issue_date'] }}</div>
+                            <div class="value" style="font-family: 'JetBrains Mono', monospace;">
+                                {{ $result['document']['issue_date'] }}</div>
                         </div>
 
                         <div class="info-item full-width">
@@ -340,7 +361,8 @@
 
                     <div class="privacy-badge">
                         <span>🛡️</span>
-                        <span>تم حجب البيانات المدنية والخاصة (الرقم الوطني والهاتف) لحماية خصوصية حامل الوثيقة وفق معايير الأمان المعتمدة.</span>
+                        <span>تم حجب البيانات المدنية والخاصة (الرقم الوطني والهاتف) لحماية خصوصية حامل الوثيقة وفق معايير
+                            الأمان المعتمدة.</span>
                     </div>
                 </div>
 
@@ -365,7 +387,8 @@
                         </div>
                         <div class="info-item full-width">
                             <div class="label">سبب وحالة الاستبدال الإداري</div>
-                            <div class="value" style="color: var(--amber-text);">{{ $result['replacement_note'] ?? 'تم استبدال الوثيقة بوثيقة أحدث' }}</div>
+                            <div class="value" style="color: var(--amber-text);">
+                                {{ $result['replacement_note'] ?? 'تم استبدال الوثيقة بوثيقة أحدث' }}</div>
                         </div>
                     </div>
                 </div>
@@ -391,7 +414,8 @@
                         </div>
                         <div class="info-item full-width">
                             <div class="label">سبب الإلغاء الإداري</div>
-                            <div class="value" style="color: var(--rose-text);">{{ $result['revocation_note'] ?? 'تم إبطال سريان الوثيقة' }}</div>
+                            <div class="value" style="color: var(--rose-text);">
+                                {{ $result['revocation_note'] ?? 'تم إبطال سريان الوثيقة' }}</div>
                         </div>
                     </div>
                 </div>
@@ -409,9 +433,10 @@
                     <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 16px;">
                         رمز التحقق المدخل:
                     </p>
-                    <code style="background: #090e17; padding: 8px 16px; border-radius: 8px; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">
-                        {{ $uuid }}
-                    </code>
+                    <code
+                        style="background: #090e17; padding: 8px 16px; border-radius: 8px; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">
+                            {{ $uuid }}
+                        </code>
                     <p style="color: #64748b; font-size: 13px; margin-top: 24px;">
                         إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع إدارة شؤون الطلاب والامتحانات المركزية في المعهد.
                     </p>
@@ -420,10 +445,12 @@
 
             <footer class="card-footer">
                 <div>منظومة المعهد التخصصي للعلوم الشرعية — الإصدار 2.0</div>
-                <div style="font-family: 'JetBrains Mono', monospace;">UUID: {{ substr($uuid, 0, 8) }}...{{ substr($uuid, -4) }}</div>
+                <div style="font-family: 'JetBrains Mono', monospace;">UUID:
+                    {{ substr($uuid, 0, 8) }}...{{ substr($uuid, -4) }}</div>
             </footer>
         </main>
     </div>
 
 </body>
+
 </html>
