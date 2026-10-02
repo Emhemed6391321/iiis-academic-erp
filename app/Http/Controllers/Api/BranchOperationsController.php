@@ -34,7 +34,15 @@ class BranchOperationsController extends Controller
             $contractsQuery->where('branch_id', $branchId);
         }
 
-        $totalBranches = Branch::where('is_active', true)->count();
+        $totalBranches = Branch::count();
+        $activeBranches = Branch::where('is_active', true)->count();
+        $ownedBranches = Branch::whereIn('building_type', ['owned', 'state'])->count();
+        $rentedBranches = Branch::where('building_type', 'rented')->count();
+        $avgScore = round(Branch::avg('latest_score') ?? 0, 1);
+        $totalStaff = (int) (Branch::sum('total_staff') ?: (Branch::sum('academic_staff') + Branch::sum('admin_staff')));
+        $academicStaff = (int) Branch::sum('academic_staff');
+        $adminStaff = (int) Branch::sum('admin_staff');
+
         $pendingRequests = (clone $requestsQuery)->whereIn('status', ['pending', 'under_review'])->count();
         $inProgressRequests = (clone $requestsQuery)->where('status', 'in_progress')->count();
         $completedRequests = (clone $requestsQuery)->where('status', 'completed')->count();
@@ -47,6 +55,13 @@ class BranchOperationsController extends Controller
             'data' => [
                 'summary' => [
                     'total_branches' => $totalBranches,
+                    'active_branches' => $activeBranches,
+                    'owned_branches' => $ownedBranches,
+                    'rented_branches' => $rentedBranches,
+                    'avg_score' => $avgScore,
+                    'total_staff' => $totalStaff,
+                    'academic_staff' => $academicStaff,
+                    'admin_staff' => $adminStaff,
                     'pending_requests' => $pendingRequests,
                     'in_progress_requests' => $inProgressRequests,
                     'completed_requests' => $completedRequests,

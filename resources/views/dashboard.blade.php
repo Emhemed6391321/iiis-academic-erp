@@ -1426,7 +1426,7 @@
                                 <button @click="openNewBranchModal()" class="px-2.5 py-1 rounded-[8px] bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 shadow-sm transition-all" title="إضافة فرع جديد">
                                     <span>➕ إضافة فرع</span>
                                 </button>
-                                <button @click="currentSection = 'branches_directory'" class="text-xs font-bold text-[#2b78a5] dark:text-blue-400 hover:underline">عرض الـ 18 فرعاً</button>
+                                <button @click="currentSection = 'branches_directory'" class="text-xs font-bold text-[#2b78a5] dark:text-blue-400 hover:underline" x-text="'عرض كافة الفروع (' + (branchesList.length || 0) + ')'">عرض كافة الفروع</button>
                             </div>
                         </div>
 
@@ -12086,7 +12086,8 @@
                             <div>
                                 <h3 class="font-extrabold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                     دليل الفروع والمقرات والتقييم الميداني الشامل
-                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2b78a5]/15 text-[#2b78a5] dark:text-sky-400 border border-[#2b78a5]/20">21 مقراً بليبيا</span>
+                                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2b78a5]/15 text-[#2b78a5] dark:text-sky-400 border border-[#2b78a5]/20"
+                                          x-text="(branchesList.length || 0) + ' مقراً بليبيا'"></span>
                                 </h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">الرصد الجغرافي الحي، بطاقات التقييم الرقابي الدوري، الطاقة الاستيعابية، والتجهيزات الميدانية</p>
                             </div>
@@ -12131,14 +12132,14 @@
                         </div>
                     </div>
 
-                    <!-- 4 بطاقات إحصائية رئيسية -->
+                    <!-- 4 بطاقات إحصائية رئيسية حقيقية وديناميكية 100% -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="p-4 rounded-[16px] border flex items-center justify-between transition-all hover:-translate-y-0.5"
                              :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
                             <div>
                                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">إجمالي المقرات المعتمدة</span>
-                                <div class="text-2xl font-black font-mono text-slate-800 dark:text-white mt-1" x-text="branchesList.length || 21">21</div>
-                                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">● مغطاة جغرافياً بـ 100%</span>
+                                <div class="text-2xl font-black font-mono text-slate-800 dark:text-white mt-1" x-text="branchesList.length || 0">0</div>
+                                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold" x-text="'● ' + branchesActiveCount + ' مقراً تشغيلياً نشطاً'"></span>
                             </div>
                             <div class="w-10 h-10 rounded-[12px] bg-blue-500/10 text-[#2b78a5] dark:text-sky-400 flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
@@ -12149,8 +12150,10 @@
                              :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
                             <div>
                                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">ملكية المباني</span>
-                                <div class="text-xl font-black font-mono text-slate-800 dark:text-white mt-1">17 مملوك <span class="text-xs text-slate-400">/ 4 مستأجر</span></div>
-                                <span class="text-[10px] text-[#2b78a5] dark:text-sky-400 font-bold">81% أصول تابعة للدولة</span>
+                                <div class="text-xl font-black font-mono text-slate-800 dark:text-white mt-1">
+                                    <span x-text="branchesOwnedCount">0</span> مملوك <span class="text-xs text-slate-400">/ <span x-text="branchesRentedCount">0</span> مستأجر</span>
+                                </div>
+                                <span class="text-[10px] text-[#2b78a5] dark:text-sky-400 font-bold" x-text="branchesOwnedPercentage + '% أصول ومبانٍ تابعة للمعهد'"></span>
                             </div>
                             <div class="w-10 h-10 rounded-[12px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>
@@ -12161,11 +12164,14 @@
                              :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
                             <div>
                                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">متوسط مؤشر التقييم الميداني</span>
-                                <div class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">89.4% <span class="text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/20">A ممتاز</span></div>
-                                <span class="text-[10px] text-slate-500 dark:text-slate-400">مبني على 5 محاور رقابية</span>
+                                <div class="text-2xl font-black font-mono mt-1" :class="branchesAvgScore >= 85 ? 'text-emerald-600 dark:text-emerald-400' : (branchesAvgScore >= 75 ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400')">
+                                    <span x-text="branchesAvgScore + '%'">0%</span> 
+                                    <span class="text-xs font-bold px-1.5 py-0.5 rounded" :class="branchesAvgScore >= 85 ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'" x-text="branchesAvgGrade">A ممتاز</span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400">مبني على تقارير التقييم الرقابية الميدانية</span>
                             </div>
                             <div class="w-10 h-10 rounded-[12px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z" /></svg>
                             </div>
                         </div>
 
@@ -12173,8 +12179,10 @@
                              :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
                             <div>
                                 <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">إجمالي الكوادر التشغيلية</span>
-                                <div class="text-2xl font-black font-mono text-[#2b78a5] dark:text-sky-400 mt-1">438 <span class="text-xs text-slate-400">عنصر</span></div>
-                                <span class="text-[10px] text-slate-500 dark:text-slate-400">إداري، تدريسي، وفني</span>
+                                <div class="text-2xl font-black font-mono text-[#2b78a5] dark:text-sky-400 mt-1">
+                                    <span x-text="branchesTotalStaff">0</span> <span class="text-xs text-slate-400">عنصر</span>
+                                </div>
+                                <span class="text-[10px] text-slate-500 dark:text-slate-400" x-text="branchesAcademicStaff + ' تدريسي • ' + branchesAdminStaff + ' إداري وفني'"></span>
                             </div>
                             <div class="w-10 h-10 rounded-[12px] bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
@@ -12198,23 +12206,17 @@
 
                         <select x-model="branchFilterCity" class="text-xs p-2 rounded-[10px] border outline-none font-semibold focus:border-[#2b78a5]"
                                 :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
-                            <option value="">كافة المدن والمناطق</option>
-                            <option value="طرابلس">طرابلس الكبرى</option>
-                            <option value="بنغازي">بنغازي</option>
-                            <option value="مصراتة">مصراتة</option>
-                            <option value="الزاوية">الزاوية</option>
-                            <option value="سرت">سرت</option>
-                            <option value="البيضاء">البيضاء</option>
-                            <option value="طبرق">طبرق</option>
-                            <option value="سبها">سبها (الجنوب)</option>
-                            <option value="قصر بن غشير">قصر بن غشير</option>
-                            <option value="السائح">السائح</option>
+                            <option value="">كافة المدن والمناطق (الكل)</option>
+                            <template x-for="city in availableBranchCities" :key="city">
+                                <option :value="city" x-text="city"></option>
+                            </template>
                         </select>
 
                         <select x-model="branchFilterType" class="text-xs p-2 rounded-[10px] border outline-none font-semibold focus:border-[#2b78a5]"
                                 :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
                             <option value="">نوع المبنى (الكل)</option>
                             <option value="owned">مبنى مملوك للمعهد</option>
+                            <option value="state">مبنى حكومي مخصص</option>
                             <option value="rented">مبنى مستأجر بعقد رسمي</option>
                         </select>
 
@@ -12349,7 +12351,7 @@
                                     </div>
                                     <div>
                                         <div class="text-[10px] text-slate-400">الكادر الإجمالي</div>
-                                        <div class="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 mt-0.5" x-text="b.total_staff || 24">24</div>
+                                        <div class="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 mt-0.5" x-text="b.total_staff || ((parseInt(b.academic_staff) || 0) + (parseInt(b.admin_staff) || 0)) || 0">24</div>
                                     </div>
                                     <div>
                                         <div class="text-[10px] text-slate-400">حالة المبنى</div>
@@ -12421,7 +12423,7 @@
                                                   x-text="b.building_type === 'owned' ? 'مملوك' : 'مستأجر'">
                                             </span>
                                         </td>
-                                        <td class="p-3.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300" x-text="b.total_staff || 24"></td>
+                                        <td class="p-3.5 text-center font-mono font-bold text-slate-700 dark:text-slate-300" x-text="b.total_staff || ((parseInt(b.academic_staff) || 0) + (parseInt(b.admin_staff) || 0)) || 0"></td>
                                         <td class="p-3.5 text-center font-mono font-bold text-[#2b78a5] dark:text-sky-400" x-text="b.students_count || 0"></td>
                                         <td class="p-3.5">
                                             <div class="flex items-center gap-2">
@@ -20631,6 +20633,63 @@ async initApp() {
                 
                 get branchesList() {
                     return Array.isArray(this.branches) ? this.branches : [];
+                },
+
+                get branchesActiveCount() {
+                    return this.branchesList.filter(b => b.is_active || b.branch_status === 'ACTIVE').length;
+                },
+
+                get branchesOwnedCount() {
+                    return this.branchesList.filter(b => b.building_type === 'owned' || b.building_type === 'state').length;
+                },
+
+                get branchesRentedCount() {
+                    return this.branchesList.filter(b => b.building_type === 'rented').length;
+                },
+
+                get branchesOwnedPercentage() {
+                    if (!this.branchesList.length) return 0;
+                    return Math.round((this.branchesOwnedCount / this.branchesList.length) * 100);
+                },
+
+                get branchesAvgScore() {
+                    if (!this.branchesList.length) return 0;
+                    const scores = this.branchesList.map(b => parseFloat(b.latest_score)).filter(s => !isNaN(s) && s > 0);
+                    if (!scores.length) return 0;
+                    const sum = scores.reduce((a, b) => a + b, 0);
+                    return Math.round((sum / scores.length) * 10) / 10;
+                },
+
+                get branchesAvgGrade() {
+                    const s = this.branchesAvgScore;
+                    if (s >= 95) return 'A+ ممتاز مرتفع';
+                    if (s >= 85) return 'A ممتاز';
+                    if (s >= 75) return 'B جيد جداً';
+                    if (s >= 65) return 'C يحتاج متابعة';
+                    return 'D دون المستوى';
+                },
+
+                get branchesTotalStaff() {
+                    if (!this.branchesList.length) return 0;
+                    return this.branchesList.reduce((acc, b) => {
+                        const staff = parseInt(b.total_staff) || ((parseInt(b.academic_staff) || 0) + (parseInt(b.admin_staff) || 0)) || 0;
+                        return acc + staff;
+                    }, 0);
+                },
+
+                get branchesAcademicStaff() {
+                    if (!this.branchesList.length) return 0;
+                    return this.branchesList.reduce((acc, b) => acc + (parseInt(b.academic_staff) || 0), 0);
+                },
+
+                get branchesAdminStaff() {
+                    if (!this.branchesList.length) return 0;
+                    return this.branchesList.reduce((acc, b) => acc + (parseInt(b.admin_staff) || 0), 0);
+                },
+
+                get availableBranchCities() {
+                    const cities = this.branchesList.map(b => b.city).filter(Boolean);
+                    return Array.from(new Set(cities));
                 },
 
                 filteredBranches() {
