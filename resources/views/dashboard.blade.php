@@ -12463,8 +12463,11 @@
                                     <button @click="openBranchDetails(b)" class="flex-1 py-2 rounded-[10px] text-xs font-bold bg-[#2b78a5]/10 text-[#2b78a5] dark:text-sky-400 hover:bg-[#2b78a5]/20 transition-all text-center">
                                         الملف والتجهيزات
                                     </button>
+                                    <button @click="openEditBranchModal(b)" class="px-2.5 py-2 rounded-[10px] text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all" title="تعديل بيانات الفرع">
+                                        ✏️ تعديل
+                                    </button>
                                     <button @click="openNewAssessmentModal(b.id)" class="px-3 py-2 rounded-[10px] text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all">
-                                        تقييم ميداني
+                                        تقييم
                                     </button>
                                     <button @click="branchViewMode = 'map'; $nextTick(() => { initBranchesMap(); panToBranch(b); })" class="px-2.5 py-2 rounded-[10px] text-xs font-bold border border-slate-300 dark:border-slate-700 text-slate-400 hover:text-slate-200 transition-all" title="عرض على الخريطة">
                                         🗺️
@@ -12526,6 +12529,9 @@
                                             <div class="flex items-center justify-end gap-1.5">
                                                 <button @click="openBranchDetails(b)" class="px-2.5 py-1.5 rounded-[8px] bg-[#2b78a5]/10 text-[#2b78a5] dark:text-sky-400 hover:bg-[#2b78a5]/20 font-bold text-xs transition-all">
                                                     تفاصيل
+                                                </button>
+                                                <button @click="openEditBranchModal(b)" class="px-2 py-1.5 rounded-[8px] bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 font-bold text-xs transition-all" title="تعديل بيانات الفرع">
+                                                    ✏️ تعديل
                                                 </button>
                                                 <button @click="openNewAssessmentModal(b.id)" class="px-2.5 py-1.5 rounded-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs transition-all">
                                                     تقييم
@@ -16844,7 +16850,7 @@
     <div x-show="showBranchDetailsModal" 
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
          @click.self="showBranchDetailsModal = false">
-        <div class="w-full max-w-4xl rounded-[20px] border p-6 space-y-5 shadow-2xl text-xs max-h-[92vh] overflow-y-auto"
+        <div class="w-full max-w-5xl rounded-[24px] border p-6 space-y-5 shadow-2xl text-xs max-h-[94vh] overflow-y-auto"
              :class="darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
             
             <template x-if="branchDetailsLoading">
@@ -16859,43 +16865,57 @@
                     <!-- ترويسة المقر -->
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
                         <div class="flex items-center gap-3.5">
-                            <div class="w-12 h-12 rounded-[16px] bg-gradient-to-tr from-[#14268d] to-[#2b78a5] text-white flex items-center justify-center font-black text-sm shadow-md" x-text="branchDetailsData.branch.code"></div>
+                            <div class="w-14 h-14 rounded-[18px] bg-gradient-to-tr from-[#14268d] to-[#2b78a5] text-white flex items-center justify-center font-black text-base shadow-lg shadow-[#2b78a5]/25" x-text="branchDetailsData.branch.code"></div>
                             <div>
-                                <h3 class="font-extrabold text-base text-slate-800 dark:text-white" x-text="branchDetailsData.branch.name"></h3>
-                                <p class="text-xs text-slate-400" x-text="branchDetailsData.branch.city + ' • ' + (branchDetailsData.branch.address || 'العنوان الرئيسي')"></p>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-extrabold text-lg text-slate-800 dark:text-white" x-text="branchDetailsData.branch.name"></h3>
+                                    <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold"
+                                          :class="branchDetailsData.branch.branch_status === 'ACTIVE' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : (branchDetailsData.branch.branch_status === 'EQUIPPING' ? 'bg-blue-500/15 text-blue-600' : 'bg-amber-500/15 text-amber-600')"
+                                          x-text="branchDetailsData.branch.branch_status === 'ACTIVE' ? 'نشط ويعمل' : (branchDetailsData.branch.branch_status === 'EQUIPPING' ? 'تحت التجهيز' : 'موقوف مؤقتاً')">
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-0.5" x-text="branchDetailsData.branch.city + ' • ' + (branchDetailsData.branch.region || 'المنطقة الغربية') + ' • ' + (branchDetailsData.branch.address || 'المقر الرئيسي')"></p>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <span class="px-3 py-1 rounded-[8px] text-xs font-black font-mono"
+                            <button @click="openEditBranchModal(branchDetailsData.branch)" class="px-3.5 py-2 rounded-[10px] text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border border-amber-500/30 flex items-center gap-1.5 transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                <span>تعديل بيانات الفرع</span>
+                            </button>
+                            <span class="px-3 py-1.5 rounded-[10px] text-xs font-black font-mono"
                                   :class="branchDetailsData.branch.latest_score >= 85 ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'"
                                   x-text="'تقييم المقر: ' + (branchDetailsData.branch.latest_score || 88) + '% (' + (branchDetailsData.branch.latest_rating || 'A') + ')'">
                             </span>
-                            <button @click="showBranchDetailsModal = false" class="w-7 h-7 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-200">✕</button>
+                            <button @click="showBranchDetailsModal = false" class="w-8 h-8 rounded-[10px] flex items-center justify-center text-slate-400 hover:bg-slate-800 transition-colors">✕</button>
                         </div>
                     </div>
 
-                    <!-- تبويبات تفاصيل الفرع -->
-                    <div class="flex items-center gap-2 border-b" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
-                        <button @click="activeBranchDetailsTab = 'overview'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all"
+                    <!-- تبويبات تفاصيل الفرع الشاملة -->
+                    <div class="flex items-center gap-2 border-b overflow-x-auto pb-1" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
+                        <button @click="activeBranchDetailsTab = 'overview'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
                                 :class="activeBranchDetailsTab === 'overview' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
-                            بيانات المقر والموقع
+                            <span>🏛️ بيانات المقر والموقع</span>
                         </button>
-                        <button @click="activeBranchDetailsTab = 'capacity'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all"
+                        <button @click="activeBranchDetailsTab = 'social'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+                                :class="activeBranchDetailsTab === 'social' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+                            <span>🌐 صفحات التواصل والاتصال</span>
+                        </button>
+                        <button @click="activeBranchDetailsTab = 'capacity'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
                                 :class="activeBranchDetailsTab === 'capacity' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
-                            الفصول والشواغر
+                            <span>📚 الفصول والقاعات والمعامل</span>
                         </button>
-                        <button @click="activeBranchDetailsTab = 'facilities'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all"
+                        <button @click="activeBranchDetailsTab = 'photos'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
+                                :class="activeBranchDetailsTab === 'photos' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
+                            <span>📸 معرض صور الفرع (<span x-text="(branchDetailsData.branch.photos && branchDetailsData.branch.photos.length) || 0"></span>)</span>
+                        </button>
+                        <button @click="activeBranchDetailsTab = 'facilities'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
                                 :class="activeBranchDetailsTab === 'facilities' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
-                            المرافق والمباني
+                            <span>🏢 المرافق والتجهيزات</span>
                         </button>
-                        <button @click="activeBranchDetailsTab = 'assessments'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all"
+                        <button @click="activeBranchDetailsTab = 'assessments'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all whitespace-nowrap flex items-center gap-1.5"
                                 :class="activeBranchDetailsTab === 'assessments' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
-                            سجل التقييمات الميدانية
-                        </button>
-                        <button @click="activeBranchDetailsTab = 'tickets'" class="pb-2.5 px-3 font-bold border-b-2 text-xs transition-all"
-                                :class="activeBranchDetailsTab === 'tickets' ? 'border-[#2b78a5] text-[#2b78a5] dark:text-sky-400' : 'border-transparent text-slate-400 hover:text-slate-200'">
-                            التذاكر والعقود
+                            <span>📋 سجل التقييمات الميدانية</span>
                         </button>
                     </div>
 
@@ -16905,69 +16925,211 @@
                             <div>
                                 <span class="text-slate-400 block text-[10px]">المدير المسؤول</span>
                                 <span class="font-bold text-xs" x-text="branchDetailsData.branch.manager_name || 'معين'"></span>
+                                <span class="text-[10px] text-slate-500 block font-mono" x-text="branchDetailsData.branch.manager_phone || ''"></span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block text-[10px]">نوع الحيازة</span>
-                                <span class="font-bold text-xs" x-text="branchDetailsData.branch.building_type === 'owned' ? 'مبنى مملوك للمعهد' : 'مستأجر بعقد'"></span>
+                                <span class="text-slate-400 block text-[10px]">نوع الحيازة والملكية</span>
+                                <span class="font-bold text-xs" x-text="branchDetailsData.branch.building_type === 'owned' ? 'مبنى حكومي مملوك للمعهد' : 'مقر مستأجر بعقد'"></span>
+                                <span class="text-[10px] text-slate-500 block" x-text="'حالة المبنى: ' + (branchDetailsData.branch.building_condition === 'excellent' ? 'ممتاز' : 'جيد')"></span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block text-[10px]">الهاتف والاتصال</span>
-                                <span class="font-mono text-xs" x-text="branchDetailsData.branch.phone || '021-1234567'"></span>
+                                <span class="text-slate-400 block text-[10px]">الكادر التعليمي والإداري</span>
+                                <span class="font-bold text-xs text-[#2b78a5] dark:text-sky-400" x-text="((parseInt(branchDetailsData.branch.academic_staff) || 0) + (parseInt(branchDetailsData.branch.admin_staff) || 0)) + ' موظف'"></span>
+                                <span class="text-[10px] text-slate-500 block" x-text="(branchDetailsData.branch.academic_staff || 0) + ' أكاديمي • ' + (branchDetailsData.branch.admin_staff || 0) + ' إداري'"></span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block text-[10px]">البريد الإلكتروني</span>
-                                <span class="font-mono text-xs" x-text="branchDetailsData.branch.email || 'branch@iiis.edu.ly'"></span>
+                                <span class="text-slate-400 block text-[10px]">هاتف وبريد المقر</span>
+                                <span class="font-mono text-xs block" x-text="branchDetailsData.branch.phone || '021-1234567'"></span>
+                                <span class="font-mono text-[10px] text-slate-500 block truncate" x-text="branchDetailsData.branch.email || 'branch@iiis.edu.ly'"></span>
                             </div>
                         </div>
 
                         <!-- إحداثيات الموقع -->
                         <div class="p-4 rounded-[16px] border space-y-2" :class="darkMode ? 'bg-slate-800/20 border-slate-700/50' : 'bg-slate-50 border-[#e8ebf2]'">
                             <span class="font-bold text-xs block text-slate-700 dark:text-slate-300">الإحداثيات الجغرافية لمقر الفرع:</span>
-                            <div class="flex items-center gap-3">
-                                <span class="font-mono text-xs bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-[8px] text-slate-700 dark:text-slate-200" x-text="branchDetailsData.branch.latitude + ', ' + branchDetailsData.branch.longitude"></span>
-                                <button @click="showBranchDetailsModal = false; branchViewMode = 'map'; $nextTick(() => { initBranchesMap(); panToBranch(branchDetailsData.branch); })" class="px-3 py-1 rounded-[8px] bg-[#2b78a5] text-white font-bold text-xs hover:bg-[#14268d] transition-all">
-                                    عرض وتكبير في الخريطة الحية 🗺️
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-xs bg-slate-200 dark:bg-slate-700 px-3 py-1.5 rounded-[8px] text-slate-700 dark:text-slate-200" x-text="(branchDetailsData.branch.latitude || '32.8872') + ', ' + (branchDetailsData.branch.longitude || '13.1913')"></span>
+                                    <span class="text-xs text-slate-400" x-text="branchDetailsData.branch.address || 'وسط المدينة'"></span>
+                                </div>
+                                <button @click="showBranchDetailsModal = false; branchViewMode = 'map'; $nextTick(() => { initBranchesMap(); panToBranch(branchDetailsData.branch); })" class="px-3 py-1.5 rounded-[8px] bg-[#2b78a5] text-white font-bold text-xs hover:bg-[#14268d] transition-all flex items-center gap-1.5">
+                                    <span>عرض وتكبير في الخريطة الحية</span>
+                                    <span>🗺️</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. الفصول والشواغر -->
-                    <div x-show="activeBranchDetailsTab === 'capacity'" class="space-y-4">
-                        <div class="grid grid-cols-3 gap-3 text-center">
-                            <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
-                                <span class="text-slate-400 text-[10px]">الطاقة الاستيعابية</span>
-                                <div class="font-mono font-black text-sm text-[#2b78a5]" x-text="branchDetailsData.stats.total_capacity || 120">120</div>
-                            </div>
-                            <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
-                                <span class="text-slate-400 text-[10px]">الطلاب المقيدون</span>
-                                <div class="font-mono font-black text-sm text-emerald-600" x-text="branchDetailsData.stats.enrolled_students || 0">0</div>
-                            </div>
-                            <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
-                                <span class="text-slate-400 text-[10px]">المقاعد الشاغرة</span>
-                                <div class="font-mono font-black text-sm text-amber-600" x-text="branchDetailsData.stats.available_seats || 120">120</div>
-                            </div>
+                    <!-- 2. صفحات التواصل الاجتماعي وقنوات الاتصال -->
+                    <div x-show="activeBranchDetailsTab === 'social'" class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-xs text-slate-700 dark:text-slate-300">القنوات والصفحات الرسمية لفرع <span class="text-[#2b78a5]" x-text="branchDetailsData.branch.name"></span>:</span>
+                            <button @click="openEditBranchModal(branchDetailsData.branch)" class="px-3 py-1.5 rounded-[8px] bg-[#2b78a5]/15 text-[#2b78a5] dark:text-sky-400 font-bold hover:bg-[#2b78a5]/25 transition-all">
+                                ✏️ تعديل الروابط والقنوات
+                            </button>
                         </div>
 
-                        <div class="overflow-x-auto rounded-[12px] border" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- Facebook -->
+                            <div class="p-4 rounded-[16px] border flex items-center justify-between transition-all"
+                                 :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-[12px] bg-blue-600 text-white flex items-center justify-center font-bold text-base shadow-md shadow-blue-600/30">
+                                        f
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800 dark:text-white">صفحة فيسبوك الرسمية</div>
+                                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[220px]" x-text="branchDetailsData.branch.facebook_url || 'غير محددة'"></div>
+                                    </div>
+                                </div>
+                                <template x-if="branchDetailsData.branch.facebook_url">
+                                    <a :href="branchDetailsData.branch.facebook_url" target="_blank" class="px-3 py-1.5 rounded-[8px] bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-500 transition-all flex items-center gap-1">
+                                        <span>زيارة</span>
+                                        <span>↗</span>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Telegram -->
+                            <div class="p-4 rounded-[16px] border flex items-center justify-between transition-all"
+                                 :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-[12px] bg-sky-500 text-white flex items-center justify-center font-bold text-base shadow-md shadow-sky-500/30">
+                                        ✈️
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800 dark:text-white">قناة تلغرام الطلابية</div>
+                                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[220px]" x-text="branchDetailsData.branch.telegram_url || 'غير محددة'"></div>
+                                    </div>
+                                </div>
+                                <template x-if="branchDetailsData.branch.telegram_url">
+                                    <a :href="branchDetailsData.branch.telegram_url" target="_blank" class="px-3 py-1.5 rounded-[8px] bg-sky-500 text-white font-bold text-[11px] hover:bg-sky-400 transition-all flex items-center gap-1">
+                                        <span>انضمام</span>
+                                        <span>↗</span>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- WhatsApp -->
+                            <div class="p-4 rounded-[16px] border flex items-center justify-between transition-all"
+                                 :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-[12px] bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-md shadow-emerald-600/30">
+                                        💬
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800 dark:text-white">خدمة واتساب الرسمية</div>
+                                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[220px]" x-text="branchDetailsData.branch.whatsapp_number || 'غير محدد'"></div>
+                                    </div>
+                                </div>
+                                <template x-if="branchDetailsData.branch.whatsapp_number">
+                                    <a :href="'https://wa.me/' + branchDetailsData.branch.whatsapp_number.replace(/[^0-9]/g, '')" target="_blank" class="px-3 py-1.5 rounded-[8px] bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-500 transition-all flex items-center gap-1">
+                                        <span>مراسلة</span>
+                                        <span>↗</span>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Website -->
+                            <div class="p-4 rounded-[16px] border flex items-center justify-between transition-all"
+                                 :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-[#e8ebf2]'">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-[12px] bg-[#14268d] text-white flex items-center justify-center font-bold text-base shadow-md shadow-[#14268d]/30">
+                                        🌐
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-xs text-slate-800 dark:text-white">الموقع الإلكتروني أو البوابة</div>
+                                        <div class="text-[10px] text-slate-400 font-mono truncate max-w-[220px]" x-text="branchDetailsData.branch.website_url || 'غير محدد'"></div>
+                                    </div>
+                                </div>
+                                <template x-if="branchDetailsData.branch.website_url">
+                                    <a :href="branchDetailsData.branch.website_url" target="_blank" class="px-3 py-1.5 rounded-[8px] bg-[#14268d] text-white font-bold text-[11px] hover:bg-[#2b78a5] transition-all flex items-center gap-1">
+                                        <span>فتح الرابط</span>
+                                        <span>↗</span>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. الفصول والشواغر والقاعات -->
+                    <div x-show="activeBranchDetailsTab === 'capacity'" class="space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="grid grid-cols-3 gap-3 text-center flex-1">
+                                <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
+                                    <span class="text-slate-400 text-[10px]">الطاقة الاستيعابية</span>
+                                    <div class="font-mono font-black text-sm text-[#2b78a5]" x-text="branchDetailsData.stats.total_capacity || 120">120</div>
+                                </div>
+                                <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
+                                    <span class="text-slate-400 text-[10px]">الطلاب المقيدون</span>
+                                    <div class="font-mono font-black text-sm text-emerald-600" x-text="branchDetailsData.stats.enrolled_students || 0">0</div>
+                                </div>
+                                <div class="p-3 rounded-[12px] border" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
+                                    <span class="text-slate-400 text-[10px]">المقاعد الشاغرة</span>
+                                    <div class="font-mono font-black text-sm text-amber-600" x-text="branchDetailsData.stats.available_seats || 120">120</div>
+                                </div>
+                            </div>
+
+                            <button @click="openNewBranchHallModal(branchDetailsData.branch.id)" class="px-4 py-3 rounded-[12px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-900/20 transition-all flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span>+ إضافة قاعة / فصل / معمل جديد</span>
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-[14px] border" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
                             <table class="w-full text-right text-xs">
                                 <thead :class="darkMode ? 'bg-slate-800 text-slate-300' : 'bg-[#f6f7fb] text-slate-700'">
                                     <tr>
-                                        <th class="p-2.5">اسم القاعة / الفصل</th>
-                                        <th class="p-2.5">المرحلة الدراسية</th>
-                                        <th class="p-2.5 text-center">السعة القصوى</th>
-                                        <th class="p-2.5 text-center">المقيدون</th>
-                                        <th class="p-2.5 text-center">المقاعد المتاحة</th>
+                                        <th class="p-3">اسم القاعة / الفصل</th>
+                                        <th class="p-3">المرحلة / القسم</th>
+                                        <th class="p-3">النوع والموقع</th>
+                                        <th class="p-3 text-center">السعة</th>
+                                        <th class="p-3 text-center">المقيدون</th>
+                                        <th class="p-3 text-center">المقاعد المتاحة</th>
+                                        <th class="p-3 text-center">الحالة</th>
+                                        <th class="p-3 text-left">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y" :class="darkMode ? 'divide-slate-800' : 'divide-[#e8ebf2]'">
-                                    <template x-for="c in (branchDetailsData.branch.classes && branchDetailsData.branch.classes.length ? branchDetailsData.branch.classes : [{name: 'قاعة الإمام مالك', stage: 'السنة الأولى', max_capacity: 35, current_students: 28, available_seats: 7}])">
+                                    <template x-for="c in (branchDetailsData.branch.classes && branchDetailsData.branch.classes.length ? branchDetailsData.branch.classes : [])" :key="c.id || c.name">
+                                        <tr class="hover:bg-[#2b78a5]/5 transition-colors">
+                                            <td class="p-3 font-bold text-slate-800 dark:text-white">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="w-2 h-2 rounded-full" :class="c.status === 'active' || !c.status ? 'bg-emerald-500' : 'bg-amber-500'"></span>
+                                                    <span x-text="c.name"></span>
+                                                </div>
+                                            </td>
+                                            <td class="p-3 text-slate-400" x-text="c.stage || 'عام'"></td>
+                                            <td class="p-3 text-slate-500">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-200 dark:bg-slate-800" x-text="(c.room_type || 'قاعة دراسية') + (c.floor ? ' (' + c.floor + ')' : '')"></span>
+                                            </td>
+                                            <td class="p-3 text-center font-mono font-bold text-slate-700 dark:text-slate-200" x-text="c.max_capacity"></td>
+                                            <td class="p-3 text-center font-mono text-emerald-500 font-bold" x-text="c.current_students || 0"></td>
+                                            <td class="p-3 text-center font-mono text-amber-500 font-bold" x-text="c.available_seats !== undefined ? c.available_seats : (c.max_capacity - (c.current_students || 0))"></td>
+                                            <td class="p-3 text-center">
+                                                <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold"
+                                                      :class="c.status === 'active' || !c.status ? 'bg-emerald-500/15 text-emerald-600' : 'bg-amber-500/15 text-amber-600'"
+                                                      x-text="c.status === 'active' || !c.status ? 'جاهزة' : 'صيانة'">
+                                                </span>
+                                            </td>
+                                            <td class="p-3 text-left">
+                                                <div class="flex items-center justify-end gap-1.5">
+                                                    <button @click="openEditBranchHallModal(c)" class="px-2 py-1 rounded-[6px] bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 font-bold text-[11px]" title="تعديل بيانات القاعة">
+                                                        ✏️
+                                                    </button>
+                                                    <button @click="deleteBranchHall(c)" class="px-2 py-1 rounded-[6px] bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 font-bold text-[11px]" title="حذف القاعة">
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="!branchDetailsData.branch.classes || branchDetailsData.branch.classes.length === 0">
                                         <tr>
-                                            <td class="p-2.5 font-bold" x-text="c.name"></td>
-                                            <td class="p-2.5 text-slate-400" x-text="c.stage"></td>
-                                            <td class="p-2.5 text-center font-mono" x-text="c.max_capacity"></td>
-                                            <td class="p-2.5 text-center font-mono text-emerald-500 font-bold" x-text="c.current_students"></td>
-                                            <td class="p-2.5 text-center font-mono text-amber-500 font-bold" x-text="c.available_seats"></td>
+                                            <td colspan="8" class="p-8 text-center text-slate-400">
+                                                <div>لا توجد قاعات أو فصول مضافة بعد لهذا الفرع.</div>
+                                                <button @click="openNewBranchHallModal(branchDetailsData.branch.id)" class="mt-2 text-xs font-bold text-[#2b78a5] hover:underline">انقر هنا لإضافة أول قاعة دراسية</button>
+                                            </td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -16975,7 +17137,89 @@
                         </div>
                     </div>
 
-                    <!-- 3. المرافق والمباني -->
+                    <!-- 4. معرض صور الفرع والمبنى (Photo Gallery) -->
+                    <div x-show="activeBranchDetailsTab === 'photos'" class="space-y-5">
+                        <!-- نموذج رفع صورة جديدة -->
+                        <div class="p-4 rounded-[16px] border space-y-3" :class="darkMode ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1.5">
+                                    <span>📸 رفع وإضافة صورة جديدة لتوثيق الفرع</span>
+                                </h4>
+                                <span class="text-[10px] text-slate-400">تدعم صيغ JPG, PNG, WEBP حتى 10MB</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                                <div class="sm:col-span-4">
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">اختر ملف الصورة <span class="text-rose-500">*</span></label>
+                                    <input type="file" id="branchPhotoFileInput" accept="image/*"
+                                           class="w-full text-xs p-1.5 rounded-[10px] border outline-none cursor-pointer"
+                                           :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-300 file:bg-slate-800 file:text-slate-200 file:border-0 file:rounded-md file:px-2 file:py-1' : 'bg-white border-[#e8ebf2] text-slate-700 file:bg-slate-100 file:text-slate-700 file:border-0 file:rounded-md file:px-2 file:py-1'">
+                                </div>
+
+                                <div class="sm:col-span-3">
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">تصنيف الصورة</label>
+                                    <select x-model="branchPhotoCategory" class="w-full p-2 rounded-[10px] text-xs font-semibold border outline-none"
+                                            :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
+                                        <option value="exterior">🏢 واجهة المبنى الخارجية</option>
+                                        <option value="classroom">📚 قاعة دراسية / فصل</option>
+                                        <option value="lab">💻 معمل حاسوب / مختبر</option>
+                                        <option value="admin">💼 مكاتب إدارة وكنترول</option>
+                                        <option value="facilities">🕌 مصلى ومرافق عامة</option>
+                                    </select>
+                                </div>
+
+                                <div class="sm:col-span-3">
+                                    <label class="block text-[11px] font-bold text-slate-400 mb-1">الوصف أو العنوان</label>
+                                    <input type="text" x-model="branchPhotoCaption" placeholder="مثال: القاعة الرئيسية رقم 1"
+                                           class="w-full p-2 rounded-[10px] text-xs font-semibold border outline-none"
+                                           :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
+                                </div>
+
+                                <div class="sm:col-span-2">
+                                    <button @click="uploadBranchPhoto()" :disabled="isUploadingBranchPhoto"
+                                            class="w-full py-2 px-3 rounded-[10px] bg-gradient-to-l from-[#2b78a5] to-[#14268d] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-[#2b78a5]/20 hover:opacity-95 transition-all">
+                                        <span x-show="isUploadingBranchPhoto" class="animate-spin">⏳</span>
+                                        <span x-text="isUploadingBranchPhoto ? 'جار الرفع...' : 'رفع الصورة'"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- شبكة صور الفرع الحالية -->
+                        <div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <template x-for="(photo, idx) in (branchDetailsData.branch.photos && branchDetailsData.branch.photos.length ? branchDetailsData.branch.photos : [])" :key="idx">
+                                    <div class="rounded-[16px] border overflow-hidden relative group transition-all hover:shadow-xl hover:-translate-y-1"
+                                         :class="darkMode ? 'bg-slate-800/50 border-slate-700/70' : 'bg-white border-[#e8ebf2]'">
+                                        <div class="h-36 bg-slate-950 overflow-hidden relative">
+                                            <img :src="photo.url" :alt="photo.caption || 'صورة الفرع'" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300">
+                                            <span class="absolute top-2 right-2 px-2 py-0.5 rounded-[6px] bg-slate-950/80 backdrop-blur-md text-[9px] font-bold text-white font-mono" x-text="photo.category || 'صورة'"></span>
+                                            <button @click="deleteBranchPhoto(idx)" class="absolute top-2 left-2 w-6 h-6 rounded-full bg-rose-600/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-500" title="حذف الصورة">
+                                                ✕
+                                            </button>
+                                        </div>
+                                        <div class="p-2.5 space-y-1">
+                                            <div class="font-bold text-[11px] text-slate-800 dark:text-slate-100 truncate" x-text="photo.caption || 'توثيق مقرات المعهد'"></div>
+                                            <div class="text-[9px] text-slate-400 flex items-center justify-between">
+                                                <span x-text="photo.uploaded_at ? photo.uploaded_at.split('T')[0] : 'توثيق رسمي'"></span>
+                                                <a :href="photo.url" target="_blank" class="text-[#2b78a5] dark:text-sky-400 font-bold hover:underline">عرض بالحجم الكامل ↗</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <template x-if="!branchDetailsData.branch.photos || branchDetailsData.branch.photos.length === 0">
+                                <div class="py-12 text-center rounded-[16px] border border-dashed text-slate-400 space-y-2" :class="darkMode ? 'border-slate-800 bg-slate-900/30' : 'border-slate-300 bg-slate-50'">
+                                    <div class="text-3xl">📷</div>
+                                    <div class="font-bold text-xs">لا توجد صور مرفوعة لهذا المقر حالياً.</div>
+                                    <p class="text-[11px] text-slate-500">استخدم النموذج أعلاه لرفع صور الواجهة والقاعات وتجهيزات الفرع.</p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 5. المرافق والمباني -->
                     <div x-show="activeBranchDetailsTab === 'facilities'" class="space-y-3">
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <template x-for="f in (branchDetailsData.branch.facilities && branchDetailsData.branch.facilities.length ? branchDetailsData.branch.facilities : [{facility_type: 'قاعات دراسية', count: 6, condition_status: 'ممتاز'}, {facility_type: 'مكاتب إدارية', count: 3, condition_status: 'جيد'}, {facility_type: 'مصلى المعهد', count: 1, condition_status: 'ممتاز'}, {facility_type: 'مكتبة المعهد', count: 1, condition_status: 'جيد'}, {facility_type: 'دورات مياه', count: 4, condition_status: 'جيد'}])">
@@ -16990,7 +17234,7 @@
                         </div>
                     </div>
 
-                    <!-- 4. سجل التقييمات الميدانية -->
+                    <!-- 6. سجل التقييمات الميدانية -->
                     <div x-show="activeBranchDetailsTab === 'assessments'" class="space-y-3">
                         <div class="flex items-center justify-between">
                             <span class="font-bold text-xs text-slate-700 dark:text-slate-300">التقارير الرقابية والتفتيشية السابقة:</span>
@@ -17026,24 +17270,6 @@
                         </div>
                     </div>
 
-                    <!-- 5. التذاكر والعقود -->
-                    <div x-show="activeBranchDetailsTab === 'tickets'" class="space-y-4">
-                        <div>
-                            <h5 class="font-bold text-xs text-slate-700 dark:text-slate-300 mb-2">تذاكر الصيانة والتشغيل:</h5>
-                            <div class="space-y-1.5">
-                                <template x-for="req in (branchDetailsData.branch.requests && branchDetailsData.branch.requests.length ? branchDetailsData.branch.requests : [{ticket_number: 'REQ-2026-001', title: 'صيانة دورية للمكيفات', category: 'صيانة', status: 'completed'}])">
-                                    <div class="p-2.5 rounded-[10px] border flex items-center justify-between text-xs" :class="darkMode ? 'bg-slate-800/30 border-slate-700' : 'bg-slate-50 border-[#e8ebf2]'">
-                                        <div>
-                                            <span class="font-mono text-[#2b78a5] font-bold" x-text="req.ticket_number"></span>
-                                            <span class="font-semibold text-slate-700 dark:text-slate-200 mr-2" x-text="req.title"></span>
-                                        </div>
-                                        <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold bg-emerald-500/15 text-emerald-500" x-text="req.status"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </template>
 
@@ -17068,118 +17294,313 @@
         </div>
     </div>
 
-    <!-- نافذة إضافة فرع ومقر جديد (New Branch Modal) -->
+    <!-- نافذة إضافة وتعديل الفرع والمقر (Create & Edit Branch Modal) -->
     <div x-show="showNewBranchModal" 
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
          @click.self="showNewBranchModal = false">
-        <div class="w-full max-w-2xl rounded-[20px] border p-6 space-y-5 shadow-2xl text-xs max-h-[92vh] overflow-y-auto"
+        <div class="w-full max-w-3xl rounded-[24px] border p-6 space-y-5 shadow-2xl text-xs max-h-[94vh] overflow-y-auto"
              :class="darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
             
             <div class="flex items-center justify-between pb-4 border-b" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-[12px] bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-900/30">
+                    <div class="w-11 h-11 rounded-[14px] bg-gradient-to-tr from-[#14268d] to-[#2b78a5] text-white flex items-center justify-center font-bold text-lg shadow-md shadow-[#2b78a5]/30">
                         🏛️
                     </div>
                     <div>
-                        <h3 class="font-extrabold text-base text-slate-800 dark:text-white">إضافة مقر فرع جديد للمعهد</h3>
-                        <p class="text-xs text-slate-400">تسجيل وتوثيق مقر فرع جديد مع ربطه بالهيكل الإداري والجغرافي</p>
+                        <h3 class="font-extrabold text-base text-slate-800 dark:text-white" x-text="branchForm.id ? 'تعديل وتحديث بيانات الفرع والمقر' : 'إضافة مقر فرع جديد للمعهد'"></h3>
+                        <p class="text-xs text-slate-400">ضبط البيانات الأساسية، الإدارة، القنوات الاجتماعية، وتحديد الموقع الجغرافي</p>
                     </div>
                 </div>
                 <button @click="showNewBranchModal = false" class="w-7 h-7 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-200">✕</button>
             </div>
 
-            <form @submit.prevent="saveNewBranch()" class="space-y-4">
+            <form @submit.prevent="saveBranch()" class="space-y-5">
+                
+                <!-- القسم 1: البيانات الأساسية والهوية -->
+                <div class="space-y-3">
+                    <div class="font-bold text-xs text-[#2b78a5] dark:text-sky-400 flex items-center gap-2 border-b pb-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                        <span>1. الهوية الرسمية والبيانات الأساسية</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">اسم الفرع الرسمي <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="branchForm.name" required placeholder="مثال: فرع الزاوية المركزي"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">كود / رمز الفرع <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="branchForm.code" required placeholder="مثال: ZAW-01"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">المدينة <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="branchForm.city" required placeholder="مثال: طرابلس، بنغازي، مصراتة"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">المنطقة الجغرافية</label>
+                            <input type="text" x-model="branchForm.region" placeholder="مثال: المنطقة الغربية / الشرقية"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">الحالة التشغيلية</label>
+                            <select x-model="branchForm.branch_status" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                    :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                                <option value="ACTIVE">نشط ويعمل (ACTIVE)</option>
+                                <option value="EQUIPPING">تحت التجهيز (EQUIPPING)</option>
+                                <option value="SUSPENDED">موقوف مؤقتاً (SUSPENDED)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم 2: الإدارة والكوادر -->
+                <div class="space-y-3">
+                    <div class="font-bold text-xs text-[#2b78a5] dark:text-sky-400 flex items-center gap-2 border-b pb-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                        <span>2. إدارة الفرع والكادر الوظيفي</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">المدير المسؤول المكلف</label>
+                            <input type="text" x-model="branchForm.manager_name" placeholder="اسم مدير الفرع"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">هاتف مدير الفرع</label>
+                            <input type="text" x-model="branchForm.manager_phone" placeholder="091xxxxxxx" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">البريد الإلكتروني للإدارة</label>
+                            <input type="email" x-model="branchForm.manager_email" placeholder="manager@iiis.edu.ly" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد الكادر التدريسي والأكاديمي</label>
+                            <input type="number" min="0" x-model="branchForm.academic_staff" placeholder="18"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد الكادر الإداري والفني</label>
+                            <input type="number" min="0" x-model="branchForm.admin_staff" placeholder="6"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">هاتف الاستقبال العام للفرع</label>
+                            <input type="text" x-model="branchForm.phone" placeholder="021-xxxxxxx" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم 3: المقر والموقع الجغرافي -->
+                <div class="space-y-3">
+                    <div class="font-bold text-xs text-[#2b78a5] dark:text-sky-400 flex items-center gap-2 border-b pb-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                        <span>3. بيانات المقر الإنشائية والموقع الجغرافي</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">نوع ملكية المقر</label>
+                            <select x-model="branchForm.building_type" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                    :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                                <option value="owned">مبنى حكومي مملوك للمعهد</option>
+                                <option value="rented">مقر مستأجر بعقد رسمي</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">حالة المبنى الفنية</label>
+                            <select x-model="branchForm.building_condition" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                    :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                                <option value="excellent">ممتاز (جاهزية تامة)</option>
+                                <option value="good">جيد جداً</option>
+                                <option value="needs_maintenance">يحتاج صيانة وترميم</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">خط العرض (Latitude)</label>
+                            <input type="number" step="any" x-model="branchForm.latitude" placeholder="32.8872"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">خط الطول (Longitude)</label>
+                            <input type="number" step="any" x-model="branchForm.longitude" placeholder="13.1913"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div class="md:col-span-4">
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">العنوان التفصيلي للمقر</label>
+                            <input type="text" x-model="branchForm.address" placeholder="الشارع، المعلم الرئيسي، المربع السكني"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- القسم 4: صفحات التواصل والقنوات الرقمية -->
+                <div class="space-y-3">
+                    <div class="font-bold text-xs text-[#2b78a5] dark:text-sky-400 flex items-center gap-2 border-b pb-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                        <span>4. صفحات التواصل الاجتماعي والقنوات الرقمية الرسمية</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">رابط صفحة فيسبوك (Facebook URL)</label>
+                            <input type="url" x-model="branchForm.facebook_url" placeholder="https://facebook.com/iiis.branch" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">رابط قناة تلغرام (Telegram URL)</label>
+                            <input type="url" x-model="branchForm.telegram_url" placeholder="https://t.me/iiis_branch" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">رقم واتساب الرسمي (WhatsApp Number)</label>
+                            <input type="text" x-model="branchForm.whatsapp_number" placeholder="+21891xxxxxxx" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1.5 text-slate-400">الموقع الإلكتروني أو البوابة (Website URL)</label>
+                            <input type="url" x-model="branchForm.website_url" placeholder="https://branch.iiis.edu.ly" dir="ltr"
+                                   class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-[#2b78a5]"
+                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
+                    <button type="button" @click="showNewBranchModal = false" class="px-4 py-2.5 rounded-[12px] text-slate-400 hover:bg-slate-800">إلغاء</button>
+                    <button type="submit" 
+                            class="px-6 py-2.5 rounded-[12px] text-xs font-bold bg-gradient-to-l from-[#2b78a5] to-[#14268d] hover:opacity-95 text-white shadow-md shadow-[#2b78a5]/30 flex items-center gap-2 transition-all"
+                            :disabled="isSavingBranch">
+                        <span x-show="isSavingBranch" class="animate-spin">⏳</span>
+                        <span x-text="isSavingBranch ? 'جارِ الحفظ...' : (branchForm.id ? 'حفظ وتحديث بيانات الفرع' : 'حفظ واعتماد الفرع الجديد')"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة / تعديل قاعة أو فصل أو معمل (Branch Hall/Class Modal) -->
+    <div x-show="showBranchHallModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
+         @click.self="showBranchHallModal = false">
+        <div class="w-full max-w-xl rounded-[24px] border p-6 space-y-5 shadow-2xl text-xs max-h-[92vh] overflow-y-auto"
+             :class="darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'">
+            
+            <div class="flex items-center justify-between pb-4 border-b" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-[12px] bg-[#2b78a5] text-white flex items-center justify-center font-bold text-base shadow-md shadow-[#2b78a5]/30">
+                        📚
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-base text-slate-800 dark:text-white" x-text="branchHallForm.id ? 'تعديل بيانات القاعة / الفصل' : 'إضافة قاعة أو فصل أو معمل جديد'"></h3>
+                        <p class="text-xs text-slate-400">ضبط الطاقة الاستيعابية، النوع، والتجهيزات الفنية للقاعة</p>
+                    </div>
+                </div>
+                <button @click="showBranchHallModal = false" class="w-7 h-7 rounded-[8px] flex items-center justify-center text-slate-400 hover:text-slate-200">✕</button>
+            </div>
+
+            <form @submit.prevent="saveBranchHall()" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">اسم الفرع الرسمي <span class="text-rose-500">*</span></label>
-                        <input type="text" x-model="branchForm.name" required placeholder="مثال: فرع الزاوية المركزي"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">اسم القاعة / الفصل <span class="text-rose-500">*</span></label>
+                        <input type="text" x-model="branchHallForm.name" required placeholder="مثال: قاعة الإمام مالك، معمل الحاسوب 1"
+                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
                                :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">كود / رمز الفرع <span class="text-rose-500">*</span></label>
-                        <input type="text" x-model="branchForm.code" required placeholder="مثال: ZAW-01"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-emerald-500"
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">المرحلة الدراسية أو القسم</label>
+                        <input type="text" x-model="branchHallForm.stage" placeholder="مثال: السنة الأولى / شريعة / عام"
+                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
                                :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">المدينة <span class="text-rose-500">*</span></label>
-                        <input type="text" x-model="branchForm.city" required placeholder="مثال: طرابلس، بنغازي، مصراتة، الزاوية"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">المنطقة الجغرافية</label>
-                        <input type="text" x-model="branchForm.region" placeholder="مثال: المنطقة الغربية / الشرقية / الوسطى / الجنوبية"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">نوع ملكية المقر</label>
-                        <select x-model="branchForm.building_type" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">نوع القاعة / الغرفة</label>
+                        <select x-model="branchHallForm.room_type" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
                                 :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                            <option value="owned">مبنى حكومي مملوك للمعهد</option>
-                            <option value="rented">مقر مستأجر بعقد رسمي</option>
+                            <option value="قاعة دراسية">قاعة دراسية عامة</option>
+                            <option value="مدرج محاضرات">مدرج محاضرات رئيسي</option>
+                            <option value="معمل حاسوب">معمل حاسوب وتقنية</option>
+                            <option value="مختبر علمي">مختبر علمي / لغوي</option>
+                            <option value="ورشة تدريب">ورشة تدريب عملية</option>
+                            <option value="مكتبة وبحث">قاعة مكتبة وبحث</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">حالة الفرع التشغيلية</label>
-                        <select x-model="branchForm.branch_status" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">الطابق / الجناح</label>
+                        <input type="text" x-model="branchHallForm.floor" placeholder="مثال: الطابق الأرضي، الجناح الشرقي"
+                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">السعة الاستيعابية القصوى (مقعد) <span class="text-rose-500">*</span></label>
+                        <input type="number" min="1" x-model="branchHallForm.max_capacity" required placeholder="35"
+                               class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
+                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">حالة القاعة</label>
+                        <select x-model="branchHallForm.status" class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
                                 :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                            <option value="ACTIVE">نشط ويعمل (ACTIVE)</option>
-                            <option value="EQUIPPING">تحت التجهيز (EQUIPPING)</option>
-                            <option value="SUSPENDED">موقوف مؤقتاً (SUSPENDED)</option>
+                            <option value="active">جاهزة وتعمل (نشطة)</option>
+                            <option value="maintenance">تحت الصيانة والترميم</option>
+                            <option value="reserved">محجوزة لفعاليات خاصة</option>
                         </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">المدير المسؤول المكلف</label>
-                        <input type="text" x-model="branchForm.manager_name" placeholder="اسم مدير الفرع"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">هاتف مدير الفرع</label>
-                        <input type="text" x-model="branchForm.manager_phone" placeholder="091xxxxxxx" dir="ltr"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-mono text-right border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">العنوان التفصيلي للمقر</label>
-                        <input type="text" x-model="branchForm.address" placeholder="الشارع، المعلم الرئيسي، المربع السكني"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">خط العرض (Latitude)</label>
-                        <input type="number" step="any" x-model="branchForm.latitude" placeholder="32.8872"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-mono border outline-none focus:border-emerald-500"
-                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">خط الطول (Longitude)</label>
-                        <input type="number" step="any" x-model="branchForm.longitude" placeholder="13.1913"
-                               class="w-full p-2.5 rounded-[12px] text-xs font-mono border outline-none focus:border-emerald-500"
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">التجهيزات والوسائل الفنية</label>
+                        <input type="text" x-model="branchHallForm.equipment" placeholder="مثال: شاشة تفاعلية ذكية، بروجكتر، تكييف مركزي، 30 مقعد خشبي"
+                               class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
                                :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-4 border-t" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
-                    <button type="button" @click="showNewBranchModal = false" class="px-4 py-2 rounded-[12px] text-slate-400 hover:bg-slate-800">إلغاء</button>
+                    <button type="button" @click="showBranchHallModal = false" class="px-4 py-2.5 rounded-[12px] text-slate-400 hover:bg-slate-800">إلغاء</button>
                     <button type="submit" 
-                            class="px-6 py-2.5 rounded-[12px] text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/30 flex items-center gap-2 transition-all"
-                            :disabled="isSavingBranch">
-                        <span x-show="isSavingBranch" class="animate-spin">⏳</span>
-                        <span x-text="isSavingBranch ? 'جارِ الحفظ...' : 'حفظ واعتماد الفرع الجديد'"></span>
+                            class="px-6 py-2.5 rounded-[12px] text-xs font-bold bg-[#2b78a5] hover:bg-[#14268d] text-white shadow-md shadow-[#2b78a5]/30 flex items-center gap-2 transition-all"
+                            :disabled="isSavingBranchHall">
+                        <span x-show="isSavingBranchHall" class="animate-spin">⏳</span>
+                        <span x-text="isSavingBranchHall ? 'جارِ الحفظ...' : (branchHallForm.id ? 'حفظ وتحديث القاعة' : 'إضافة القاعة للفرع')"></span>
                     </button>
                 </div>
             </form>
@@ -19271,8 +19692,14 @@
                 showBranchAssessmentModal: false,
                 showBranchDetailsModal: false,
                 showNewBranchModal: false,
+                showBranchHallModal: false,
                 isSavingBranch: false,
+                isSavingBranchHall: false,
+                isUploadingBranchPhoto: false,
+                branchPhotoCategory: 'exterior',
+                branchPhotoCaption: '',
                 branchForm: {
+                    id: null,
                     name: '',
                     code: '',
                     city: 'طرابلس',
@@ -19281,6 +19708,7 @@
                     gender_type: 'COED',
                     branch_status: 'ACTIVE',
                     building_type: 'owned',
+                    building_condition: 'excellent',
                     manager_name: '',
                     manager_phone: '',
                     manager_email: '',
@@ -19289,6 +19717,26 @@
                     address: '',
                     latitude: 32.8872,
                     longitude: 13.1913,
+                    academic_staff: 18,
+                    admin_staff: 6,
+                    facebook_url: '',
+                    telegram_url: '',
+                    whatsapp_number: '',
+                    website_url: '',
+                    notes: ''
+                },
+                branchHallForm: {
+                    id: null,
+                    branch_id: null,
+                    name: '',
+                    stage: '',
+                    room_type: 'قاعة دراسية',
+                    floor: '',
+                    max_capacity: 35,
+                    current_students: 0,
+                    available_seats: 35,
+                    status: 'active',
+                    equipment: '',
                     notes: ''
                 },
                 activeBranchDetailsTab: 'overview',
@@ -21367,6 +21815,7 @@ async initApp() {
 
                 openNewBranchModal() {
                     this.branchForm = {
+                        id: null,
                         name: '',
                         code: 'BR-' + Math.floor(100 + Math.random() * 900),
                         city: 'طرابلس',
@@ -21375,6 +21824,7 @@ async initApp() {
                         gender_type: 'COED',
                         branch_status: 'ACTIVE',
                         building_type: 'owned',
+                        building_condition: 'excellent',
                         manager_name: '',
                         manager_phone: '',
                         manager_email: '',
@@ -21383,12 +21833,51 @@ async initApp() {
                         address: '',
                         latitude: 32.8872,
                         longitude: 13.1913,
+                        academic_staff: 18,
+                        admin_staff: 6,
+                        facebook_url: '',
+                        telegram_url: '',
+                        whatsapp_number: '',
+                        website_url: '',
                         notes: ''
                     };
                     this.showNewBranchModal = true;
                 },
 
-                async saveNewBranch() {
+                openEditBranchModal(b) {
+                    const branch = b || (this.branchDetailsData && this.branchDetailsData.branch);
+                    if (!branch) return;
+                    this.branchForm = {
+                        id: branch.id,
+                        name: branch.name || '',
+                        code: branch.code || '',
+                        city: branch.city || 'طرابلس',
+                        region: branch.region || 'المنطقة الغربية',
+                        branch_type: branch.branch_type || 'MAIN',
+                        gender_type: branch.gender_type || 'COED',
+                        branch_status: branch.branch_status || 'ACTIVE',
+                        building_type: branch.building_type || 'owned',
+                        building_condition: branch.building_condition || 'excellent',
+                        manager_name: branch.manager_name || '',
+                        manager_phone: branch.manager_phone || '',
+                        manager_email: branch.manager_email || '',
+                        phone: branch.phone || '',
+                        email: branch.email || '',
+                        address: branch.address || '',
+                        latitude: branch.latitude || 32.8872,
+                        longitude: branch.longitude || 13.1913,
+                        academic_staff: branch.academic_staff || 0,
+                        admin_staff: branch.admin_staff || 0,
+                        facebook_url: branch.facebook_url || '',
+                        telegram_url: branch.telegram_url || '',
+                        whatsapp_number: branch.whatsapp_number || '',
+                        website_url: branch.website_url || '',
+                        notes: branch.notes || ''
+                    };
+                    this.showNewBranchModal = true;
+                },
+
+                async saveBranch() {
                     if (!this.branchForm.name || !this.branchForm.code || !this.branchForm.city) {
                         alert('يرجى تعبئة الحقول الإلزامية: اسم الفرع، الرمز، والمدينة.');
                         return;
@@ -21396,8 +21885,12 @@ async initApp() {
                     this.isSavingBranch = true;
                     try {
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                        const res = await fetch('/api/v1/branches', {
-                            method: 'POST',
+                        const isEdit = !!this.branchForm.id;
+                        const url = isEdit ? '/api/v1/branches/' + this.branchForm.id : '/api/v1/branches';
+                        const method = isEdit ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method: method,
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
@@ -21408,8 +21901,11 @@ async initApp() {
                         const data = await res.json();
                         if (res.ok && data.status === 'success') {
                             this.showNewBranchModal = false;
-                            this.showToast('تم إنشاء ملف الفرع بنجاح: ' + data.data.name);
+                            this.showToast(isEdit ? 'تم تحديث بيانات الفرع بنجاح: ' + data.data.name : 'تم إنشاء ملف الفرع بنجاح: ' + data.data.name);
                             await this.loadBranchOperations();
+                            if (this.showBranchDetailsModal && this.branchDetailsData && this.branchDetailsData.branch.id === data.data.id) {
+                                this.openBranchDetails(data.data);
+                            }
                         } else {
                             alert('حدث خطأ: ' + (data.message || 'تعذر حفظ بيانات الفرع'));
                         }
@@ -21418,6 +21914,203 @@ async initApp() {
                         alert('تعذر الاتصال بالخادم لحفظ الفرع');
                     } finally {
                         this.isSavingBranch = false;
+                    }
+                },
+
+                async uploadBranchPhoto() {
+                    const branch = this.branchDetailsData && this.branchDetailsData.branch;
+                    if (!branch) {
+                        alert('يرجى فتح ملف الفرع أولاً.');
+                        return;
+                    }
+                    const fileInput = document.getElementById('branchPhotoFileInput');
+                    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+                        alert('يرجى اختيار ملف الصورة أولاً.');
+                        return;
+                    }
+                    const file = fileInput.files[0];
+                    const formData = new FormData();
+                    formData.append('photo', file);
+                    formData.append('caption', this.branchPhotoCaption || '');
+                    formData.append('category', this.branchPhotoCategory || 'exterior');
+
+                    this.isUploadingBranchPhoto = true;
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/branches/' + branch.id + '/photos', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: formData
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.status === 'success') {
+                            this.showToast('تم رفع وتوثيق صورة الفرع بنجاح.');
+                            this.branchPhotoCaption = '';
+                            fileInput.value = '';
+                            if (this.branchDetailsData && this.branchDetailsData.branch) {
+                                this.branchDetailsData.branch.photos = data.data.photos || [];
+                            }
+                            await this.loadBranchOperations();
+                        } else {
+                            alert('تعذر رفع الصورة: ' + (data.message || 'يرجى مراجعة حجم ونوع الملف'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('تعذر الاتصال بالخادم لرفع الصورة');
+                    } finally {
+                        this.isUploadingBranchPhoto = false;
+                    }
+                },
+
+                async deleteBranchPhoto(photoIndex) {
+                    const branch = this.branchDetailsData && this.branchDetailsData.branch;
+                    if (!branch) return;
+                    if (!confirm('هل أنت متأكد من حذف هذه الصورة من معرض الفرع؟')) return;
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/branches/' + branch.id + '/photos/' + photoIndex, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.status === 'success') {
+                            this.showToast('تم حذف الصورة من المعرض بنجاح.');
+                            if (this.branchDetailsData && this.branchDetailsData.branch) {
+                                this.branchDetailsData.branch.photos = data.data.photos || [];
+                            }
+                            await this.loadBranchOperations();
+                        } else {
+                            alert('تعذر حذف الصورة: ' + (data.message || 'خطأ غير متوقع'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('تعذر الاتصال بالخادم لحذف الصورة');
+                    }
+                },
+
+                openNewBranchHallModal(branchId = null) {
+                    const targetBranchId = branchId || (this.branchDetailsData && this.branchDetailsData.branch && this.branchDetailsData.branch.id);
+                    if (!targetBranchId) {
+                        alert('يرجى اختيار فرع أولاً.');
+                        return;
+                    }
+                    this.branchHallForm = {
+                        id: null,
+                        branch_id: targetBranchId,
+                        name: '',
+                        stage: 'السنة الأولى',
+                        room_type: 'قاعة دراسية',
+                        floor: 'الطابق الأرضي',
+                        max_capacity: 35,
+                        current_students: 0,
+                        available_seats: 35,
+                        status: 'active',
+                        equipment: 'تكييف مركزي، شاشة عرض، مقاعد دراسية',
+                        notes: ''
+                    };
+                    this.showBranchHallModal = true;
+                },
+
+                openEditBranchHallModal(hall) {
+                    if (!hall) return;
+                    const branchId = hall.branch_id || (this.branchDetailsData && this.branchDetailsData.branch && this.branchDetailsData.branch.id);
+                    this.branchHallForm = {
+                        id: hall.id,
+                        branch_id: branchId,
+                        name: hall.name || '',
+                        stage: hall.stage || '',
+                        room_type: hall.room_type || 'قاعة دراسية',
+                        floor: hall.floor || '',
+                        max_capacity: hall.max_capacity || 35,
+                        current_students: hall.current_students || 0,
+                        available_seats: hall.available_seats || (hall.max_capacity - (hall.current_students || 0)),
+                        status: hall.status || 'active',
+                        equipment: Array.isArray(hall.equipment) ? hall.equipment.join('، ') : (hall.equipment || ''),
+                        notes: hall.notes || ''
+                    };
+                    this.showBranchHallModal = true;
+                },
+
+                async saveBranchHall() {
+                    if (!this.branchHallForm.name || !this.branchHallForm.max_capacity) {
+                        alert('يرجى إدخال اسم القاعة/الفصل والسعة الاستيعابية.');
+                        return;
+                    }
+                    const branchId = this.branchHallForm.branch_id || (this.branchDetailsData && this.branchDetailsData.branch && this.branchDetailsData.branch.id);
+                    if (!branchId) {
+                        alert('معرّف الفرع مفقود.');
+                        return;
+                    }
+
+                    this.isSavingBranchHall = true;
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const isEdit = !!this.branchHallForm.id;
+                        const url = isEdit ? '/api/v1/branches/' + branchId + '/classes/' + this.branchHallForm.id : '/api/v1/branches/' + branchId + '/classes';
+                        const method = isEdit ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify(this.branchHallForm)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.status === 'success') {
+                            this.showBranchHallModal = false;
+                            this.showToast(isEdit ? 'تم تحديث بيانات القاعة بنجاح' : 'تمت إضافة القاعة للفرع بنجاح');
+                            if (this.branchDetailsData && this.branchDetailsData.branch) {
+                                await this.openBranchDetails(this.branchDetailsData.branch);
+                            }
+                            await this.loadBranchOperations();
+                        } else {
+                            alert('حدث خطأ: ' + (data.message || 'تعذر حفظ بيانات القاعة'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('تعذر الاتصال بالخادم لحفظ القاعة');
+                    } finally {
+                        this.isSavingBranchHall = false;
+                    }
+                },
+
+                async deleteBranchHall(hall) {
+                    if (!hall || !hall.id) return;
+                    const branchId = hall.branch_id || (this.branchDetailsData && this.branchDetailsData.branch && this.branchDetailsData.branch.id);
+                    if (!confirm('هل أنت متأكد من رغبتك في حذف القاعة «' + hall.name + '»؟')) return;
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/branches/' + branchId + '/classes/' + hall.id, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.status === 'success') {
+                            this.showToast('تم حذف القاعة بنجاح.');
+                            if (this.branchDetailsData && this.branchDetailsData.branch) {
+                                await this.openBranchDetails(this.branchDetailsData.branch);
+                            }
+                            await this.loadBranchOperations();
+                        } else {
+                            alert('تعذر حذف القاعة: ' + (data.message || 'خطأ غير متوقع'));
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('تعذر الاتصال بالخادم لحذف القاعة');
                     }
                 },
 

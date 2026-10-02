@@ -25,10 +25,20 @@ class BatchStudentImportTest extends TestCase
 
     public function test_can_download_sample_csv_template()
     {
-        $admin = User::factory()->create();
-        $response = $this->actingAs($admin)->get('/api/v1/students/sample-template');
+        $response = $this->get('/api/v1/students/sample-template');
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+        $responseCsv = $this->get('/api/v1/students/sample-template-csv');
+        $responseCsv->assertStatus(200);
+        $responseCsv->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    }
+
+    public function test_guest_can_download_sample_xlsx_template()
+    {
+        $response = $this->get('/api/v1/students/sample-template-xlsx');
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     public function test_can_import_students_via_json_batch()

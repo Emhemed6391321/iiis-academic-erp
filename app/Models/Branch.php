@@ -44,6 +44,13 @@ class Branch extends Model
         'operating_date',
         'suspended_at',
         'suspension_reason',
+        'facebook_url',
+        'telegram_url',
+        'whatsapp_number',
+        'website_url',
+        'cover_image',
+        'photos',
+        'social_links',
     ];
 
     protected $casts = [
@@ -54,6 +61,8 @@ class Branch extends Model
         'total_staff' => 'integer',
         'academic_staff' => 'integer',
         'admin_staff' => 'integer',
+        'photos' => 'array',
+        'social_links' => 'array',
     ];
 
     public function users(): HasMany

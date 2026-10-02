@@ -10,6 +10,8 @@ use App\Models\BranchRequest;
 use App\Models\BranchRequestTracking;
 use App\Models\BranchContract;
 use App\Models\BranchAssessment;
+use App\Models\BranchClass;
+use App\Models\BranchFacility;
 use App\Models\Student;
 use App\Models\Course;
 use App\Models\SystemAuditTrail;
@@ -502,6 +504,11 @@ class BranchOperationsController extends Controller
             'branch_type' => 'nullable|string|max:50',
             'gender_type' => 'nullable|string|in:MALES,FEMALES,COED',
             'branch_status' => 'required|in:ACTIVE,EQUIPPING,SUSPENDED,CLOSED,TRANSFERRED,CANCELED',
+            'building_type' => 'nullable|string|max:50',
+            'building_condition' => 'nullable|string|max:50',
+            'total_staff' => 'nullable|integer|min:0',
+            'academic_staff' => 'nullable|integer|min:0',
+            'admin_staff' => 'nullable|integer|min:0',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
@@ -513,6 +520,12 @@ class BranchOperationsController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'notes' => 'nullable|string',
+            'facebook_url' => 'nullable|string|max:255',
+            'telegram_url' => 'nullable|string|max:255',
+            'whatsapp_number' => 'nullable|string|max:50',
+            'website_url' => 'nullable|string|max:255',
+            'cover_image' => 'nullable|string',
+            'social_links' => 'nullable|array',
         ], [
             'name.required' => 'اسم الفرع مطلوب.',
             'code.required' => 'رمز الفرع مطلوب.',
@@ -553,11 +566,17 @@ class BranchOperationsController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:150',
             'short_name' => 'nullable|string|max:50',
+            'code' => 'nullable|string|max:20',
             'city' => 'sometimes|required|string|max:100',
             'region' => 'nullable|string|max:100',
             'branch_type' => 'nullable|string|max:50',
             'gender_type' => 'nullable|string|in:MALES,FEMALES,COED',
             'branch_status' => 'nullable|in:ACTIVE,EQUIPPING,SUSPENDED,CLOSED,TRANSFERRED,CANCELED',
+            'building_type' => 'nullable|string|max:50',
+            'building_condition' => 'nullable|string|max:50',
+            'total_staff' => 'nullable|integer|min:0',
+            'academic_staff' => 'nullable|integer|min:0',
+            'admin_staff' => 'nullable|integer|min:0',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
@@ -569,6 +588,12 @@ class BranchOperationsController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'notes' => 'nullable|string',
+            'facebook_url' => 'nullable|string|max:255',
+            'telegram_url' => 'nullable|string|max:255',
+            'whatsapp_number' => 'nullable|string|max:50',
+            'website_url' => 'nullable|string|max:255',
+            'cover_image' => 'nullable|string',
+            'social_links' => 'nullable|array',
         ]);
 
         if (isset($validated['branch_status'])) {
@@ -591,8 +616,217 @@ class BranchOperationsController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'تم تحديث بيانات الفرع بنجاح.',
-            'data' => $branch->fresh(),
+            'message' => 'تم تحديث كافة بيانات الفرع وقنوات التواصل بنجاح.',
+            'data' => $branch->fresh()->load(['classes', 'facilities', 'assessments']),
+        ]);
+    }
+
+    /**
+     * Upload a photo for the Branch photo gallery
+     */
+    public function uploadBranchPhoto(Request $request, int $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+
+        $request->validate([
+            'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'caption' => 'nullable|string|max:150',
+            'category' => 'nullable|string|max:50',
+        ], [
+            'photo.required' => 'يرجى اختيار صورة للرفع.',
+            'photo.image' => 'الملف المحدد يجب أن يكون صورة صالحة.',
+            'photo.max' => 'حجم الصورة لا يجب أن يتجاوز 5 ميجابايت.',
+        ]);
+
+        $file = $request->file('photo');
+        $filename = 'branch_' . $id . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs('branches/' . $id, $filename, 'public');
+        $url = '/storage/' . $path;
+
+        $photos = $branch->photos ?: [];
+        $newPhoto = [
+            'url' => $url,
+            'caption' => $request->input('caption', 'صورة من مرافق الفرع'),
+            'category' => $request->input('category', 'general'),
+            'uploaded_at' => now()->toDateTimeString(),
+        ];
+        $photos[] = $newPhoto;
+
+        // If cover_image is empty, set this as cover image
+        $updateData = ['photos' => $photos];
+        if (empty($branch->cover_image)) {
+            $updateData['cover_image'] = $url;
+        }
+        $branch->update($updateData);
+
+        SystemAuditTrail::log(
+            'BRANCH_PHOTO_UPLOADED',
+            "إضافة صورة جديدة لمعرض الفرع «{$branch->name}»: " . ($newPhoto['caption'] ?: 'صورة فرع'),
+            $newPhoto,
+            Auth::id(),
+            $branch->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم رفع الصورة وإضافتها إلى معرض صور الفرع بنجاح.',
+            'photo' => $newPhoto,
+            'photos' => $branch->fresh()->photos,
+            'branch' => $branch->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete a photo from Branch Gallery
+     */
+    public function deleteBranchPhoto(Request $request, int $id, int $photoIndex): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $photos = $branch->photos ?: [];
+
+        if (!isset($photos[$photoIndex])) {
+            return response()->json(['status' => 'error', 'message' => 'الصورة غير موجودة'], 404);
+        }
+
+        $deletedPhoto = $photos[$photoIndex];
+        array_splice($photos, $photoIndex, 1);
+        $branch->update(['photos' => array_values($photos)]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم حذف الصورة من المعرض بنجاح.',
+            'photos' => $branch->fresh()->photos,
+        ]);
+    }
+
+    /**
+     * Create Classroom / Hall for Branch
+     */
+    public function storeBranchClass(Request $request, int $id): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+
+        $input = $request->all();
+        if (isset($input['equipment']) && is_string($input['equipment'])) {
+            $items = array_map('trim', explode('،', str_replace(',', '،', $input['equipment'])));
+            $input['equipment'] = array_values(array_filter($items));
+            $request->merge(['equipment' => $input['equipment']]);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'academic_year' => 'nullable|string|max:50',
+            'stage' => 'required|string|max:100',
+            'room_type' => 'nullable|string|max:50',
+            'floor' => 'nullable|string|max:50',
+            'max_capacity' => 'required|integer|min:1|max:500',
+            'current_students' => 'nullable|integer|min:0',
+            'status' => 'nullable|string|max:20',
+            'equipment' => 'nullable|array',
+            'notes' => 'nullable|string',
+        ], [
+            'name.required' => 'اسم القاعة أو الفصل مطلوب.',
+            'stage.required' => 'المرحلة أو الدفعة الدراسية مطلوبة.',
+            'max_capacity.required' => 'السعة الاستيعابية القصوى مطلوبة.',
+        ]);
+
+        $validated['branch_id'] = $branch->id;
+        $validated['academic_year'] = (!empty($validated['academic_year'])) ? $validated['academic_year'] : '2026-2027';
+        $validated['room_type'] = (!empty($validated['room_type'])) ? $validated['room_type'] : 'CLASSROOM';
+        $validated['current_students'] = $validated['current_students'] ?? 0;
+        $validated['available_seats'] = max(0, $validated['max_capacity'] - $validated['current_students']);
+        $validated['status'] = (!empty($validated['status'])) ? $validated['status'] : 'active';
+
+        $branchClass = BranchClass::create($validated);
+
+        SystemAuditTrail::log(
+            'BRANCH_CLASS_CREATED',
+            "إضافة قاعة/فصل جديد «{$branchClass->name}» لفرع «{$branch->name}» بسعة {$branchClass->max_capacity} مقعداً",
+            $branchClass->toArray(),
+            Auth::id(),
+            $branch->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم إضافة القاعة / الفصل بنجاح إلى الفرع.',
+            'data' => $branchClass,
+        ], 201);
+    }
+
+    /**
+     * Update Classroom / Hall for Branch
+     */
+    public function updateBranchClass(Request $request, int $id, int $classId): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $branchClass = BranchClass::where('branch_id', $branch->id)->findOrFail($classId);
+
+        $input = $request->all();
+        if (isset($input['equipment']) && is_string($input['equipment'])) {
+            $items = array_map('trim', explode('،', str_replace(',', '،', $input['equipment'])));
+            $input['equipment'] = array_values(array_filter($items));
+            $request->merge(['equipment' => $input['equipment']]);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:100',
+            'academic_year' => 'nullable|string|max:50',
+            'stage' => 'sometimes|required|string|max:100',
+            'room_type' => 'nullable|string|max:50',
+            'floor' => 'nullable|string|max:50',
+            'max_capacity' => 'sometimes|required|integer|min:1|max:500',
+            'current_students' => 'nullable|integer|min:0',
+            'status' => 'nullable|string|max:20',
+            'equipment' => 'nullable|array',
+            'notes' => 'nullable|string',
+        ]);
+
+        if (isset($validated['max_capacity']) || isset($validated['current_students'])) {
+            $cap = $validated['max_capacity'] ?? $branchClass->max_capacity;
+            $cur = $validated['current_students'] ?? $branchClass->current_students;
+            $validated['available_seats'] = max(0, $cap - $cur);
+        }
+
+        $branchClass->update($validated);
+
+        SystemAuditTrail::log(
+            'BRANCH_CLASS_UPDATED',
+            "تحديث بيانات القاعة «{$branchClass->name}» بفرع «{$branch->name}»",
+            $branchClass->fresh()->toArray(),
+            Auth::id(),
+            $branch->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم تحديث بيانات القاعة / الفصل بنجاح.',
+            'data' => $branchClass->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete Classroom / Hall for Branch
+     */
+    public function deleteBranchClass(Request $request, int $id, int $classId): JsonResponse
+    {
+        $branch = Branch::findOrFail($id);
+        $branchClass = BranchClass::where('branch_id', $branch->id)->findOrFail($classId);
+
+        $className = $branchClass->name;
+        $branchClass->delete();
+
+        SystemAuditTrail::log(
+            'BRANCH_CLASS_DELETED',
+            "حذف القاعة/الفصل «{$className}» من فرع «{$branch->name}»",
+            ['branch_id' => $branch->id, 'class_id' => $classId],
+            Auth::id(),
+            $branch->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم حذف القاعة من سجلات الفرع بنجاح.',
         ]);
     }
 

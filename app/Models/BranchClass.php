@@ -16,10 +16,25 @@ class BranchClass extends Model
         'name',
         'academic_year',
         'stage',
+        'room_type',
+        'floor',
         'max_capacity',
         'current_students',
         'available_seats',
         'status',
+        'equipment',
         'notes',
     ];
+
+    protected $casts = [
+        'max_capacity' => 'integer',
+        'current_students' => 'integer',
+        'available_seats' => 'integer',
+        'equipment' => 'array',
+    ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 }
