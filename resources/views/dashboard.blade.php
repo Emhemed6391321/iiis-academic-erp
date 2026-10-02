@@ -338,7 +338,7 @@
                     </svg>
                 </button>
 
-                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" @click="navigateTo('dashboard')">
+                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer" @click="currentSection = 'dashboard'">
                     <div class="w-10 h-10 rounded-[12px] flex items-center justify-center font-extrabold text-white text-xl shadow-md bg-white border border-slate-200 dark:border-slate-700 shadow-blue-900/20 overflow-hidden p-0.5">
                         <img :src="adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
                              class="w-full h-full object-contain rounded-[10px]" 
@@ -623,7 +623,7 @@
                         <span>الرئيسية</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="navigateTo('dashboard')"
+                        <button @click="currentSection = 'dashboard'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'dashboard' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="لوحة المؤشرات">
@@ -640,7 +640,7 @@
                         <span>التعليم والطلاب</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="navigateTo('students')"
+                        <button @click="currentSection = 'students'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'students' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="سجل الطلاب">
@@ -658,7 +658,7 @@
                         </button>
 
                         <!-- زر ملف الطالب — يظهر عند تحديد طالب -->
-                        <button @click="navigateTo('student_file')"
+                        <button @click="currentSection = 'student_file'"
                                 x-show="studentFile.student !== null"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative"
                                 :class="currentSection === 'student_file' ? (darkMode ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' : 'bg-amber-600 text-white shadow-md') : (darkMode ? 'hover:bg-amber-900/30 text-amber-300 border border-amber-700/40' : 'hover:bg-amber-50 text-amber-700 border border-amber-200')"
@@ -769,7 +769,7 @@
                         <span>إدارة الفروع</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="navigateTo('branches_directory')"
+                        <button @click="currentSection = 'branches_directory'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branches_directory' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="دليل الفروع">
@@ -784,7 +784,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate font-black">➕ إضافة مقر جديد</span>
                         </button>
 
-                        <button @click="navigateTo('branch_requests')"
+                        <button @click="currentSection = 'branch_requests'"
                                 class="w-full flex items-center justify-between px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branch_requests' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="طلبات الصيانة">
@@ -797,7 +797,7 @@
                                   x-text="branchOverview.pending_requests"></span>
                         </button>
 
-                        <button @click="navigateTo('branch_contracts')"
+                        <button @click="currentSection = 'branch_contracts'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'branch_contracts' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="عقود المقرات">
@@ -813,7 +813,7 @@
                         <span>الإدارة والنظام</span>
                     </div>
                     <div class="space-y-1">
-                        <button @click="navigateTo('users')"
+                        <button @click="currentSection = 'users'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'users' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="المستخدمين">
@@ -821,7 +821,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">المستخدمين</span>
                         </button>
 
-                        <button @click="navigateTo('matrix')"
+                        <button @click="currentSection = 'matrix'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'matrix' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="الصلاحيات">
@@ -829,7 +829,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">مصفوفة الصلاحيات</span>
                         </button>
 
-                        <button @click="navigateTo('audit')"
+                        <button @click="currentSection = 'audit'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'audit' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="سجل التدقيق">
@@ -837,7 +837,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">سجل التدقيق</span>
                         </button>
 
-                        <button @click="navigateTo('themes')"
+                        <button @click="currentSection = 'themes'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'themes' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="المظهر والخطوط">
@@ -845,7 +845,7 @@
                             <span x-show="!sidebarCollapsed" class="truncate">المظهر والخطوط</span>
                         </button>
 
-                        <button @click="navigateTo('profile')"
+                        <button @click="currentSection = 'profile'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all"
                                 :class="currentSection === 'profile' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="الملف الشخصي">
@@ -898,7 +898,7 @@
                     </div>
                     <div class="space-y-1">
                         <!-- دليل الإجراءات -->
-                        <button @click="navigateTo('procedures')"
+                        <button @click="currentSection = 'procedures'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
                                 :class="currentSection === 'procedures' ? (darkMode ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-lg shadow-teal-950/40' : 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="دليل الإجراءات الموحد للأنظمة">
@@ -912,7 +912,7 @@
                         </button>
 
                         <!-- التحديثات -->
-                        <button @click="navigateTo('updates')"
+                        <button @click="currentSection = 'updates'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
                                 :class="currentSection === 'updates' ? (darkMode ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-lg shadow-sky-950/40' : 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-md shadow-sky-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="تحديثات النظام وسجل الإصدارات">
@@ -926,7 +926,7 @@
                         </button>
 
                         <!-- بلاغات الأخطاء -->
-                        <button @click="navigateTo('bug-reports')"
+                        <button @click="currentSection = 'bug-reports'"
                                 class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-[12px] text-xs font-bold transition-all relative group"
                                 :class="currentSection === 'bug-reports' ? (darkMode ? 'bg-gradient-to-r from-rose-600 to-pink-700 text-white shadow-lg shadow-rose-950/40' : 'bg-gradient-to-r from-rose-600 to-pink-700 text-white shadow-md shadow-rose-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
                                 title="بلاغات الأخطاء وإدارة المشكلات">
@@ -18299,9 +18299,6 @@
                 sidebarCollapsed: false,
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
                 bugReportsNavBadge: 0,
-                navigationCount: 0,
-                showTransitionGif: false,
-                pendingSection: null,
                 selectedCourseId: {{ $initialCourseId ?? 1 }},
                 settingsTab: '{{ $initialSettingsTab ?? "years" }}',
                 selectedAcademicYearId: '{{ $currentAcademicYear ? $currentAcademicYear->id : 1 }}',
@@ -18319,31 +18316,6 @@
 
                 showComingSoonModal: false,
                 comingSoonTitle: 'قسم الدراسة والامتحانات',
-                // ─── Navigation with GIF Transition ───────────────────────────────
-                navigateTo(section) {
-                    if (section === this.currentSection) return;
-                    this.navigationCount++;
-                    if (this.navigationCount % 5 === 0) {
-                        this.pendingSection = section;
-                        this.showTransitionGif = true;
-                        this.$nextTick(() => {
-                            const gif = document.getElementById('section-transition-gif');
-                            if (gif) {
-                                const src = gif.src;
-                                gif.src = '';
-                                gif.src = src;
-                            }
-                        });
-                        setTimeout(() => {
-                            this.currentSection = this.pendingSection;
-                            this.pendingSection = null;
-                            setTimeout(() => { this.showTransitionGif = false; }, 400);
-                        }, 1800);
-                    } else {
-                        this.currentSection = section;
-                    }
-                },
-
                 openComingSoon(title) {
                     this.comingSoonTitle = title || 'قسم الدراسة والامتحانات';
                     this.showComingSoonModal = true;
@@ -25251,37 +25223,6 @@ async loadBranchOperations() {
         </div>
     </div>
 
-
-    <!-- ============================================================ -->
-    <!-- Section Transition GIF Overlay (fires every 5th navigation)  -->
-    <!-- ============================================================ -->
-    <div x-show="showTransitionGif"
-         x-cloak
-         id="section-transition-overlay"
-         class="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-400"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0">
-        <!-- Dark backdrop with blur -->
-        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
-        <!-- GIF container -->
-        <div class="relative z-10 flex flex-col items-center gap-6">
-            <img id="section-transition-gif"
-                 src="/images/transition.gif"
-                 alt="جاري الانتقال..."
-                 class="w-72 h-72 object-contain drop-shadow-2xl"
-                 style="image-rendering: auto;">
-            <!-- Subtle loading label -->
-            <div class="flex items-center gap-2 opacity-60">
-                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:0ms"></div>
-                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:150ms"></div>
-                <div class="w-1.5 h-1.5 rounded-full bg-white animate-bounce" style="animation-delay:300ms"></div>
-            </div>
-        </div>
-    </div>
 
 </body>
 </html>
