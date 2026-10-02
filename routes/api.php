@@ -24,6 +24,12 @@ Route::prefix('v1')->middleware('throttle:30,1')->group(function () {
 
     // استقبال أخطاء الواجهة الأمامية (يُسمح دون مصادقة لضمان التسجيل دائماً)
     Route::post('/system-errors/report-js', [\App\Http\Controllers\Api\SystemErrorMonitoringController::class, 'reportJs']);
+
+    // نماذج استيراد البيانات القياسية المعتمدة (قوالب إكسل و CSV عامة لا تحتوي بيانات خاصة)
+    Route::get('/branches/sample-template-xlsx', [BranchOperationsController::class, 'downloadBranchesSampleXlsx']);
+    Route::get('/students/sample-template', [StudentController::class, 'downloadSampleTemplate']);
+    Route::get('/students/sample-template-xlsx', [StudentController::class, 'downloadSampleXlsx']);
+    Route::get('/students/sample-template-csv', [StudentController::class, 'downloadSampleCsv']);
 });
 
 // ============================================================

@@ -857,7 +857,6 @@ class StudentController extends Controller
             echo (string) $xlsx;
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 
@@ -866,10 +865,7 @@ class StudentController extends Controller
      */
     public function downloadSampleCsv()
     {
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="استمارة_القبول_الموحدة_نموذج_الاستيراد.csv"',
-        ];
+        $filename = 'استمارة_القبول_الموحدة_نموذج_الاستيراد.csv';
 
         $columns = [
             'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اللقب',
@@ -906,7 +902,9 @@ class StudentController extends Controller
             fclose($file);
         };
 
-        return response()->stream($callback, 200, $headers);
+        return response()->streamDownload($callback, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     private function getStudentHeaderMap(): array

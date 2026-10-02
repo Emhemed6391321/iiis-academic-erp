@@ -768,7 +768,6 @@ class BranchOperationsController extends Controller
             echo (string) $xlsx;
         }, $filename, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 

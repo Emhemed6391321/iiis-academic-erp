@@ -876,21 +876,6 @@
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             <span x-show="!sidebarCollapsed" class="truncate">الإعدادات والتقويم</span>
                         </button>
-
-                        <button @click="currentSection = 'error_monitoring'; loadSystemErrorLogs()"
-                                class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2.5 rounded-[12px] text-xs font-bold transition-all relative group"
-                                :class="currentSection === 'error_monitoring' ? 'bg-gradient-to-r from-rose-600 via-rose-700 to-rose-900 text-white shadow-lg shadow-rose-950/40' : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700')"
-                                title="مراقبة أخطاء النظام المركزية">
-                            <span class="p-1.5 rounded-lg transition-colors" :class="currentSection === 'error_monitoring' ? 'bg-white/20 text-white' : (darkMode ? 'bg-slate-800 text-rose-400' : 'bg-rose-50 text-rose-600')">
-                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </span>
-                            <span x-show="!sidebarCollapsed" class="truncate font-black">مراقبة الأخطاء</span>
-                            <span x-show="!sidebarCollapsed && errorMonitoring.kpis && errorMonitoring.kpis.unresolved_count > 0"
-                                  class="mr-auto px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                  x-text="errorMonitoring.kpis.unresolved_count"></span>
-                        </button>
                     </div>
                 </div>
 
@@ -15629,31 +15614,6 @@
                             ],
                             outputs: ['نوافذ زمنية منضبطة برمجياً لمنع استلام الطلبات المتأخرة'],
                             governance: 'يقفل النظام استلام أي طلبات تلقائياً بمجرد حلول الساعة 23:59 من تاريخ الإغلاق المحدد.'
-                        },
-                        {
-                            code: 'SOP-ERR-01',
-                            system: 'monitoring',
-                            systemName: 'مراقبة العمليات وصحة النظام',
-                            title: 'مراقبة سجلات أخطاء النظام ومعالجة البلاغات التقنية الفورية',
-                            badge: 'تشغيلي حرج',
-                            badgeColor: 'rose',
-                            role: 'مهندس النظم والعمليات (DevOps / IT Admin)',
-                            targetSection: 'error_monitoring',
-                            targetAction: 'loadSystemErrorLogs()',
-                            targetLabel: 'الانتقال لمركز مراقبة أخطاء النظام ↗',
-                            objective: 'الكشف الفوري عن أي استثناءات برمجية أو انقطاعات في قواعد البيانات والخدمات، وحلها وتوثيق إغلاقها.',
-                            prerequisites: [
-                                'صلاحيات إدارة البنية التحتية والأنظمة'
-                            ],
-                            steps: [
-                                'الانتقال لقسم (مراقبة الأخطاء) من القائمة الجانبية.',
-                                'استعراض المؤشرات الحية: (إجمالي الأخطاء، غير المحلولة، الحالات الحرجة).',
-                                'النقر على الخطأ لمعاينة تتبع المكدس (Stack Trace)، كود الخطأ، المسار، ومستخدم الجلسة.',
-                                'اتخاذ الإجراء التصحيحي البرمجي أو في الخادم.',
-                                'تحديث حالة الخطأ إلى (تم الحل / Resolved) مع تدوين ملاحظات المعالجة الفنية.'
-                            ],
-                            outputs: ['سجل أعطال معالجة ومؤشرات استقرار بنسبة 99.98%'],
-                            governance: 'يتم إشعار فريق الدعم الفني فور تسجيل أي خطأ من الدرجة الحرجة (Critical Error).'
                         }
                     ],
                     get filteredProcedures() {
