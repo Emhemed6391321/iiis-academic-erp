@@ -715,6 +715,373 @@ class BranchOperationsController extends Controller
         ]);
     }
 
+    /**
+     * Download sample Excel template for bulk Branch Directory Import.
+     */
+    public function downloadBranchesSampleXlsx(Request $request)
+    {
+        $headers = [
+            'رمز الفرع', 'اسم الفرع', 'الاسم المختصر', 'المدينة', 'المنطقة',
+            'نوع الفرع (رئيسي/فرعي)', 'نوع المقر (ملك للدولة/مستأجر)', 'حالة الفرع',
+            'اسم المدير', 'هاتف المدير', 'هاتف الفرع', 'البريد الإلكتروني',
+            'خط العرض (Latitude)', 'خط الطول (Longitude)', 'الملاحظات'
+        ];
+
+        $sampleRows = [
+            $headers,
+            [
+                'TIP-01', 'فرع طرابلس المركزي', 'طرابلس', 'طرابلس', 'المنطقة الغربية',
+                'رئيسي', 'ملك للدولة', 'ACTIVE',
+                'د. سالم عبد الله المحجوب', '091-2345678', '021-3344556', 'tripoli@iiis.edu.ly',
+                32.8872, 13.1913, 'المقر الإداري والأكاديمي الرئيسي'
+            ],
+            [
+                'BEN-02', 'فرع بنغازي التعليمي', 'بنغازي', 'بنغازي', 'المنطقة الشرقية',
+                'فرعي', 'ملك للدولة', 'ACTIVE',
+                'أ. عثمان محمود البرغثي', '092-3456789', '061-2233445', 'benghazi@iiis.edu.ly',
+                32.1167, 20.0667, 'مقر الفرع الإقليمي لشرق ليبيا'
+            ],
+            [
+                'MIS-03', 'فرع مصراتة التعليمي', 'مصراتة', 'مصراتة', 'المنطقة الوسطى',
+                'فرعي', 'مستأجر', 'ACTIVE',
+                'أ. طارق عبد السلام الفيتوري', '091-8765432', '051-6677889', 'misrata@iiis.edu.ly',
+                32.3754, 15.0925, 'فرع مخصص لخدمة المنطقة الوسطى'
+            ],
+            [
+                'ZAW-04', 'فرع الزاوية التعليمي', 'الزاوية', 'الزاوية', 'المنطقة الغربية',
+                'فرعي', 'مستأجر', 'ACTIVE',
+                'د. فتحي محمد القمودي', '092-9988776', '023-4455667', 'zawiya@iiis.edu.ly',
+                32.7522, 12.7278, 'فرع غرب طرابلس'
+            ],
+            [
+                'SEB-05', 'فرع سبها والجنوب', 'سبها', 'سبها', 'المنطقة الجنوبية',
+                'فرعي', 'ملك للدولة', 'ACTIVE',
+                'الشيخ عبد القادر محمد', '091-5544332', '071-2621122', 'sebha@iiis.edu.ly',
+                27.0377, 14.4283, 'فرع فزان والجنوب الليبي الكبير'
+            ],
+        ];
+
+        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
+        $filename = 'دليل_الفروع_والمقرات_نموذج_الاستيراد.xlsx';
+
+        return response()->streamDownload(function () use ($xlsx) {
+            echo (string) $xlsx;
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    /**
+     * Import multiple Branches from Excel (.xlsx/.xls) or CSV or JSON array.
+     */
+    public function importBranchesExcel(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        if ($user && !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح: استيراد الفروع والمقرات محصور بصلاحيات الإدارة العامة فقط.',
+            ], 403);
+        }
+
+        $rows = [];
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $path = $file->getRealPath();
+            $ext = strtolower($file->getClientOriginalExtension());
+
+            if ($ext === 'xlsx' || $ext === 'xls') {
+                if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                    $sheetRows = $xlsx->rows();
+                    if (count($sheetRows) < 2) {
+                        return response()->json([
+                            'status' => 'error',
+                            'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
+                        ], 422);
+                    }
+                    $headers = array_shift($sheetRows);
+                    $headers = array_map(function ($h) {
+                        return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', (string)$h)));
+                    }, $headers);
+
+                    $headerMap = $this->getBranchHeaderMap();
+
+                    foreach ($sheetRows as $lineIndex => $rowValues) {
+                        if (empty(array_filter($rowValues, fn($v) => trim((string)$v) !== ''))) {
+                            continue;
+                        }
+                        $rowData = [];
+                        foreach ($headers as $idx => $headerName) {
+                            $key = $headerMap[$headerName] ?? $headerName;
+                            $rowData[$key] = trim((string)($rowValues[$idx] ?? ''));
+                        }
+                        $rowData['_row_number'] = $lineIndex + 2;
+                        $rows[] = $rowData;
+                    }
+                } else {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'تعذر قراءة ملف Excel: ' . \Shuchkin\SimpleXLSX::parseError(),
+                    ], 422);
+                }
+            } else {
+                // CSV fallback
+                $content = file_get_contents($path);
+                $bom = pack('H*', 'EFBBBF');
+                $content = preg_replace("/^$bom/", '', $content);
+                $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $content));
+                $lines = array_filter(array_map('trim', $lines));
+
+                if (count($lines) < 2) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'ملف CSV فارغ أو لا يحتوي على صفوف بيانات.',
+                    ], 422);
+                }
+
+                $delimiter = str_contains($lines[0], ';') ? ';' : (str_contains($lines[0], "\t") ? "\t" : ',');
+                $headers = str_getcsv(array_shift($lines), $delimiter);
+                $headers = array_map(function ($h) {
+                    return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $h)));
+                }, $headers);
+                $headerMap = $this->getBranchHeaderMap();
+
+                foreach ($lines as $lineIndex => $line) {
+                    if (empty(trim($line))) continue;
+                    $rowValues = str_getcsv($line, $delimiter);
+                    $rowData = [];
+                    foreach ($headers as $idx => $headerName) {
+                        $key = $headerMap[$headerName] ?? $headerName;
+                        $rowData[$key] = trim($rowValues[$idx] ?? '');
+                    }
+                    $rowData['_row_number'] = $lineIndex + 2;
+                    $rows[] = $rowData;
+                }
+            }
+        } elseif ($request->has('branches') && is_array($request->branches)) {
+            $rows = $request->branches;
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'يرجى إرفاق ملف Excel (.xlsx) أو CSV يحتوي على بيانات الفروع.',
+            ], 422);
+        }
+
+        if (empty($rows)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'لم يتم العثور على أي صفوف صالحة للمعالجة.',
+            ], 422);
+        }
+
+        $imported = [];
+        $updated = [];
+        $errors = [];
+
+        foreach ($rows as $index => $row) {
+            $rowNum = $row['_row_number'] ?? ($index + 1);
+            $name = trim($row['name'] ?? $row['branch_name'] ?? '');
+            $code = strtoupper(trim($row['code'] ?? $row['branch_code'] ?? ''));
+            $city = trim($row['city'] ?? '');
+            $region = trim($row['region'] ?? '');
+            $managerName = trim($row['manager_name'] ?? '');
+            $managerPhone = trim($row['manager_phone'] ?? '');
+            $phone = trim($row['phone'] ?? '');
+            $email = trim($row['email'] ?? '');
+            $notes = trim($row['notes'] ?? '');
+
+            if (empty($name)) {
+                $errors[] = [
+                    'row' => $rowNum,
+                    'code' => $code,
+                    'error' => 'اسم الفرع حقل إلزامي لا يمكن تركه فارغاً.',
+                ];
+                continue;
+            }
+
+            if (empty($city)) {
+                $city = $this->detectLibyanCity($name) ?: 'طرابلس';
+            }
+
+            if (empty($code)) {
+                $code = 'BR-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $city), 0, 3) ?: 'GEN') . '-' . str_pad((string)(Branch::count() + 1), 2, '0', STR_PAD_LEFT);
+            }
+
+            // Clean building type
+            $rawBType = mb_strtolower(trim($row['building_type'] ?? 'state'));
+            if (str_contains($rawBType, 'مستأجر') || str_contains($rawBType, 'rented') || str_contains($rawBType, 'ايجار')) {
+                $buildingType = 'rented';
+            } elseif (str_contains($rawBType, 'ملك') || str_contains($rawBType, 'دولة') || str_contains($rawBType, 'owned') || str_contains($rawBType, 'state')) {
+                $buildingType = 'state';
+            } else {
+                $buildingType = 'state';
+            }
+
+            // Clean branch status
+            $rawStatus = strtoupper(trim($row['branch_status'] ?? 'ACTIVE'));
+            if (in_array($rawStatus, ['ACTIVE', 'نشط', 'مفعل', 'مفتوح'])) {
+                $branchStatus = 'ACTIVE';
+            } elseif (in_array($rawStatus, ['EQUIPPING', 'قيد التجهيز', 'تجهيز'])) {
+                $branchStatus = 'EQUIPPING';
+            } elseif (in_array($rawStatus, ['SUSPENDED', 'موقوف', 'معلق'])) {
+                $branchStatus = 'SUSPENDED';
+            } elseif (in_array($rawStatus, ['CLOSED', 'مغلق', 'مقفل'])) {
+                $branchStatus = 'CLOSED';
+            } else {
+                $branchStatus = 'ACTIVE';
+            }
+
+            $lat = !empty($row['latitude']) && is_numeric($row['latitude']) ? floatval($row['latitude']) : null;
+            $lng = !empty($row['longitude']) && is_numeric($row['longitude']) ? floatval($row['longitude']) : null;
+            $geoLocation = ($lat && $lng) ? "{$lat}, {$lng}" : null;
+
+            try {
+                $existing = Branch::where('code', $code)->orWhere('name', $name)->first();
+
+                $branchData = [
+                    'name' => $name,
+                    'short_name' => trim($row['short_name'] ?? mb_substr($name, 0, 20)),
+                    'code' => $code,
+                    'city' => $city,
+                    'region' => $region ?: $this->detectLibyanRegion($city),
+                    'branch_type' => trim($row['branch_type'] ?? 'فرعي'),
+                    'building_type' => $buildingType,
+                    'branch_status' => $branchStatus,
+                    'is_active' => $branchStatus === 'ACTIVE',
+                    'manager_name' => $managerName ?: ($existing?->manager_name ?? '—'),
+                    'manager_phone' => $managerPhone ?: ($existing?->manager_phone ?? ''),
+                    'phone' => $phone ?: ($existing?->phone ?? ''),
+                    'email' => $email ?: ($existing?->email ?? ''),
+                    'latitude' => $lat ?: $existing?->latitude,
+                    'longitude' => $lng ?: $existing?->longitude,
+                    'geo_location' => $geoLocation ?: $existing?->geo_location,
+                    'notes' => $notes ?: ($existing?->notes ?? 'تم الاستيراد والتحديث عبر ملف إكسل'),
+                ];
+
+                if ($existing) {
+                    $existing->update($branchData);
+                    $updated[] = [
+                        'id' => $existing->id,
+                        'name' => $existing->name,
+                        'code' => $existing->code,
+                        'city' => $existing->city,
+                    ];
+                } else {
+                    $newBranch = Branch::create($branchData);
+                    $imported[] = [
+                        'id' => $newBranch->id,
+                        'name' => $newBranch->name,
+                        'code' => $newBranch->code,
+                        'city' => $newBranch->city,
+                    ];
+
+                    SystemAuditTrail::log(
+                        'BRANCH_CREATED',
+                        "إنشاء فرع جديد عبر استيراد إكسل: «{$newBranch->name}» (رمز: {$newBranch->code})",
+                        $newBranch->toArray(),
+                        $user?->id,
+                        $newBranch->id
+                    );
+                }
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'row' => $rowNum,
+                    'name' => $name,
+                    'code' => $code,
+                    'error' => 'خطأ أثناء المعالجة: ' . $e->getMessage(),
+                ];
+            }
+        }
+
+        $totalProcessed = count($imported) + count($updated);
+        $failedCount = count($errors);
+
+        return response()->json([
+            'status' => $totalProcessed > 0 ? 'success' : 'error',
+            'message' => "اكتملت معالجة ملف الفروع: تم استيراد " . count($imported) . " فرعاً جديداً، وتحديث " . count($updated) . " فرعاً قائماً، وفشل {$failedCount} صفوف.",
+            'imported_count' => count($imported),
+            'updated_count' => count($updated),
+            'failed_count' => $failedCount,
+            'imported' => $imported,
+            'updated' => $updated,
+            'errors' => $errors,
+        ], $totalProcessed > 0 ? 200 : 422);
+    }
+
+    private function getBranchHeaderMap(): array
+    {
+        return [
+            'code' => 'code',
+            'رمز الفرع' => 'code',
+            'كود الفرع' => 'code',
+            'name' => 'name',
+            'اسم الفرع' => 'name',
+            'الفرع' => 'name',
+            'short_name' => 'short_name',
+            'الاسم المختصر' => 'short_name',
+            'city' => 'city',
+            'المدينة' => 'city',
+            'region' => 'region',
+            'المنطقة' => 'region',
+            'branch_type' => 'branch_type',
+            'نوع الفرع' => 'branch_type',
+            'building_type' => 'building_type',
+            'نوع المقر' => 'building_type',
+            'نوع المبنى' => 'building_type',
+            'branch_status' => 'branch_status',
+            'حالة الفرع' => 'branch_status',
+            'manager_name' => 'manager_name',
+            'اسم المدير' => 'manager_name',
+            'مدير الفرع' => 'manager_name',
+            'manager_phone' => 'manager_phone',
+            'هاتف المدير' => 'manager_phone',
+            'phone' => 'phone',
+            'هاتف الفرع' => 'phone',
+            'الهاتف' => 'phone',
+            'email' => 'email',
+            'البريد الإلكتروني' => 'email',
+            'البريد الالكتروني' => 'email',
+            'latitude' => 'latitude',
+            'خط العرض' => 'latitude',
+            'longitude' => 'longitude',
+            'خط الطول' => 'longitude',
+            'notes' => 'notes',
+            'ملاحظات' => 'notes',
+            'الملاحظات' => 'notes',
+        ];
+    }
+
+    private function detectLibyanCity(string $text): string
+    {
+        $cities = [
+            'طرابلس', 'بنغازي', 'مصراتة', 'الزاوية', 'سبها', 'زليتن', 'طبرق', 'البيضاء',
+            'غريان', 'سرت', 'درنة', 'الخمس', 'ترهونة', 'صبراتة', 'اجدابيا', 'الكفرة',
+            'يفرن', 'غدامس', 'نالوت', 'بني وليد', 'تاجوراء', 'جنزور'
+        ];
+        foreach ($cities as $c) {
+            if (mb_strpos($text, $c) !== false) {
+                return $c;
+            }
+        }
+        return 'طرابلس';
+    }
+
+    private function detectLibyanRegion(string $city): string
+    {
+        $west = ['طرابلس', 'الزاوية', 'غريان', 'صبراتة', 'الخمس', 'ترهونة', 'يفرن', 'نالوت', 'تاجوراء', 'جنزور', 'زوارة'];
+        $east = ['بنغازي', 'طبرق', 'البيضاء', 'درنة', 'اجدابيا', 'المرج', 'شحات'];
+        $south = ['سبها', 'الكفرة', 'غدامس', 'مرزق', 'أوباري', 'غات'];
+        $middle = ['مصراتة', 'زليتن', 'سرت', 'بني وليد', 'الجفرة'];
+
+        if (in_array($city, $west)) return 'المنطقة الغربية';
+        if (in_array($city, $east)) return 'المنطقة الشرقية';
+        if (in_array($city, $south)) return 'المنطقة الجنوبية';
+        if (in_array($city, $middle)) return 'المنطقة الوسطى';
+        return 'المنطقة الغربية';
+    }
+
     private function getSystemScreens(): array
     {
         return [

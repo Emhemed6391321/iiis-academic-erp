@@ -8,6 +8,10 @@ use Illuminate\Http\JsonResponse;
 use App\Models\Student;
 use App\Models\StudentDocument;
 use App\Models\AcademicYear;
+use App\Models\Branch;
+use App\Models\Department;
+use App\Models\StudyYear;
+use App\Models\SystemAuditTrail;
 use App\Rules\MinimumAdmissionAgeRule;
 use App\Services\AcademicNumberGeneratorService;
 use Illuminate\Support\Facades\Auth;
@@ -352,7 +356,9 @@ class StudentController extends Controller
     }
 
     /**
-     * Batch import students via CSV/Excel or JSON payload.
+    /**
+     * Batch import students via Excel (.xlsx/.xls), CSV, or JSON payload.
+     * Fully aligned with the Unified Admission Form & Official Academic Number Generator.
      */
     public function importBatch(Request $request): JsonResponse
     {
@@ -361,100 +367,88 @@ class StudentController extends Controller
         $yearId = $currentYear ? $currentYear->id : 1;
 
         $rows = [];
+        $headerMap = $this->getStudentHeaderMap();
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $path = $file->getRealPath();
-            $content = file_get_contents($path);
-            
-            // Remove UTF-8 BOM if present
-            $bom = pack('H*','EFBBBF');
-            $content = preg_replace("/^$bom/", '', $content);
-            
-            $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $content));
-            $lines = array_filter(array_map('trim', $lines));
-            
-            if (count($lines) < 2) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'ملف CSV فارغ أو لا يحتوي على صفوف بيانات.',
-                ], 422);
-            }
+            $ext = strtolower($file->getClientOriginalExtension());
 
-            // Detect delimiter (, or ;)
-            $firstLine = $lines[0];
-            $delimiter = str_contains($firstLine, ';') ? ';' : ',';
+            if ($ext === 'xlsx' || $ext === 'xls') {
+                if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                    $sheetRows = $xlsx->rows();
+                    if (count($sheetRows) < 2) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
+                        ], 422);
+                    }
+                    $headers = array_shift($sheetRows);
+                    $headers = array_map(function($h) {
+                        return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', (string)$h)));
+                    }, $headers);
 
-            $headers = str_getcsv(array_shift($lines), $delimiter);
-            $headers = array_map(function($h) {
-                return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $h)));
-            }, $headers);
-
-            // Mapping dictionary for Arabic & English column headers
-            $headerMap = [
-                'national_id' => 'national_id',
-                'الرقم الوطني' => 'national_id',
-                'first_name' => 'first_name',
-                'الاسم الأول' => 'first_name',
-                'father_name' => 'father_name',
-                'اسم الأب' => 'father_name',
-                'grandfather_name' => 'grandfather_name',
-                'اسم الجد' => 'grandfather_name',
-                'family_name' => 'family_name',
-                'اللقب' => 'family_name',
-                'اسم العائلة' => 'family_name',
-                'mother_name' => 'mother_name',
-                'اسم الأم' => 'mother_name',
-                'gender' => 'gender',
-                'الجنس' => 'gender',
-                'birth_date' => 'birth_date',
-                'تاريخ الميلاد' => 'birth_date',
-                'birth_place' => 'birth_place',
-                'مكان الميلاد' => 'birth_place',
-                'nationality' => 'nationality',
-                'الجنسية' => 'nationality',
-                'phone' => 'phone',
-                'الهاتف' => 'phone',
-                'guardian_phone' => 'guardian_phone',
-                'هاتف ولي الأمر' => 'guardian_phone',
-                'study_type' => 'study_type',
-                'صفة القيد' => 'study_type',
-                'branch_id' => 'branch_id',
-                'الفرع' => 'branch_id',
-                'department_id' => 'department_id',
-                'القسم' => 'department_id',
-                'current_study_year_id' => 'current_study_year_id',
-                'السنة الدراسية' => 'current_study_year_id',
-                'blood_type' => 'blood_type',
-                'فصيلة الدم' => 'blood_type',
-                'address' => 'address',
-                'العنوان' => 'address',
-                'ministry_student_id' => 'ministry_student_id',
-                'رقم المنظومة' => 'ministry_student_id',
-            ];
-
-            foreach ($lines as $lineIndex => $line) {
-                if (empty(trim($line))) continue;
-                $rowValues = str_getcsv($line, $delimiter);
-                $rowData = [];
-                foreach ($headers as $idx => $headerName) {
-                    $key = $headerMap[$headerName] ?? $headerName;
-                    $rowData[$key] = trim($rowValues[$idx] ?? '');
+                    foreach ($sheetRows as $lineIndex => $rowValues) {
+                        if (empty(array_filter($rowValues, fn($v) => trim((string)$v) !== ''))) {
+                            continue;
+                        }
+                        $rowData = [];
+                        foreach ($headers as $idx => $headerName) {
+                            $key = $headerMap[$headerName] ?? $headerName;
+                            $rowData[$key] = trim((string)($rowValues[$idx] ?? ''));
+                        }
+                        $rowData['_row_number'] = $lineIndex + 2;
+                        $rows[] = $rowData;
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'تعذر قراءة ملف Excel: ' . \Shuchkin\SimpleXLSX::parseError(),
+                    ], 422);
                 }
-                $rowData['_row_number'] = $lineIndex + 2;
-                $rows[] = $rowData;
+            } else {
+                // CSV Parsing
+                $content = file_get_contents($path);
+                $bom = pack('H*','EFBBBF');
+                $content = preg_replace("/^$bom/", '', $content);
+                $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $content));
+                $lines = array_filter(array_map('trim', $lines));
+
+                if (count($lines) < 2) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'ملف البيانات فارغ أو لا يحتوي على صفوف بيانات.',
+                    ], 422);
+                }
+
+                $delimiter = str_contains($lines[0], ';') ? ';' : (str_contains($lines[0], "\t") ? "\t" : ',');
+                $headers = str_getcsv(array_shift($lines), $delimiter);
+                $headers = array_map(function($h) {
+                    return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $h)));
+                }, $headers);
+
+                foreach ($lines as $lineIndex => $line) {
+                    if (empty(trim($line))) continue;
+                    $rowValues = str_getcsv($line, $delimiter);
+                    $rowData = [];
+                    foreach ($headers as $idx => $headerName) {
+                        $key = $headerMap[$headerName] ?? $headerName;
+                        $rowData[$key] = trim($rowValues[$idx] ?? '');
+                    }
+                    $rowData['_row_number'] = $lineIndex + 2;
+                    $rows[] = $rowData;
+                }
             }
         } elseif ($request->has('students') && is_array($request->students)) {
-            // MED-2: Validate array structure and limit to prevent memory exhaustion
             $request->validate([
-                'students'   => 'array|max:500',
+                'students'   => 'array|max:1000',
                 'students.*' => 'array',
             ]);
             $rows = $request->students;
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'يرجى إرفاق ملف CSV/Excel أو إرسال مصفوفة بيانات الطلاب.',
+                'message' => 'يرجى إرفاق ملف Excel (.xlsx) أو CSV أو إرسال مصفوفة بيانات الطلاب.',
             ], 422);
         }
 
@@ -472,13 +466,40 @@ class StudentController extends Controller
 
         $imported = [];
         $errors = [];
+        $createdBranches = [];
         $seenNationalIdsInFile = [];
+
+        // Cache branches and departments for fast lookup
+        $existingBranches = Branch::all();
+        $existingDepts = Department::all();
+        $existingYears = StudyYear::all();
 
         foreach ($rows as $index => $row) {
             $rowNum = $row['_row_number'] ?? ($index + 1);
 
-            // Clean & map gender
-            $rawGender = strtoupper(trim($row['gender'] ?? 'MALE'));
+            // 1. National ID validation & cleaning
+            $nationalId = preg_replace('/[^0-9]/', '', (string)($row['national_id'] ?? ''));
+            $firstName = trim((string)($row['first_name'] ?? ''));
+            $fatherName = trim((string)($row['father_name'] ?? ''));
+            $grandfatherName = trim((string)($row['grandfather_name'] ?? ''));
+            $familyName = trim((string)($row['family_name'] ?? ''));
+            $motherName = trim((string)($row['mother_name'] ?? ''));
+            $rawBirthDate = trim((string)($row['birth_date'] ?? ''));
+            $birthPlace = trim((string)($row['birth_place'] ?? 'طرابلس'));
+            $phone = trim((string)($row['phone'] ?? '091-0000000'));
+            $guardianPhone = trim((string)($row['guardian_phone'] ?? $phone));
+            $guardianName = trim((string)($row['guardian_name'] ?? ($fatherName ? "{$fatherName} {$familyName}" : '')));
+            $guardianRel = trim((string)($row['guardian_relationship'] ?? 'أب'));
+            $emergencyContact = trim((string)($row['emergency_contact'] ?? $guardianPhone));
+            $address = trim((string)($row['address'] ?? ''));
+            $bloodType = trim((string)($row['blood_type'] ?? 'O+'));
+            $ministryId = trim((string)($row['ministry_student_id'] ?? ''));
+            $nationality = trim((string)($row['nationality'] ?? 'ليبي'));
+            $religion = trim((string)($row['religion'] ?? 'مسلم'));
+            $notes = trim((string)($row['notes'] ?? ''));
+
+            // 2. Gender Clean & Map
+            $rawGender = strtoupper(trim((string)($row['gender'] ?? 'MALE')));
             if (in_array($rawGender, ['ذكر', 'MALE', '1', 'M', 'BOY'])) {
                 $gender = 'MALE';
             } elseif (in_array($rawGender, ['أنثى', 'انثى', 'FEMALE', '2', 'F', 'GIRL'])) {
@@ -487,35 +508,123 @@ class StudentController extends Controller
                 $gender = 'MALE';
             }
 
-            // Clean & map study type
-            $rawStudyType = strtoupper(trim($row['study_type'] ?? $defaultStudyType));
-            if (in_array($rawStudyType, ['انتساب', 'INTISAB', 'EXTERNAL'])) {
+            // 3. Study Type Clean & Map
+            $rawStudyType = strtoupper(trim((string)($row['study_type'] ?? $defaultStudyType)));
+            if (in_array($rawStudyType, ['انتساب', 'INTISAB', 'EXTERNAL', 'منتسب'])) {
                 $studyType = 'INTISAB';
             } else {
                 $studyType = 'REGULAR';
             }
 
-            $nationalId = preg_replace('/[^0-9]/', '', $row['national_id'] ?? '');
-            $firstName = trim($row['first_name'] ?? '');
-            $fatherName = trim($row['father_name'] ?? '');
-            $grandfatherName = trim($row['grandfather_name'] ?? '');
-            $familyName = trim($row['family_name'] ?? '');
-            $motherName = trim($row['mother_name'] ?? '');
-            $birthDate = trim($row['birth_date'] ?? '');
-            $birthPlace = trim($row['birth_place'] ?? 'طرابلس');
-            $phone = trim($row['phone'] ?? '091-0000000');
-            $guardianPhone = trim($row['guardian_phone'] ?? $phone);
+            // 4. Resolve Branch (From Directory of Branches or Auto-Create via Excel)
+            $rawBranch = trim((string)($row['branch'] ?? $row['branch_name'] ?? $row['branch_code'] ?? $row['branch_id'] ?? ''));
+            $branchId = null;
 
-            // Determine Branch
-            $branchId = !empty($row['branch_id']) && is_numeric($row['branch_id']) ? intval($row['branch_id']) : $defaultBranchId;
-            if (!$user || !$user->hasGlobalAccessScope()) {
-                $branchId = $user ? ($user->branch_id ?? 1) : 1;
+            if (!$user || $user->hasGlobalAccessScope()) {
+                if (!empty($rawBranch)) {
+                    // Check if numeric ID
+                    if (is_numeric($rawBranch)) {
+                        $found = $existingBranches->firstWhere('id', intval($rawBranch));
+                        if ($found) $branchId = $found->id;
+                    }
+                    // Check code
+                    if (!$branchId) {
+                        $found = $existingBranches->first(fn($b) => strtoupper($b->code) === strtoupper($rawBranch));
+                        if ($found) $branchId = $found->id;
+                    }
+                    // Check exact or partial name
+                    if (!$branchId) {
+                        $cleanRaw = preg_replace('/[\x{064B}-\x{065F}]/u', '', $rawBranch);
+                        $found = $existingBranches->first(function($b) use ($cleanRaw) {
+                            $cleanName = preg_replace('/[\x{064B}-\x{065F}]/u', '', $b->name);
+                            return $cleanName === $cleanRaw || mb_stripos($cleanName, $cleanRaw) !== false || $b->short_name === $cleanRaw;
+                        });
+                        if ($found) $branchId = $found->id;
+                    }
+
+                    // If branch specified in Excel does not exist yet -> Auto-create branch in Directory!
+                    if (!$branchId && mb_strlen($rawBranch) >= 2) {
+                        try {
+                            $detCity = $this->detectLibyanCity($rawBranch);
+                            $newCode = 'BR-' . strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $detCity), 0, 3) ?: 'GEN') . '-' . str_pad((string)(Branch::count() + 1), 2, '0', STR_PAD_LEFT);
+                            $newBranch = Branch::create([
+                                'name' => $rawBranch,
+                                'code' => $newCode,
+                                'city' => $detCity,
+                                'branch_status' => 'ACTIVE',
+                                'is_active' => true,
+                                'branch_type' => 'فرعي',
+                                'building_type' => 'state',
+                                'notes' => 'تم إنشاء الفرع تلقائياً عبر ملف استيراد الطلاب المعتمد (Excel Import)',
+                            ]);
+                            $existingBranches->push($newBranch);
+                            $branchId = $newBranch->id;
+                            $createdBranches[] = $newBranch->name;
+
+                            SystemAuditTrail::log(
+                                'BRANCH_CREATED',
+                                "إنشاء فرع جديد تلقائياً عبر استيراد إكسل: «{$newBranch->name}» (رمز: {$newBranch->code})",
+                                $newBranch->toArray(),
+                                $user?->id,
+                                $newBranch->id
+                            );
+                        } catch (\Exception $be) {
+                            $branchId = $defaultBranchId;
+                        }
+                    }
+                }
+                if (!$branchId) {
+                    $branchId = $defaultBranchId;
+                }
+            } else {
+                // If user is restricted to a branch, force user's branch
+                $branchId = $user->branch_id ?? 1;
             }
 
-            $departmentId = !empty($row['department_id']) && is_numeric($row['department_id']) ? intval($row['department_id']) : $defaultDeptId;
-            $studyYearId = !empty($row['current_study_year_id']) && is_numeric($row['current_study_year_id']) ? intval($row['current_study_year_id']) : $defaultStudyYearId;
+            // 5. Resolve Department
+            $rawDept = trim((string)($row['department'] ?? $row['department_name'] ?? $row['department_code'] ?? $row['department_id'] ?? ''));
+            $departmentId = null;
+            if (!empty($rawDept)) {
+                if (is_numeric($rawDept)) {
+                    $foundDept = $existingDepts->firstWhere('id', intval($rawDept));
+                    if ($foundDept) $departmentId = $foundDept->id;
+                }
+                if (!$departmentId) {
+                    $foundDept = $existingDepts->first(function($d) use ($rawDept) {
+                        return mb_stripos($d->name, $rawDept) !== false || strtoupper($d->code) === strtoupper($rawDept);
+                    });
+                    if ($foundDept) $departmentId = $foundDept->id;
+                }
+            }
+            if (!$departmentId) {
+                $departmentId = $defaultDeptId;
+            }
 
-            // Row Validations
+            // 6. Resolve Study Year
+            $rawStudyYear = trim((string)($row['current_study_year_id'] ?? $row['study_year'] ?? ''));
+            $studyYearId = null;
+            if (!empty($rawStudyYear)) {
+                if (is_numeric($rawStudyYear)) {
+                    $foundYear = $existingYears->firstWhere('id', intval($rawStudyYear)) ?? $existingYears->firstWhere('year_number', intval($rawStudyYear));
+                    if ($foundYear) $studyYearId = $foundYear->id;
+                } else {
+                    if (str_contains($rawStudyYear, 'أولى') || str_contains($rawStudyYear, 'تمهيدي') || str_contains($rawStudyYear, '1')) {
+                        $studyYearId = 1;
+                    } elseif (str_contains($rawStudyYear, 'ثانية') || str_contains($rawStudyYear, 'متوسط') || str_contains($rawStudyYear, '2')) {
+                        $studyYearId = 2;
+                    } elseif (str_contains($rawStudyYear, 'ثالثة') || str_contains($rawStudyYear, 'تخصص') || str_contains($rawStudyYear, 'عالي') || str_contains($rawStudyYear, '3')) {
+                        $studyYearId = 3;
+                    }
+                }
+            }
+            if (!$studyYearId) {
+                $studyYearId = $defaultStudyYearId;
+            }
+
+            // 7. Parse & Normalize Birth Date (handle Excel serial numbers & string formats)
+            $birthDate = $this->normalizeDate($rawBirthDate);
+
+            // Validations
             if (strlen($nationalId) !== 12) {
                 $errors[] = [
                     'row' => $rowNum,
@@ -526,7 +635,7 @@ class StudentController extends Controller
                 continue;
             }
 
-            // فحص تكرار الرقم الوطني داخل نفس الملف المرفوع
+            // Check duplicate national ID in the same file
             if (isset($seenNationalIdsInFile[$nationalId])) {
                 $errors[] = [
                     'row' => $rowNum,
@@ -538,6 +647,7 @@ class StudentController extends Controller
             }
             $seenNationalIdsInFile[$nationalId] = $rowNum;
 
+            // Check duplicate national ID in DB
             if (Student::where('national_id', $nationalId)->exists()) {
                 $errors[] = [
                     'row' => $rowNum,
@@ -558,7 +668,6 @@ class StudentController extends Controller
                 continue;
             }
 
-            // Birth date & Minimum age validation
             if (empty($birthDate) || !strtotime($birthDate)) {
                 $errors[] = [
                     'row' => $rowNum,
@@ -580,6 +689,12 @@ class StudentController extends Controller
                 continue;
             }
 
+            // Health & Disability mapping
+            $hasDisability = !empty($row['has_disability']) && in_array(mb_strtolower($row['has_disability']), ['1', 'true', 'نعم', 'yes']);
+            $disabilityType = trim((string)($row['disability_type'] ?? ''));
+            $healthStatus = trim((string)($row['health_status'] ?? 'سليم'));
+            $chronicDiseases = trim((string)($row['chronic_diseases'] ?? ''));
+
             try {
                 $studentData = [
                     'national_id' => $nationalId,
@@ -591,22 +706,31 @@ class StudentController extends Controller
                     'gender' => $gender,
                     'birth_date' => $birthDate,
                     'birth_place' => $birthPlace,
-                    'nationality' => trim($row['nationality'] ?? 'ليبي'),
-                    'religion' => trim($row['religion'] ?? 'مسلم'),
+                    'nationality' => $nationality,
+                    'religion' => $religion,
                     'phone' => $phone,
                     'guardian_phone' => $guardianPhone,
-                    'address' => trim($row['address'] ?? ''),
-                    'blood_type' => trim($row['blood_type'] ?? 'O+'),
-                    'ministry_student_id' => trim($row['ministry_student_id'] ?? ''),
+                    'guardian_name' => $guardianName,
+                    'guardian_relationship' => $guardianRel,
+                    'emergency_contact' => $emergencyContact,
+                    'address' => $address,
+                    'blood_type' => $bloodType,
+                    'ministry_student_id' => $ministryId,
                     'branch_id' => $branchId,
                     'department_id' => $departmentId,
                     'current_study_year_id' => $studyYearId,
                     'study_type' => $studyType,
                     'enrolled_academic_year_id' => $yearId,
                     'academic_status' => 'ENROLLED_ACTIVE',
+                    'has_disability' => $hasDisability,
+                    'disability_type' => $disabilityType ?: null,
+                    'health_status' => $healthStatus,
+                    'chronic_diseases' => $chronicDiseases ?: null,
+                    'email' => trim((string)($row['email'] ?? '')),
+                    'passport_number' => trim((string)($row['passport_number'] ?? '')),
                     'approved_by' => $user?->id,
                     'approved_at' => Carbon::now(),
-                    'notes' => 'تم القيد عبر الاستيراد الجماعي للطلاب (Batch Import)',
+                    'notes' => $notes ?: 'تم القيد وتوليد رقم القيد الرسمي عبر استيراد إكسل للدفعة',
                 ];
 
                 $student = DB::transaction(function () use ($studentData, $currentYear, $user) {
@@ -622,10 +746,13 @@ class StudentController extends Controller
                         'old_status' => null,
                         'new_status' => 'ENROLLED_ACTIVE',
                         'event_type' => 'RENEWAL',
-                        'reason' => 'قيد جديد وتوليد رقم أكاديمي عبر الاستيراد الجماعي للدفعة',
+                        'reason' => 'قيد جديد وتوليد رقم قيد أكاديمي رسمي عبر استيراد الدفعة',
                         'changed_by' => $user?->id,
                         'event_date' => Carbon::now(),
-                        'meta' => ['academic_number' => $newStudent->academic_number],
+                        'meta' => [
+                            'academic_number' => $newStudent->academic_number,
+                            'branch_id' => $newStudent->branch_id,
+                        ],
                     ]);
 
                     return $newStudent;
@@ -637,6 +764,7 @@ class StudentController extends Controller
                     'full_name' => $student->full_name,
                     'national_id' => $student->national_id,
                     'branch_name' => $student->branch?->name ?? '—',
+                    'study_year_name' => $student->currentStudyYear?->name ?? '—',
                 ];
 
             } catch (\Exception $e) {
@@ -651,15 +779,86 @@ class StudentController extends Controller
 
         $importedCount = count($imported);
         $failedCount = count($errors);
+        $createdBranchesUnique = array_values(array_unique($createdBranches));
+
+        $branchNotice = !empty($createdBranchesUnique)
+            ? ' (تم إنشاء وإضافة ' . count($createdBranchesUnique) . ' فرعاً جديداً لدليل الفروع تلقائياً: ' . implode('، ', $createdBranchesUnique) . ')'
+            : '';
 
         return response()->json([
             'success' => $importedCount > 0,
-            'message' => "اكتملت عملية الاستيراد: تم قيد {$importedCount} طالباً بنجاح، وتعذر استيراد {$failedCount} صفوف بسبب أخطاء تحقق.",
+            'message' => "اكتملت عملية الاستيراد: تم قيد وتوليد أرقام القيد لـ {$importedCount} طالباً بنجاح، وفشل {$failedCount} صفوف{$branchNotice}.",
             'imported_count' => $importedCount,
             'failed_count' => $failedCount,
             'imported_students' => $imported,
+            'created_branches' => $createdBranchesUnique,
             'errors' => $errors,
         ], $importedCount > 0 ? 200 : 422);
+    }
+
+    /**
+     * Unified Sample Template Downloader (Supports ?format=xlsx or ?format=csv).
+     */
+    public function downloadSampleTemplate(Request $request)
+    {
+        $format = strtolower($request->query('format', 'csv'));
+        if ($format === 'xlsx' || $format === 'excel') {
+            return $this->downloadSampleXlsx();
+        }
+        return $this->downloadSampleCsv();
+    }
+
+    /**
+     * Download official Excel (.xlsx) template for bulk student registration.
+     */
+    public function downloadSampleXlsx()
+    {
+        $headers = [
+            'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اللقب (اسم العائلة)',
+            'اسم الأم', 'الجنس', 'تاريخ الميلاد', 'مكان الميلاد', 'الجنسية', 'الديانة',
+            'رقم الهاتف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'صلة القرابة', 'رقم الطوارئ',
+            'العنوان ومحل الإقامة', 'فصيلة الدم', 'الفرع التعليمي', 'القسم العلمي',
+            'السنة الدراسية', 'نظام القيد', 'رقم القيد الوزاري', 'ملاحظات'
+        ];
+
+        $sampleBranch = Branch::where('is_active', true)->first()?->name ?? 'فرع طرابلس المركزي';
+        $sampleBranch2 = Branch::where('is_active', true)->skip(1)->first()?->name ?? 'فرع بنغازي التعليمي';
+        $sampleBranch3 = Branch::where('is_active', true)->skip(2)->first()?->name ?? 'فرع مصراتة التعليمي';
+
+        $sampleRows = [
+            $headers,
+            [
+                '120050012345', 'عبدالرحمن', 'علي', 'محمد', 'الورفلي',
+                'عائشة سالم المبروك', 'ذكر', '2005-04-12', 'طرابلس', 'ليبي', 'مسلم',
+                '091-2345678', '092-3456789', 'علي محمد الورفلي', 'أب', '091-2345678',
+                'طرابلس - حي الأندلس', 'O+', $sampleBranch, 'قسم الشريعة والقانون',
+                'السنة الأولى', 'نظامي', 'MIN-2026-001', 'مستوفي كافة مسوغات القبول'
+            ],
+            [
+                '220060098765', 'فاطمة', 'عمر', 'إبراهيم', 'المصراتي',
+                'خديجة أحمد التاجوري', 'أنثى', '2006-08-20', 'مصراتة', 'ليبي', 'مسلم',
+                '091-8765432', '092-7654321', 'عمر إبراهيم المصراتي', 'أب', '092-7654321',
+                'مصراتة - شارع طرابلس', 'A+', $sampleBranch3, 'قسم أصول الدين',
+                'السنة الأولى', 'انتساب', 'MIN-2026-002', 'طالبة انتساب'
+            ],
+            [
+                '120040055443', 'إبراهيم', 'مصطفى', 'عبدالسلام', 'البرغثي',
+                'فاطمة عبد القادر', 'ذكر', '2004-11-05', 'بنغازي', 'ليبي', 'مسلم',
+                '091-5544332', '092-6655443', 'مصطفى عبدالسلام البرغثي', 'أب', '091-5544332',
+                'بنغازي - الحدائق', 'B+', $sampleBranch2, 'قسم الدراسات الإسلامية',
+                'السنة الثانية', 'نظامي', 'MIN-2026-003', 'منقول من السنة التمهيدية'
+            ],
+        ];
+
+        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
+        $filename = 'استمارة_القبول_الموحدة_نموذج_الاستيراد_الجماعي.xlsx';
+
+        return response()->streamDownload(function () use ($xlsx) {
+            echo (string) $xlsx;
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
@@ -669,28 +868,33 @@ class StudentController extends Controller
     {
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="نموذج_استيراد_الطلاب_المعتمد.csv"',
+            'Content-Disposition' => 'attachment; filename="استمارة_القبول_الموحدة_نموذج_الاستيراد.csv"',
         ];
 
         $columns = [
-            'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اسم العائلة',
+            'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اللقب',
             'اسم الأم', 'الجنس', 'تاريخ الميلاد', 'مكان الميلاد', 'الجنسية',
-            'الهاتف', 'هاتف ولي الأمر', 'صفة القيد', 'الفرع', 'القسم', 'السنة الدراسية',
-            'فصيلة الدم', 'العنوان', 'رقم المنظومة'
+            'الديانة', 'الهاتف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'صلة القرابة',
+            'رقم الطوارئ', 'العنوان', 'فصيلة الدم', 'الفرع', 'القسم', 'السنة الدراسية',
+            'صفة القيد', 'رقم المنظومة', 'الملاحظات'
         ];
+
+        $sampleBranch = Branch::where('is_active', true)->first()?->name ?? 'فرع طرابلس المركزي';
 
         $sampleRow1 = [
             '120050012345', 'عبدالرحمن', 'علي', 'محمد', 'الورفلي',
             'عائشة سالم المبروك', 'ذكر', '2005-04-12', 'طرابلس', 'ليبي',
-            '091-2345678', '092-3456789', 'نظامي', '1', '1', '1',
-            'O+', 'طرابلس - حي الأندلس', 'MIN-2026-001'
+            'مسلم', '091-2345678', '092-3456789', 'علي محمد الورفلي', 'أب',
+            '091-2345678', 'طرابلس - حي الأندلس', 'O+', $sampleBranch, '1', '1',
+            'نظامي', 'MIN-2026-001', 'مستوفي مسوغات القبول'
         ];
 
         $sampleRow2 = [
             '220060098765', 'فاطمة', 'عمر', 'إبراهيم', 'المصراتي',
             'خديجة أحمد', 'أنثى', '2006-08-20', 'مصراتة', 'ليبي',
-            '091-8765432', '092-7654321', 'انتساب', '1', '2', '1',
-            'A+', 'مصراتة - شارع طرابلس', 'MIN-2026-002'
+            'مسلم', '091-8765432', '092-7654321', 'عمر إبراهيم المصراتي', 'أب',
+            '092-7654321', 'مصراتة - شارع طرابلس', 'A+', $sampleBranch, '1', '1',
+            'انتساب', 'MIN-2026-002', 'طالبة انتساب'
         ];
 
         $callback = function () use ($columns, $sampleRow1, $sampleRow2) {
@@ -703,6 +907,214 @@ class StudentController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function getStudentHeaderMap(): array
+    {
+        return [
+            'national_id' => 'national_id',
+            'الرقم الوطني' => 'national_id',
+            'رقم القيد الوطني' => 'national_id',
+            'الرقم_الوطني' => 'national_id',
+            'رقم الهوية' => 'national_id',
+            'national id' => 'national_id',
+            'nid' => 'national_id',
+
+            'first_name' => 'first_name',
+            'الاسم الأول' => 'first_name',
+            'الاسم الاول' => 'first_name',
+            'اسم الطالب' => 'first_name',
+            'الاسم' => 'first_name',
+            'first name' => 'first_name',
+
+            'father_name' => 'father_name',
+            'اسم الأب' => 'father_name',
+            'اسم الاب' => 'father_name',
+            'father name' => 'father_name',
+
+            'grandfather_name' => 'grandfather_name',
+            'اسم الجد' => 'grandfather_name',
+            'grandfather name' => 'grandfather_name',
+
+            'family_name' => 'family_name',
+            'اللقب' => 'family_name',
+            'اسم العائلة' => 'family_name',
+            'القب' => 'family_name',
+            'اللقب (اسم العائلة)' => 'family_name',
+            'family name' => 'family_name',
+            'last name' => 'family_name',
+
+            'mother_name' => 'mother_name',
+            'اسم الأم' => 'mother_name',
+            'اسم الام' => 'mother_name',
+            'mother name' => 'mother_name',
+
+            'gender' => 'gender',
+            'الجنس' => 'gender',
+            'الجنس (ذكر/أنثى)' => 'gender',
+            'النوع' => 'gender',
+
+            'birth_date' => 'birth_date',
+            'تاريخ الميلاد' => 'birth_date',
+            'تاريخ الميلاد (yyyy-mm-dd)' => 'birth_date',
+            'تاريخ الولادة' => 'birth_date',
+            'birth date' => 'birth_date',
+            'dob' => 'birth_date',
+
+            'birth_place' => 'birth_place',
+            'مكان الميلاد' => 'birth_place',
+            'مكان الولادة' => 'birth_place',
+            'محل الميلاد' => 'birth_place',
+            'birth place' => 'birth_place',
+
+            'nationality' => 'nationality',
+            'الجنسية' => 'nationality',
+
+            'religion' => 'religion',
+            'الديانة' => 'religion',
+            'الدين' => 'religion',
+
+            'phone' => 'phone',
+            'الهاتف' => 'phone',
+            'رقم الهاتف' => 'phone',
+            'هاتف الطالب' => 'phone',
+            'رقم هاتف الطالب' => 'phone',
+
+            'guardian_phone' => 'guardian_phone',
+            'هاتف ولي الأمر' => 'guardian_phone',
+            'هاتف ولي الامر' => 'guardian_phone',
+            'رقم ولي الأمر' => 'guardian_phone',
+
+            'guardian_name' => 'guardian_name',
+            'اسم ولي الأمر' => 'guardian_name',
+            'اسم ولي الامر' => 'guardian_name',
+            'ولي الأمر' => 'guardian_name',
+
+            'guardian_relationship' => 'guardian_relationship',
+            'صلة القرابة' => 'guardian_relationship',
+            'صلة ولي الأمر' => 'guardian_relationship',
+
+            'emergency_contact' => 'emergency_contact',
+            'رقم الطوارئ' => 'emergency_contact',
+            'هاتف الطوارئ' => 'emergency_contact',
+            'طوارئ' => 'emergency_contact',
+
+            'study_type' => 'study_type',
+            'صفة القيد' => 'study_type',
+            'نظام القيد' => 'study_type',
+            'نظام القيد (نظامي/انتساب)' => 'study_type',
+            'نوع الدراسة' => 'study_type',
+
+            'branch_id' => 'branch_id',
+            'branch' => 'branch',
+            'الفرع' => 'branch',
+            'اسم الفرع' => 'branch',
+            'رمز الفرع' => 'branch',
+            'كود الفرع' => 'branch',
+            'الفرع التعليمي' => 'branch',
+            'الفرع التعليمي (الاسم أو الرمز)' => 'branch',
+
+            'department_id' => 'department_id',
+            'department' => 'department',
+            'القسم' => 'department',
+            'اسم القسم' => 'department',
+            'التخصص' => 'department',
+            'القسم العلمي' => 'department',
+
+            'current_study_year_id' => 'current_study_year_id',
+            'study_year' => 'study_year',
+            'السنة الدراسية' => 'study_year',
+            'المرحلة الدراسية' => 'study_year',
+            'المرحلة' => 'study_year',
+
+            'blood_type' => 'blood_type',
+            'فصيلة الدم' => 'blood_type',
+            'فصيلة_الدم' => 'blood_type',
+
+            'address' => 'address',
+            'العنوان' => 'address',
+            'محل الإقامة' => 'address',
+            'العنوان ومحل الإقامة' => 'address',
+
+            'ministry_student_id' => 'ministry_student_id',
+            'رقم المنظومة' => 'ministry_student_id',
+            'رقم القيد الوزاري' => 'ministry_student_id',
+            'رقم منظومة الوزارة' => 'ministry_student_id',
+
+            'has_disability' => 'has_disability',
+            'ذوي الاحتياجات الخاصة' => 'has_disability',
+            'إعاقة' => 'has_disability',
+
+            'disability_type' => 'disability_type',
+            'نوع الإعاقة' => 'disability_type',
+
+            'health_status' => 'health_status',
+            'الحالة الصحية' => 'health_status',
+
+            'chronic_diseases' => 'chronic_diseases',
+            'الأمراض المزمنة' => 'chronic_diseases',
+
+            'email' => 'email',
+            'البريد الإلكتروني' => 'email',
+            'البريد الالكتروني' => 'email',
+
+            'passport_number' => 'passport_number',
+            'جواز السفر' => 'passport_number',
+            'رقم جواز السفر' => 'passport_number',
+
+            'notes' => 'notes',
+            'ملاحظات' => 'notes',
+            'الملاحظات' => 'notes',
+        ];
+    }
+
+    private function normalizeDate(string $rawDate): string
+    {
+        $rawDate = trim($rawDate);
+        if (empty($rawDate)) {
+            return '';
+        }
+
+        // Check if numeric Excel timestamp (e.g. 38500 = ~2005)
+        if (is_numeric($rawDate) && floatval($rawDate) > 10000 && floatval($rawDate) < 60000) {
+            $unixTime = (intval($rawDate) - 25569) * 86400;
+            return gmdate('Y-m-d', $unixTime);
+        }
+
+        // Format slashes DD/MM/YYYY or YYYY/MM/DD
+        if (str_contains($rawDate, '/')) {
+            $parts = explode('/', $rawDate);
+            if (count($parts) === 3) {
+                if (strlen($parts[0]) === 4) {
+                    // YYYY/MM/DD
+                    return sprintf('%04d-%02d-%02d', $parts[0], $parts[1], $parts[2]);
+                } else {
+                    // DD/MM/YYYY
+                    return sprintf('%04d-%02d-%02d', $parts[2], $parts[1], $parts[0]);
+                }
+            }
+        }
+
+        try {
+            return Carbon::parse($rawDate)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return $rawDate;
+        }
+    }
+
+    private function detectLibyanCity(string $text): string
+    {
+        $cities = [
+            'طرابلس', 'بنغازي', 'مصراتة', 'الزاوية', 'سبها', 'زليتن', 'طبرق', 'البيضاء',
+            'غريان', 'سرت', 'درنة', 'الخمس', 'ترهونة', 'صبراتة', 'اجدابيا', 'الكفرة',
+            'يفرن', 'غدامس', 'نالوت', 'بني وليد', 'تاجوراء', 'جنزور'
+        ];
+        foreach ($cities as $c) {
+            if (mb_strpos($text, $c) !== false) {
+                return $c;
+            }
+        }
+        return 'طرابلس';
     }
 
     /**

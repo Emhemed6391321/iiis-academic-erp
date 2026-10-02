@@ -76,6 +76,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
+    <!-- SheetJS for Live Client-Side Excel (.xlsx) Parsing & Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <!-- Alpine.js Plugins & Core -->
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -4343,10 +4346,10 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="font-black text-base text-slate-900 dark:text-white">استيراد دفعة طلاب جديدة (CSV Batch Import)</h3>
-                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">معتمد v2.4</span>
+                            <h3 class="font-black text-base text-slate-900 dark:text-white">استيراد وقيد دفعة طلاب جديدة (Excel .xlsx Batch Import)</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">استمارة القبول الموحدة v2.6</span>
                         </div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">رفع وتدقيق وقيد مجموعة طلاب دفعة واحدة وتوليد أرقام القيد الأكاديمية آلياً</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">رفع وتدقيق ملفات الإكسل، مطابقة الفروع بدليل المقرات، وقيد الطلاب وتوليد أرقام القيد الرسمية آلياً</p>
                     </div>
                 </div>
 
@@ -4361,21 +4364,28 @@
             <div class="p-6 overflow-y-auto space-y-6 flex-1">
                 
                 <!-- Sample Download Banner -->
-                <div class="p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                <div class="p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4"
                      :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-emerald-50/50 border-emerald-100'">
                     <div class="flex items-start gap-3">
                         <div class="text-2xl mt-0.5">📥</div>
                         <div>
-                            <h4 class="text-xs font-black text-slate-900 dark:text-white">هل تحتاج إلى نموذج الملف المعتمد؟</h4>
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">قم بتحميل نموذج CSV الجاهز بأسماء الأعمدة الصحيحة (الرقم الوطني، الاسم، تاريخ الميلاد، ولي الأمر...) لتعبئته.</p>
+                            <h4 class="text-xs font-black text-slate-900 dark:text-white">تحميل نماذج استمارة القبول الموحدة:</h4>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">قم بتحميل نموذج Excel المعتمد بأسماء الأعمدة المعتمدة والمطابقة لمنظومة شؤون الطلاب ودليل الفروع.</p>
                         </div>
                     </div>
-                    <button @click="downloadSampleImportCsv()"
-                            type="button"
-                            class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 whitespace-nowrap self-start sm:self-auto cursor-pointer transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        <span>تحميل نموذج CSV</span>
-                    </button>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button @click="downloadSampleImportXlsx()"
+                                type="button"
+                                class="px-4 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>تحميل نموذج Excel (.xlsx)</span>
+                        </button>
+                        <button @click="downloadSampleImportCsv()"
+                                type="button"
+                                class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all">
+                            <span>نموذج CSV</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Error & Success Alerts -->
@@ -4399,14 +4409,14 @@
                     <!-- File Dropzone -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                            اختر ملف بيانات الطلاب (CSV UTF-8):
+                            اختر ملف بيانات الطلاب (Excel .xlsx أو .csv):
                         </label>
                         
                         <div class="relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer"
                              :class="batchImportModal.file ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10' : (darkMode ? 'border-slate-700 hover:border-emerald-500 bg-slate-800/30' : 'border-slate-300 hover:border-emerald-500 bg-slate-50')">
                             
                             <input type="file" 
-                                   accept=".csv,.txt"
+                                   accept=".xlsx,.xls,.csv,.txt"
                                    @change="handleBatchImportFile($event)"
                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
 
@@ -4415,9 +4425,9 @@
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                                 </div>
                                 <div class="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    انقر لاختيار الملف أو اسحبه وأفلته هنا
+                                    انقر لاختيار ملف Excel أو اسحبه وأفلته هنا
                                 </div>
-                                <p class="text-[11px] text-slate-400">ملفات بتنسيق .csv بترميز UTF-8 تدعم اللغة العربية</p>
+                                <p class="text-[11px] text-slate-400">ملفات Excel (.xlsx / .xls) أو CSV تدعم اللغة العربية بالكامل</p>
                             </div>
 
                             <div x-show="batchImportModal.file" class="space-y-2 pointer-events-none" x-cloak>
@@ -4430,22 +4440,77 @@
                         </div>
                     </div>
 
+                    <!-- Live File Preview Summary Card (Parsed Client-Side via SheetJS) -->
+                    <div x-show="batchImportModal.fileSummary" class="p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 space-y-3" x-cloak>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <span>📊 ملخص قراءة الملف المرفوع:</span>
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600" x-text="(batchImportModal.fileSummary ? batchImportModal.fileSummary.totalRows : 0) + ' صف طالب'"></span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+                                <span class="text-[10px] text-slate-400 block">إجمالي الطلاب</span>
+                                <span class="font-black font-mono text-slate-800 dark:text-slate-200" x-text="batchImportModal.fileSummary ? batchImportModal.fileSummary.totalRows : 0"></span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+                                <span class="text-[10px] text-slate-400 block">ذكور 👦</span>
+                                <span class="font-black font-mono text-blue-600 dark:text-blue-400" x-text="batchImportModal.fileSummary ? batchImportModal.fileSummary.maleCount : 0"></span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
+                                <span class="text-[10px] text-slate-400 block">إناث 👧</span>
+                                <span class="font-black font-mono text-pink-600 dark:text-pink-400" x-text="batchImportModal.fileSummary ? batchImportModal.fileSummary.femaleCount : 0"></span>
+                            </div>
+                        </div>
+
+                        <!-- Mini preview table -->
+                        <div x-show="batchImportModal.filePreviewRows && batchImportModal.filePreviewRows.length > 0" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <table class="w-full text-right text-[11px]">
+                                <thead class="bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                                    <tr>
+                                        <th class="p-2">#</th>
+                                        <th class="p-2">الرقم الوطني</th>
+                                        <th class="p-2">الاسم</th>
+                                        <th class="p-2">الجنس</th>
+                                        <th class="p-2">تاريخ الميلاد</th>
+                                        <th class="p-2">الفرع التعليمي</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="row in batchImportModal.filePreviewRows" :key="row.idx">
+                                        <tr>
+                                            <td class="p-2 font-mono text-slate-400" x-text="row.idx"></td>
+                                            <td class="p-2 font-mono font-bold" x-text="row.nid"></td>
+                                            <td class="p-2 font-semibold" x-text="row.name"></td>
+                                            <td class="p-2" x-text="row.gender"></td>
+                                            <td class="p-2 font-mono text-slate-500" x-text="row.dob"></td>
+                                            <td class="p-2 text-emerald-600 font-bold" x-text="row.branch"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- Defaults Settings for Unspecified Columns -->
                     <div class="p-4 rounded-2xl border space-y-4"
                          :class="darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-slate-50 border-slate-200/80'">
-                        <div class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                            <span>⚙️ الإعدادات الافتراضية للدفعة (في حال خلوها من ملف CSV):</span>
+                        <div class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                            <span class="flex items-center gap-1.5">
+                                <span>⚙️ الإعدادات الافتراضية (في حال عدم تحديدها داخل كل صف في ملف الإكسل):</span>
+                            </span>
+                            <span class="text-[10px] text-emerald-600 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-md">مرتبط بدليل الفروع المعتمد</span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                            <!-- Branch -->
+                            <!-- Branch from Branches Directory -->
                             <div>
-                                <label class="block text-[11px] font-bold text-slate-500 mb-1">الفرع الدراسي:</label>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">الفرع التعليمي الافتراضي:</label>
                                 <select x-model="batchImportModal.defaultBranchId"
                                         class="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none"
                                         :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'">
                                     <template x-for="b in (branches && branches.length ? branches : branchesList)" :key="b.id">
-                                        <option :value="b.id" x-text="b.name"></option>
+                                        <option :value="b.id" x-text="b.name + ' (' + (b.city || '') + ')'"></option>
                                     </template>
                                     <option value="1" x-show="!branchesList.length && !branches.length">فرع طرابلس المركزي</option>
                                 </select>
@@ -4474,60 +4539,87 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="p-2.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900 text-[11px] text-blue-700 dark:text-blue-300 flex items-start gap-2">
+                            <span class="text-sm">🏢</span>
+                            <span><strong>إمكانية إضافة فروع تلقائياً:</strong> في حال احتوى ملف الإكسل على اسم فرع جديد غير موجود بدليل الفروع، سيقوم النظام تلقائياً بإنشاء ملف الفرع وإدراجه ضمن دليل الفروع والمقرات والتقييم الميداني الشامل.</span>
+                        </div>
                     </div>
 
                     <!-- Rules Checklist -->
                     <div class="text-[11px] text-slate-500 dark:text-slate-400 space-y-1 pr-1">
-                        <div class="font-bold text-slate-700 dark:text-slate-300">قواعد التحقق الصارمة أثناء الاستيراد:</div>
-                        <div>• يجب أن يتكون الرقم الوطني من 12 خانة رقمية بالضبط.</div>
-                        <div>• يمنع استيراد طالب أقل من 15 سنة وفق تاريخ ميلاده.</div>
-                        <div>• الأسماء الرباعية واسم الأم بالكامل حقول إجبارية.</div>
-                        <div>• يفحص النظام تلقائياً عدم تكرار الرقم الوطني داخل الملف ومع قاعدة البيانات المركزية.</div>
+                        <div class="font-bold text-slate-700 dark:text-slate-300">قواعد التدقيق وتوليد أرقام القيد:</div>
+                        <div>• توليد رقم القيد الأكاديمي الرسمي تلقائياً لكل طالب مقبول بصيغة [الجنس 1/2][العام 26][التسلسل 0001].</div>
+                        <div>• التحقق من الرقم الوطني (12 خانة رقمية) وعدم التكرار محلياً ومركزياً.</div>
+                        <div>• التحقق من السن القانوني للقبول (15 سنة فأكثر حسب استمارة القبول الموحدة).</div>
+                        <div>• الحقول الإلزامية: الاسم الأول، اسم الأب، اللقب، اسم الأم، تاريخ الميلاد، ورقم الهاتف.</div>
                     </div>
                 </div>
 
                 <!-- Results Section (when completed) -->
                 <div x-show="batchImportModal.results" class="space-y-6" x-cloak>
                     <!-- KPI Cards -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         <div class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 text-center">
                             <div class="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400"
                                  x-text="batchImportModal.results ? batchImportModal.results.imported_count : 0"></div>
-                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">تم قيدهم بنجاح وتوليد أرقامهم</div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">تم قيدهم وتوليد أرقامهم</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border bg-blue-500/10 border-blue-500/20 text-center"
+                             x-show="batchImportModal.results && batchImportModal.results.created_branches && batchImportModal.results.created_branches.length > 0">
+                            <div class="text-3xl font-black font-mono text-blue-600 dark:text-blue-400"
+                                 x-text="batchImportModal.results && batchImportModal.results.created_branches ? batchImportModal.results.created_branches.length : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">فروع جديدة أُضيفت للدليل</div>
                         </div>
 
                         <div class="p-4 rounded-2xl border text-center"
                              :class="(batchImportModal.results && batchImportModal.results.errors_count > 0) ? 'bg-rose-500/10 border-rose-500/20' : 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'">
                             <div class="text-3xl font-black font-mono"
                                  :class="(batchImportModal.results && batchImportModal.results.errors_count > 0) ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'"
-                                 x-text="batchImportModal.results ? batchImportModal.results.errors_count : 0"></div>
+                                 x-text="batchImportModal.results ? (batchImportModal.results.errors_count || batchImportModal.results.failed_count || 0) : 0"></div>
                             <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">صفوف مرفوضة بها أخطاء</div>
                         </div>
                     </div>
 
+                    <!-- New Branches Notice -->
+                    <div x-show="batchImportModal.results && batchImportModal.results.created_branches && batchImportModal.results.created_branches.length > 0"
+                         class="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs">
+                        <div class="font-black text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-1.5">
+                            <span>🏢 الفروع الجديدة التي تم تسجيلها في دليل الفروع تلقائياً:</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <template x-for="br in batchImportModal.results.created_branches" :key="br">
+                                <span class="px-3 py-1 rounded-lg bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 font-bold text-blue-700 dark:text-blue-300" x-text="br"></span>
+                            </template>
+                        </div>
+                    </div>
+
                     <!-- Imported List Table -->
-                    <div x-show="batchImportModal.results && batchImportModal.results.imported && batchImportModal.results.imported.length > 0">
+                    <div x-show="batchImportModal.results && batchImportModal.results.imported_students && batchImportModal.results.imported_students.length > 0">
                         <h4 class="text-xs font-black text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
-                            <span>✓ قائمة الطلاب المقيدين الجدد:</span>
+                            <span>✓ قائمة الطلاب المقيدين الجدد وأرقام قيدهم الرسمية:</span>
                         </h4>
-                        <div class="rounded-xl border overflow-x-auto max-h-48 scrollbar-thin"
+                        <div class="rounded-xl border overflow-x-auto max-h-56 scrollbar-thin"
                              :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
                             <table class="w-full text-right text-xs">
                                 <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold sticky top-0">
                                     <tr>
-                                        <th class="p-2.5">الرقم الدراسي</th>
+                                        <th class="p-2.5">رقم القيد الرسمي</th>
                                         <th class="p-2.5">الاسم الكامل</th>
                                         <th class="p-2.5">الرقم الوطني</th>
-                                        <th class="p-2.5">الفرع</th>
+                                        <th class="p-2.5">الفرع التعليمي</th>
+                                        <th class="p-2.5">السنة الدراسية</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                                    <template x-for="st in (batchImportModal.results ? batchImportModal.results.imported : [])" :key="st.id">
+                                    <template x-for="st in (batchImportModal.results ? batchImportModal.results.imported_students : [])" :key="st.id">
                                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                            <td class="p-2.5 font-mono font-bold text-[#2b78a5] dark:text-sky-400" x-text="st.academic_number"></td>
+                                            <td class="p-2.5 font-mono font-black text-[#2b78a5] dark:text-sky-400" x-text="st.academic_number"></td>
                                             <td class="p-2.5 font-bold" x-text="st.full_name"></td>
                                             <td class="p-2.5 font-mono text-slate-500" x-text="st.national_id"></td>
-                                            <td class="p-2.5 text-slate-500" x-text="st.branch_name"></td>
+                                            <td class="p-2.5 text-slate-700 dark:text-slate-300 font-semibold" x-text="st.branch_name"></td>
+                                            <td class="p-2.5 text-slate-500" x-text="st.study_year_name"></td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -4590,7 +4682,7 @@
                             :disabled="batchImportModal.submitting || !batchImportModal.file"
                             class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-black shadow-md flex items-center gap-2 transition-all cursor-pointer text-xs disabled:opacity-50 disabled:cursor-not-allowed">
                         <svg x-show="batchImportModal.submitting" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                        <span x-text="batchImportModal.submitting ? 'جارٍ رفع وتدقيق الدفعة...' : 'بدء الاستيراد والمعالجة'">بدء الاستيراد والمعالجة</span>
+                        <span x-text="batchImportModal.submitting ? 'جارٍ رفع وتدقيق الدفعة وتوليد الأرقام...' : 'بدء الاستيراد وتوليد الأرقام'">بدء الاستيراد وتوليد الأرقام</span>
                     </button>
                 </div>
             </div>
@@ -12116,6 +12208,13 @@
                                 </button>
                             </div>
 
+                            <!-- زر استيراد الفروع من Excel -->
+                            <button @click="openBranchImportModal()"
+                                    class="px-3.5 py-2 rounded-[12px] text-xs font-bold border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1.5 transition-all cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                <span>استيراد فروع من Excel (.xlsx)</span>
+                            </button>
+
                             <!-- زر إضافة مقر فرع جديد -->
                             <button @click="openNewBranchModal()"
                                     class="px-4 py-2 rounded-[12px] text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/20 flex items-center gap-2 transition-all">
@@ -17127,6 +17226,281 @@
         </div>
     </div>
 
+    <!-- ========================================================================= -->
+    <!-- نافذة استيراد الفروع والمقرات عبر EXCEL (BRANCH IMPORT EXCEL MODAL)         -->
+    <!-- ========================================================================= -->
+    <div x-show="branchImportModal.open"
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md"
+         x-cloak
+         @keydown.escape.window="if (!branchImportModal.submitting) branchImportModal.open = false">
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col transition-all"
+             @click.away="if (!branchImportModal.submitting) branchImportModal.open = false">
+            
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-l from-emerald-50/50 via-white to-transparent dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-900">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-lg shadow-emerald-900/25 border border-white/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-black text-base text-slate-900 dark:text-white">استيراد وتحديث الفروع والمقرات (Excel .xlsx Branch Import)</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-mono">دليل الفروع المعتمد</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">رفع وتحديث بيانات المقرات الإدارية والتعليمية آلياً من ملف الإكسل المعتمد</p>
+                    </div>
+                </div>
+
+                <button @click="branchImportModal.open = false" 
+                        :disabled="branchImportModal.submitting"
+                        class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                
+                <!-- Sample Download Banner -->
+                <div class="p-4 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4"
+                     :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-emerald-50/50 border-emerald-100'">
+                    <div class="flex items-start gap-3">
+                        <div class="text-2xl mt-0.5">📥</div>
+                        <div>
+                            <h4 class="text-xs font-black text-slate-900 dark:text-white">تحميل نموذج إكسل دليل الفروع والمقرات:</h4>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">قم بتحميل نموذج Excel المعتمد الجاهز الذي يحتوي على كافة أعمدة المقرات، الإحداثيات، وبيانات المدير المسؤول.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button @click="downloadBranchesSampleXlsx()"
+                                type="button"
+                                class="px-4 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 whitespace-nowrap cursor-pointer transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span>تحميل نموذج الفروع (.xlsx)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error & Success Alerts -->
+                <div x-show="branchImportModal.errorMessage" 
+                     class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-start gap-2.5"
+                     x-cloak>
+                    <span class="text-base flex-shrink-0">⚠️</span>
+                    <span x-text="branchImportModal.errorMessage" class="leading-relaxed"></span>
+                </div>
+
+                <div x-show="branchImportModal.successMessage" 
+                     class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-start gap-2.5"
+                     x-cloak>
+                    <span class="text-base flex-shrink-0">🎉</span>
+                    <span x-text="branchImportModal.successMessage" class="leading-relaxed"></span>
+                </div>
+
+                <!-- Upload Section (when no results yet) -->
+                <div x-show="!branchImportModal.results" class="space-y-5">
+                    
+                    <!-- File Dropzone -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                            اختر ملف بيانات الفروع (Excel .xlsx أو .csv):
+                        </label>
+                        
+                        <div class="relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer"
+                             :class="branchImportModal.file ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10' : (darkMode ? 'border-slate-700 hover:border-emerald-500 bg-slate-800/30' : 'border-slate-300 hover:border-emerald-500 bg-slate-50')">
+                            
+                            <input type="file" 
+                                   accept=".xlsx,.xls,.csv,.txt"
+                                   @change="handleBranchImportFile($event)"
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+
+                            <div x-show="!branchImportModal.file" class="space-y-2 pointer-events-none">
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                </div>
+                                <div class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    انقر لاختيار ملف Excel أو اسحبه وأفلته هنا
+                                </div>
+                                <p class="text-[11px] text-slate-400">ملفات Excel (.xlsx / .xls) تدعم أسماء الفروع والمدن والإحداثيات بالكامل</p>
+                            </div>
+
+                            <div x-show="branchImportModal.file" class="space-y-2 pointer-events-none" x-cloak>
+                                <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-md">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                <div class="text-xs font-black text-emerald-600 dark:text-emerald-400" x-text="branchImportModal.fileName"></div>
+                                <div class="text-[11px] text-slate-400" x-text="'الحجم: ' + branchImportModal.fileSizeText"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live File Preview Summary Card (Parsed Client-Side via SheetJS) -->
+                    <div x-show="branchImportModal.fileSummary" class="p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 space-y-3" x-cloak>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                                <span>📊 ملخص الفروع المرصودة في الملف:</span>
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600" x-text="(branchImportModal.fileSummary ? branchImportModal.fileSummary.totalRows : 0) + ' فرع / مقر'"></span>
+                        </div>
+
+                        <!-- Mini preview table -->
+                        <div x-show="branchImportModal.filePreviewRows && branchImportModal.filePreviewRows.length > 0" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                            <table class="w-full text-right text-[11px]">
+                                <thead class="bg-slate-100 dark:bg-slate-800 font-bold text-slate-600 dark:text-slate-300">
+                                    <tr>
+                                        <th class="p-2">#</th>
+                                        <th class="p-2">اسم الفرع</th>
+                                        <th class="p-2">الرمز (الكود)</th>
+                                        <th class="p-2">المدينة</th>
+                                        <th class="p-2">المدير المسؤول</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="row in branchImportModal.filePreviewRows" :key="row.idx">
+                                        <tr>
+                                            <td class="p-2 font-mono text-slate-400" x-text="row.idx"></td>
+                                            <td class="p-2 font-bold" x-text="row.name"></td>
+                                            <td class="p-2 font-mono text-emerald-600 font-bold" x-text="row.code"></td>
+                                            <td class="p-2 font-semibold" x-text="row.city"></td>
+                                            <td class="p-2 text-slate-500" x-text="row.manager"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Import Instructions -->
+                    <div class="p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800/30 border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1.5">
+                        <div class="font-bold text-slate-800 dark:text-slate-200">تعليمات وضوابط استيراد الفروع:</div>
+                        <div>• يتم التعرف على الفرع القائم بواسطة <strong>كود الفرع</strong> أو <strong>اسم الفرع</strong>؛ إذا وُجد يتم تحديث بياناته، وإذا لم يوجد يتم إضافته كفرع جديد تلقائياً.</div>
+                        <div>• الحقول المعتمدة: اسم الفرع، كود الفرع، المدينة، المنطقة الجغرافية، العنوان، المدير المسؤول، رقم هاتف المدير، نوع الملكية، الإحداثيات الجغرافية (خط الطول وخط العرض).</div>
+                        <div>• تظهر الفروع المضافة أو المحدثة فوراً في دليل الفروع والخرائط الحية وبطاقات التقييم الميداني الشامل.</div>
+                    </div>
+                </div>
+
+                <!-- Results Section (when completed) -->
+                <div x-show="branchImportModal.results" class="space-y-6" x-cloak>
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 text-center">
+                            <div class="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400"
+                                 x-text="branchImportModal.results ? branchImportModal.results.created_count : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">فروع جديدة أُضيفت</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border bg-blue-500/10 border-blue-500/20 text-center">
+                            <div class="text-3xl font-black font-mono text-blue-600 dark:text-blue-400"
+                                 x-text="branchImportModal.results ? branchImportModal.results.updated_count : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">فروع تم تحديثها</div>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border text-center"
+                             :class="(branchImportModal.results && branchImportModal.results.errors_count > 0) ? 'bg-rose-500/10 border-rose-500/20' : 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'">
+                            <div class="text-3xl font-black font-mono"
+                                 :class="(branchImportModal.results && branchImportModal.results.errors_count > 0) ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'"
+                                 x-text="branchImportModal.results ? branchImportModal.results.errors_count : 0"></div>
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">صفوف مرفوضة</div>
+                        </div>
+                    </div>
+
+                    <!-- Processed Branches List -->
+                    <div x-show="branchImportModal.results && branchImportModal.results.processed && branchImportModal.results.processed.length > 0">
+                        <h4 class="text-xs font-black text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1.5">
+                            <span>✓ قائمة الفروع التي تم استيرادها وتحديثها:</span>
+                        </h4>
+                        <div class="rounded-xl border overflow-x-auto max-h-56 scrollbar-thin"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold sticky top-0">
+                                    <tr>
+                                        <th class="p-2.5">الإجراء</th>
+                                        <th class="p-2.5">اسم الفرع</th>
+                                        <th class="p-2.5">الكود</th>
+                                        <th class="p-2.5">المدينة</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="b in (branchImportModal.results ? branchImportModal.results.processed : [])" :key="b.id">
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <td class="p-2.5">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                                      :class="b.action === 'created' ? 'bg-emerald-500/15 text-emerald-600' : 'bg-blue-500/15 text-blue-600'"
+                                                      x-text="b.action === 'created' ? '➕ إضافة جديدة' : '🔄 تحديث'"></span>
+                                            </td>
+                                            <td class="p-2.5 font-bold" x-text="b.name"></td>
+                                            <td class="p-2.5 font-mono text-slate-500" x-text="b.code"></td>
+                                            <td class="p-2.5 text-slate-700 dark:text-slate-300 font-semibold" x-text="b.city"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Errors List Table -->
+                    <div x-show="branchImportModal.results && branchImportModal.results.errors && branchImportModal.results.errors.length > 0">
+                        <h4 class="text-xs font-black text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-1.5">
+                            <span>⚠️ تفاصيل الأخطاء:</span>
+                        </h4>
+                        <div class="rounded-xl border overflow-x-auto max-h-48 scrollbar-thin"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 font-bold sticky top-0">
+                                    <tr>
+                                        <th class="p-2.5">السطر #</th>
+                                        <th class="p-2.5">اسم الفرع / الكود</th>
+                                        <th class="p-2.5">سبب الرفض</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <template x-for="(err, i) in (branchImportModal.results ? branchImportModal.results.errors : [])" :key="i">
+                                        <tr class="hover:bg-rose-50/50 dark:hover:bg-rose-950/20">
+                                            <td class="p-2.5 font-mono font-bold text-rose-600" x-text="err.row || (i+1)"></td>
+                                            <td class="p-2.5 font-semibold text-slate-700 dark:text-slate-300" x-text="err.name || err.code || '—'"></td>
+                                            <td class="p-2.5 text-rose-600 dark:text-rose-400 font-medium leading-relaxed" x-text="err.error"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900">
+                <button @click="branchImportModal.open = false" 
+                        type="button"
+                        :disabled="branchImportModal.submitting"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-xs cursor-pointer">
+                    إغلاق
+                </button>
+
+                <div class="flex items-center gap-2">
+                    <button x-show="branchImportModal.results"
+                            @click="resetBranchImport()"
+                            type="button"
+                            class="px-4 py-2.5 rounded-xl border border-emerald-300 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-50 transition-colors cursor-pointer"
+                            x-cloak>
+                        استيراد ملف إضافي
+                    </button>
+
+                    <button x-show="!branchImportModal.results"
+                            @click="submitBranchImport()"
+                            type="button"
+                            :disabled="branchImportModal.submitting || !branchImportModal.file"
+                            class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-900/20 flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg x-show="!branchImportModal.submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        <span x-show="branchImportModal.submitting" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        <span x-text="branchImportModal.submitting ? 'جارِ معالجة واستيراد الفروع...' : 'بدء استيراد الفروع وتحديث الدليل'"></span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 
     <!-- ========================================================================= -->
     <!-- MODAL 1: نافذة المسح الذكي لبطاقات الطلاب (QR & Barcode Scanner Modal)       -->
@@ -18601,10 +18975,25 @@
                     file: null,
                     fileName: '',
                     fileSizeText: '',
+                    fileSummary: null,
+                    filePreviewRows: [],
                     defaultBranchId: 1,
                     defaultDepartmentId: 1,
                     defaultStudyYearId: 1,
                     defaultStudyType: 'REGULAR',
+                    errorMessage: '',
+                    successMessage: '',
+                    results: null
+                },
+
+                branchImportModal: {
+                    open: false,
+                    submitting: false,
+                    file: null,
+                    fileName: '',
+                    fileSizeText: '',
+                    fileSummary: null,
+                    filePreviewRows: [],
                     errorMessage: '',
                     successMessage: '',
                     results: null
@@ -19052,10 +19441,16 @@
                     const file = event.target.files ? event.target.files[0] : null;
                     if (!file) return;
                     
-                    if (!file.name.toLowerCase().endsWith('.csv') && !file.name.toLowerCase().endsWith('.txt')) {
-                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف بيانات بتنسيق CSV (.csv).';
+                    const lowerName = file.name.toLowerCase();
+                    const isXlsx = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls');
+                    const isCsv = lowerName.endsWith('.csv') || lowerName.endsWith('.txt');
+
+                    if (!isXlsx && !isCsv) {
+                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف إكسل بتنسيق (.xlsx / .xls) أو ملف (.csv).';
                         this.batchImportModal.file = null;
                         this.batchImportModal.fileName = '';
+                        this.batchImportModal.fileSummary = null;
+                        this.batchImportModal.filePreviewRows = [];
                         return;
                     }
 
@@ -19064,11 +19459,75 @@
                     this.batchImportModal.fileName = file.name;
                     const sizeInKb = (file.size / 1024).toFixed(1);
                     this.batchImportModal.fileSizeText = sizeInKb + ' كيلوبايت';
+
+                    // Client-Side Preview & Validation with SheetJS
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                if (typeof XLSX === 'undefined') return;
+                                const data = new Uint8Array(e.target.result);
+                                const workbook = XLSX.read(data, { type: 'array' });
+                                const firstSheetName = workbook.SheetNames[0];
+                                const worksheet = workbook.Sheets[firstSheetName];
+                                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                                if (jsonRows && jsonRows.length > 1) {
+                                    const headerRow = jsonRows[0].map(h => String(h || '').trim());
+                                    const dataRows = jsonRows.slice(1).filter(r => r.some(cell => String(cell || '').trim() !== ''));
+                                    
+                                    // Identify columns
+                                    const nidIdx = headerRow.findIndex(h => h.includes('الوطني') || h.toLowerCase().includes('national_id') || h.toLowerCase().includes('nid'));
+                                    const nameIdx = headerRow.findIndex(h => h.includes('الاسم') || h.toLowerCase().includes('name') || h.includes('الأول'));
+                                    const genderIdx = headerRow.findIndex(h => h.includes('الجنس') || h.toLowerCase().includes('gender') || h.includes('النوع'));
+                                    const dobIdx = headerRow.findIndex(h => h.includes('الميلاد') || h.toLowerCase().includes('dob') || h.toLowerCase().includes('birth'));
+                                    const branchIdx = headerRow.findIndex(h => h.includes('الفرع') || h.toLowerCase().includes('branch'));
+
+                                    let maleCount = 0;
+                                    let femaleCount = 0;
+
+                                    dataRows.forEach(r => {
+                                        const g = genderIdx >= 0 ? String(r[genderIdx] || '').trim() : '';
+                                        const nid = nidIdx >= 0 ? String(r[nidIdx] || '').trim() : '';
+                                        if (g.includes('ذكر') || g === 'M' || g === 'male' || (nid && nid.startsWith('1'))) {
+                                            maleCount++;
+                                        } else if (g.includes('أنثى') || g.includes('انثى') || g === 'F' || g === 'female' || (nid && nid.startsWith('2'))) {
+                                            femaleCount++;
+                                        }
+                                    });
+
+                                    const previewRows = dataRows.slice(0, 5).map((r, idx) => {
+                                        const nid = nidIdx >= 0 ? String(r[nidIdx] || '').trim() : '—';
+                                        let name = nameIdx >= 0 ? String(r[nameIdx] || '').trim() : '—';
+                                        if (nameIdx >= 0 && r[nameIdx + 1]) {
+                                            name = [r[nameIdx], r[nameIdx + 1], r[nameIdx + 2], r[nameIdx + 3]].filter(Boolean).join(' ');
+                                        }
+                                        const gender = genderIdx >= 0 ? String(r[genderIdx] || '').trim() : (nid.startsWith('1') ? 'ذكر' : (nid.startsWith('2') ? 'أنثى' : '—'));
+                                        const dob = dobIdx >= 0 ? String(r[dobIdx] || '').trim() : '—';
+                                        const branch = branchIdx >= 0 ? String(r[branchIdx] || '').trim() : 'الافتراضي';
+                                        return { idx: idx + 1, nid, name, gender, dob, branch };
+                                    });
+
+                                    this.batchImportModal.fileSummary = {
+                                        totalRows: dataRows.length,
+                                        maleCount: maleCount,
+                                        femaleCount: femaleCount
+                                    };
+                                    this.batchImportModal.filePreviewRows = previewRows;
+                                }
+                            } catch (parseErr) {
+                                console.warn('Live XLSX preview parse notice:', parseErr);
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } catch (e) {
+                        console.warn('FileReader error:', e);
+                    }
                 },
 
                 async submitBatchImport() {
                     if (!this.batchImportModal.file) {
-                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف CSV أولاً لبدء الاستيراد.';
+                        this.batchImportModal.errorMessage = 'يرجى اختيار ملف Excel (.xlsx) أو CSV أولاً لبدء الاستيراد.';
                         return;
                     }
 
@@ -19087,7 +19546,7 @@
 
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         
-                        const res = await fetch('/api/students/import-batch', {
+                        const res = await fetch('/api/v1/students/import-batch', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -19102,19 +19561,30 @@
                             this.batchImportModal.results = {
                                 imported_count: data.imported_count || 0,
                                 errors_count: data.errors_count || 0,
-                                imported: data.imported || [],
+                                created_branches: data.created_branches || [],
+                                imported_students: data.imported_students || data.imported || [],
                                 errors: data.errors || []
                             };
 
-                            this.batchImportModal.successMessage = data.message || `تم بنجاح استيراد ${data.imported_count} طالب!`;
-                            this.showToast(`تم استيراد ${data.imported_count} طالب بنجاح!`);
+                            let msg = data.message || `تم بنجاح استيراد وقيد ${data.imported_count} طالب وتوليد أرقام قيدهم الرسمية!`;
+                            if (data.created_branches && data.created_branches.length > 0) {
+                                msg += ` (تمت إضافة ${data.created_branches.length} فروع جديدة للدليل تلقائياً)`;
+                            }
+                            this.batchImportModal.successMessage = msg;
+                            this.showToast(`تم استيراد وقيد ${data.imported_count} طالب بنجاح!`);
                             
-                            // Refresh student registry and students list
+                            // Refresh student registry, students list, and branch operations
                             if (typeof this.loadRegistry === 'function') {
                                 await this.loadRegistry(1);
                             }
                             if (typeof this.loadStudents === 'function') {
                                 await this.loadStudents();
+                            }
+                            if (typeof this.loadBranchOperations === 'function') {
+                                await this.loadBranchOperations();
+                            }
+                            if (typeof this.loadDashboard === 'function') {
+                                await this.loadDashboard(true);
                             }
                         } else {
                             this.batchImportModal.errorMessage = data.message || 'حدث خطأ أثناء معالجة ملف الاستيراد.';
@@ -19122,41 +19592,206 @@
                                 this.batchImportModal.results = {
                                     imported_count: data.imported_count || 0,
                                     errors_count: data.errors.length,
-                                    imported: data.imported || [],
+                                    created_branches: data.created_branches || [],
+                                    imported_students: data.imported_students || data.imported || [],
                                     errors: data.errors
                                 };
                             }
                         }
                     } catch (err) {
                         console.error('Batch import error:', err);
-                        this.batchImportModal.errorMessage = 'فشل الاتصال بالخادم أثناء رفع الملف. يرجى إعادة المحاولة.';
+                        this.batchImportModal.errorMessage = 'فشل الاتصال بالخادم أثناء رفع ومعالجة الملف. يرجى إعادة المحاولة.';
                     } finally {
                         this.batchImportModal.submitting = false;
                     }
                 },
 
+                downloadSampleImportXlsx() {
+                    window.location.href = '/api/v1/students/sample-template-xlsx';
+                },
+
                 downloadSampleImportCsv() {
-                    const headers = 'الرقم الوطني,الاسم الأول,اسم الأب,اسم الجد,اللقب,اسم الأم,تاريخ الميلاد,الجنس,رقم الهاتف,هاتف ولي الأمر,مكان الميلاد,العنوان';
-                    const sample1 = '120060012345,أحمد,محمد,علي,الورفلي,فاطمة,2006-05-15,ذكر,0912345678,0923456789,طرابلس,حي الأندلس';
-                    const sample2 = '220070054321,مريم,عبدالله,سالم,التاجوري,عائشة,2007-09-20,أنثى,0918765432,0928765432,تاجوراء,النشيع';
-                    const csvContent = '\uFEFF' + headers + '\n' + sample1 + '\n' + sample2 + '\n';
-                    
-                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.setAttribute('download', 'نموذج_استيراد_الطلاب_المعتمد.csv');
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    window.location.href = '/api/v1/students/sample-template-csv';
                 },
 
                 resetBatchImport() {
                     this.batchImportModal.file = null;
                     this.batchImportModal.fileName = '';
                     this.batchImportModal.fileSizeText = '';
+                    this.batchImportModal.fileSummary = null;
+                    this.batchImportModal.filePreviewRows = [];
                     this.batchImportModal.results = null;
                     this.batchImportModal.errorMessage = '';
                     this.batchImportModal.successMessage = '';
+                },
+
+                // ==========================================
+                // 1b. BRANCH DIRECTORY EXCEL IMPORT METHODS
+                // ==========================================
+                openBranchImportModal() {
+                    this.branchImportModal.open = true;
+                    this.branchImportModal.submitting = false;
+                    this.branchImportModal.file = null;
+                    this.branchImportModal.fileName = '';
+                    this.branchImportModal.fileSizeText = '';
+                    this.branchImportModal.fileSummary = null;
+                    this.branchImportModal.filePreviewRows = [];
+                    this.branchImportModal.results = null;
+                    this.branchImportModal.errorMessage = '';
+                    this.branchImportModal.successMessage = '';
+                },
+
+                handleBranchImportFile(event) {
+                    const file = event.target.files ? event.target.files[0] : null;
+                    if (!file) return;
+
+                    const lowerName = file.name.toLowerCase();
+                    const isXlsx = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls');
+                    const isCsv = lowerName.endsWith('.csv') || lowerName.endsWith('.txt');
+
+                    if (!isXlsx && !isCsv) {
+                        this.branchImportModal.errorMessage = 'يرجى اختيار ملف إكسل بتنسيق (.xlsx / .xls) أو ملف (.csv).';
+                        this.branchImportModal.file = null;
+                        this.branchImportModal.fileName = '';
+                        this.branchImportModal.fileSummary = null;
+                        this.branchImportModal.filePreviewRows = [];
+                        return;
+                    }
+
+                    this.branchImportModal.errorMessage = '';
+                    this.branchImportModal.file = file;
+                    this.branchImportModal.fileName = file.name;
+                    const sizeInKb = (file.size / 1024).toFixed(1);
+                    this.branchImportModal.fileSizeText = sizeInKb + ' كيلوبايت';
+
+                    try {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                if (typeof XLSX === 'undefined') return;
+                                const data = new Uint8Array(e.target.result);
+                                const workbook = XLSX.read(data, { type: 'array' });
+                                const firstSheetName = workbook.SheetNames[0];
+                                const worksheet = workbook.Sheets[firstSheetName];
+                                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                                if (jsonRows && jsonRows.length > 1) {
+                                    const headerRow = jsonRows[0].map(h => String(h || '').trim());
+                                    const dataRows = jsonRows.slice(1).filter(r => r.some(cell => String(cell || '').trim() !== ''));
+
+                                    const nameIdx = headerRow.findIndex(h => h.includes('الفرع') || h.toLowerCase().includes('name'));
+                                    const codeIdx = headerRow.findIndex(h => h.includes('الكود') || h.includes('الرمز') || h.toLowerCase().includes('code'));
+                                    const cityIdx = headerRow.findIndex(h => h.includes('المدينة') || h.toLowerCase().includes('city'));
+                                    const managerIdx = headerRow.findIndex(h => h.includes('المدير') || h.toLowerCase().includes('manager'));
+
+                                    const previewRows = dataRows.slice(0, 5).map((r, idx) => {
+                                        return {
+                                            idx: idx + 1,
+                                            name: nameIdx >= 0 ? String(r[nameIdx] || '').trim() : '—',
+                                            code: codeIdx >= 0 ? String(r[codeIdx] || '').trim() : '—',
+                                            city: cityIdx >= 0 ? String(r[cityIdx] || '').trim() : '—',
+                                            manager: managerIdx >= 0 ? String(r[managerIdx] || '').trim() : '—'
+                                        };
+                                    });
+
+                                    this.branchImportModal.fileSummary = {
+                                        totalRows: dataRows.length
+                                    };
+                                    this.branchImportModal.filePreviewRows = previewRows;
+                                }
+                            } catch (parseErr) {
+                                console.warn('Branch XLSX live parse notice:', parseErr);
+                            }
+                        };
+                        reader.readAsArrayBuffer(file);
+                    } catch (e) {
+                        console.warn('FileReader error:', e);
+                    }
+                },
+
+                async submitBranchImport() {
+                    if (!this.branchImportModal.file) {
+                        this.branchImportModal.errorMessage = 'يرجى اختيار ملف Excel (.xlsx) أولاً لبدء الاستيراد.';
+                        return;
+                    }
+
+                    this.branchImportModal.submitting = true;
+                    this.branchImportModal.errorMessage = '';
+                    this.branchImportModal.successMessage = '';
+                    this.branchImportModal.results = null;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', this.branchImportModal.file);
+
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                        const res = await fetch('/api/v1/branches/import-excel', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: formData
+                        });
+
+                        const data = await res.json();
+
+                        if (res.ok && data.success) {
+                            this.branchImportModal.results = {
+                                created_count: data.created_count || 0,
+                                updated_count: data.updated_count || 0,
+                                errors_count: data.errors_count || 0,
+                                processed: data.processed || [],
+                                errors: data.errors || []
+                            };
+
+                            this.branchImportModal.successMessage = data.message || `تم بنجاح استيراد وتحديث ${data.created_count + data.updated_count} فرع!`;
+                            this.showToast(`تم استيراد ${data.created_count} فرع جديد وتحديث ${data.updated_count} فرع بنجاح!`);
+
+                            // Refresh branch operations and map
+                            if (typeof this.loadBranchOperations === 'function') {
+                                await this.loadBranchOperations();
+                            }
+                            if (typeof this.initBranchesMap === 'function') {
+                                this.initBranchesMap();
+                            }
+                            if (typeof this.loadDashboard === 'function') {
+                                await this.loadDashboard(true);
+                            }
+                        } else {
+                            this.branchImportModal.errorMessage = data.message || 'حدث خطأ أثناء معالجة ملف الفروع.';
+                            if (data.errors && Array.isArray(data.errors)) {
+                                this.branchImportModal.results = {
+                                    created_count: data.created_count || 0,
+                                    updated_count: data.updated_count || 0,
+                                    errors_count: data.errors.length,
+                                    processed: data.processed || [],
+                                    errors: data.errors
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Branch import error:', err);
+                        this.branchImportModal.errorMessage = 'فشل الاتصال بالخادم أثناء رفع ومعالجة ملف الفروع.';
+                    } finally {
+                        this.branchImportModal.submitting = false;
+                    }
+                },
+
+                downloadBranchesSampleXlsx() {
+                    window.location.href = '/api/v1/branches/sample-template-xlsx';
+                },
+
+                resetBranchImport() {
+                    this.branchImportModal.file = null;
+                    this.branchImportModal.fileName = '';
+                    this.branchImportModal.fileSizeText = '';
+                    this.branchImportModal.fileSummary = null;
+                    this.branchImportModal.filePreviewRows = [];
+                    this.branchImportModal.results = null;
+                    this.branchImportModal.errorMessage = '';
+                    this.branchImportModal.successMessage = '';
                 },
 
                 openCreateStudentModal() {

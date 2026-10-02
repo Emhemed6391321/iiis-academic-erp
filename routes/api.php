@@ -79,7 +79,9 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/students', [StudentController::class, 'index']);
     Route::post('/students', [StudentController::class, 'store'])->middleware(['academic.year.active', 'check.window:REGISTRATION']);
     Route::post('/students/import-batch', [StudentController::class, 'importBatch'])->middleware(['academic.year.active']);
-    Route::get('/students/sample-template', [StudentController::class, 'downloadSampleCsv']);
+    Route::get('/students/sample-template', [StudentController::class, 'downloadSampleTemplate']);
+    Route::get('/students/sample-template-xlsx', [StudentController::class, 'downloadSampleXlsx']);
+    Route::get('/students/sample-template-csv', [StudentController::class, 'downloadSampleCsv']);
     Route::get('/students/{student}', [StudentController::class, 'show']);
     Route::match(['put', 'patch', 'post'], '/students/{student}', [StudentController::class, 'update']);
     Route::get('/students/{student}/card', [StudentController::class, 'getCard']);
@@ -143,6 +145,8 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     // 9. Branch Operations & Infrastructure Integration
     Route::get('/branches/overview', [BranchOperationsController::class, 'getOverview']);
     Route::get('/branches/directory', [BranchOperationsController::class, 'getBranches']);
+    Route::get('/branches/sample-template-xlsx', [BranchOperationsController::class, 'downloadBranchesSampleXlsx']);
+    Route::post('/branches/import-excel', [BranchOperationsController::class, 'importBranchesExcel']);
     Route::post('/branches', [BranchOperationsController::class, 'storeBranch']);
     Route::put('/branches/{id}', [BranchOperationsController::class, 'updateBranch']);
     Route::post('/branches/{id}/suspend', [BranchOperationsController::class, 'suspendBranch']);

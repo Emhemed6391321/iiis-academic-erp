@@ -111,8 +111,8 @@ class LoginController extends Controller
         // Forensic audit logging
         $this->logAuditAttempt($request, $user->id, 'LOGIN_SUCCESS', 'تسجيل دخول آمن وناجح للمنظومة.');
 
-        // 6. Mandatory MFA enforcement for GLOBAL_SCOPE and super_admin
-        if ($user->requiresMfa()) {
+        // 6. Mandatory MFA enforcement for users who enabled it OR required by policy
+        if ($user->hasConfirmedMfa() || $user->requiresMfa()) {
             if (!$user->hasConfirmedMfa()) {
                 return redirect()->route('mfa.setup');
             }
