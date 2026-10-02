@@ -1,4 +1,4 @@
-﻿                        <div x-show="currentSection === 'students'" class="space-y-6">
+                        <div x-show="currentSection === 'students'" class="space-y-6">
                 <!-- لوحة التحكم العلوية لسجل الطلاب العام -->
                 <div class="p-6 rounded-[20px] border space-y-5"
                      :class="darkMode ? 'bg-slate-900/90 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'bg-white border-[#e8ebf2] shadow-[0_12px_24px_rgba(15,23,42,0.04)]'">
@@ -617,7 +617,6 @@
                     </div>
 
                 </div>
-            </div>
 
     <div x-show="createStudentModal.open"
          class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md"
@@ -2055,7 +2054,17 @@
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 mb-1">العام الدراسي للكشف</label>
                     <input type="text" x-model="officialRegistryPrintModal.academicYear"
-                           class="w-full text-xs px-3 py-2 rounded-lg border outline-none fon    <!-- ========================================================================= -->
+                           class="w-full text-xs px-3 py-2 rounded-lg border outline-none font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-amber-600">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 no-print">
+                <button @click="officialRegistryPrintModal.open = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
     <!-- 3. نافذة طباعة وثيقة تعريف طالب رسمي (STUDENT ENROLLMENT CERTIFICATE)      -->
     <!-- ========================================================================= -->
     <div x-show="enrollmentCertModal.open"
@@ -2224,8 +2233,8 @@
 
                         <div class="space-y-6 relative">
                             <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url" 
+                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert.stamp_url">
+                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert.stamp_url" 
                                      class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
                                      alt="الختم الرسمي">
                             </template>
@@ -2241,219 +2250,6 @@
                     <!-- باركود التحقق الرقمي والرمز المشفر -->
                     <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
                         <span>شهادة رسمية صادرة إلكترونياً ومسجلة بالسجل الإلكتروني العام للمعهد التخصصي</span>
-                        <span>رمز التحقق: <strong class="text-slate-700" x-text="enrollmentCertModal.cert.ref_number"></strong></span>
-                    </div>
-
-                </div>
-            </template>
-        </div>
-    </div>
-
-
-    <!-- ========================================================================= -->
-    <!-- 4. نافذة طباعة شهادة حسن السيرة والسلوك (GOOD CONDUCT CERTIFICATE MODAL)  -->
-    <!-- ========================================================================= -->
-    <div x-show="goodConductCertModal.open"
-         class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
-         x-cloak
-         @keydown.escape.window="goodConductCertModal.open = false" style="display: none;">
-        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full p-6 space-y-5 text-xs transition-all"
-             @click.away="goodConductCertModal.open = false">
-            
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 no-print">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg font-bold">
-                        🎖️
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-sm text-slate-900 dark:text-white">شهادة حسن سيرة وسلوك وانضباط أكاديمي</h3>
-                        <p class="text-[11px] text-slate-400">إفادة رسمية معتمدة بانضباط الطالب وخلو سجله من أي مخالفات تأديبية</p>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                    <button @click="printGoodConductDoc()"
-                            :disabled="goodConductCertModal.loading || !goodConductCertModal.cert"
-                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-black flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        <span>طباعة الشهادة الرسمية 🖨️</span>
-                    </button>
-                    <button @click="goodConductCertModal.open = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
-                </div>
-            </div>
-
-            <!-- حالة جاري التحميل -->
-            <div x-show="goodConductCertModal.loading" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
-                <svg class="w-8 h-8 text-emerald-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">جاري استخراج وفحص شهادة حسن السيرة والسلوك...</span>
-            </div>
-
-            <!-- محتوى شهادة حسن السيرة والسلوك المطبوع -->
-            <template x-if="goodConductCertModal.cert">
-                <div id="printableGoodConductCertificate" class="p-8 sm:p-10 bg-white text-slate-900 rounded-2xl border-4 border-double border-emerald-900 relative select-none print-cert-container shadow-sm">
-                    
-                    <!-- إطار مائي زخرفي داخلي -->
-                    <div class="absolute inset-2 border border-emerald-200 rounded-xl pointer-events-none"></div>
-
-                    <!-- الترويسة الرسمية -->
-                    <div class="flex items-center justify-between pb-4 border-b-2 border-emerald-900 mb-6 relative z-10">
-                        <div class="text-right space-y-0.5">
-                            <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
-                            <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
-                            <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                            <div class="font-black text-sm text-emerald-950" x-text="goodConductCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
-                            <div class="text-[11px] font-bold text-emerald-700" x-text="'فرع: ' + (goodConductCertModal.cert.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
-                        </div>
-
-                        <div class="flex flex-col items-center">
-                            <div class="w-20 h-20 rounded-full border-2 border-emerald-900 flex items-center justify-center p-1 bg-white overflow-hidden shadow-xs">
-                                <img :src="goodConductCertModal.cert.logo_url || adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
-                                     class="w-full h-full object-contain" 
-                                     alt="شعار المعهد المركزي">
-                            </div>
-                            <span class="text-[9px] font-mono mt-1 font-black tracking-widest text-emerald-900" x-text="adminSettings.profile.header_title || 'شؤون الطلاب والرعاية التربوية'">شؤون الطلاب والرعاية التربوية</span>
-                        </div>
-
-                        <div class="text-left space-y-1 font-mono text-[11px]">
-                            <div><strong>الرقم الإشاري:</strong> <span class="text-slate-800 font-bold" x-text="goodConductCertModal.cert.ref_number"></span></div>
-                            <div><strong>التاريخ:</strong> <span x-text="goodConductCertModal.cert.issued_date"></span></div>
-                            <div><strong>العام الدراسي:</strong> <span x-text="goodConductCertModal.cert.student.academic_year"></span></div>
-                        </div>
-                    </div>
-
-                    <!-- عنوان الشهادة -->
-                    <div class="text-center my-6 relative z-10">
-                        <div class="inline-block px-10 py-2.5 rounded-xl border-2 border-emerald-900 bg-emerald-50/50 shadow-xs">
-                            <h1 class="text-xl font-black tracking-wider text-emerald-950">شهادة حسن سيرة وسلوك وانضباط أكاديمي</h1>
-                            <div class="text-[9px] font-mono tracking-widest text-emerald-800 uppercase mt-0.5">CERTIFICATE OF GOOD CONDUCT & DISCIPLINE</div>
-                        </div>
-                    </div>
-
-                    <!-- صندوق بيانات الطالب المميز -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 text-xs my-5 relative z-10">
-                        <div class="col-span-2">
-                            <span class="text-slate-500 block text-[10px]">اسم الطالب الرباعي:</span>
-                            <strong class="text-slate-950 font-black text-[13px]" x-text="goodConductCertModal.cert.student.full_name"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">رقم القيد الأكاديمي:</span>
-                            <strong class="font-mono text-emerald-800 font-black" x-text="goodConductCertModal.cert.student.academic_number"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">الرقم الوطني:</span>
-                            <strong class="font-mono text-slate-800" x-text="goodConductCertModal.cert.student.national_id"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">المرحلة الدراسية:</span>
-                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.stage_name"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">الشعبة / القسم:</span>
-                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.section_name"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">صفة القيد:</span>
-                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.study_type"></strong>
-                        </div>
-                        <div>
-                            <span class="text-slate-500 block text-[10px]">الحالة الأكاديمية:</span>
-                            <strong class="text-emerald-800 font-bold" x-text="goodConductCertModal.cert.student.academic_status"></strong>
-                        </div>
-                    </div>
-
-                    <!-- النص الرسمي لشهادة حسن السيرة والسلوك -->
-                    <div class="my-6 space-y-4 text-justify leading-loose text-sm font-semibold text-slate-800 relative z-10">
-                        <p class="text-base font-black text-slate-900">إلى من يهمه الأمر،،،</p>
-                        
-                        <p class="leading-loose text-[13.5px] indent-6 text-justify" x-text="goodConductCertModal.cert.official_text"></p>
-
-                        <div class="p-3.5 rounded-xl bg-emerald-100/60 border border-emerald-300 text-xs font-bold text-emerald-950 flex items-center gap-2">
-                            <span>✅ تشهد وتؤكد إدارة المعهد بأن السجل السلوكي والتربوي للطالب المذكور نظيف تماماً وخالٍ من أية عقوبات أو إنذارات أو مخالفات للوائح المنظمة للمعهد.</span>
-                        </div>
-                    </div>
-
-                    <!-- التوقيعات والاعتماد الرسمي مع اسم الموظف المستخرج -->
-                    <div class="mt-10 pt-6 border-t-2 border-emerald-900 grid grid-cols-3 gap-6 text-center text-xs font-bold relative z-10">
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <div class="text-slate-500 text-[10px]">الموظف المستخرج للشهادة:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="goodConductCertModal.cert.issuer.name"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="goodConductCertModal.cert.issuer.timestamp"></div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
-                        </div>
-
-                        <div class="space-y-6">
-                            <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
-                        </div>
-
-                        <div class="space-y-6 relative">
-                            <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url" 
-                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
-                                     alt="الختم الرسمي">
-                            </template>
-                            <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').name || getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
-                        </div>
-
-                    </div>
-
-                    <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
-                        <span>شهادة رسمية صادرة إلكترونياً وموثقة بالسجل الإلكتروني العام للمعهد التخصصي للعلوم الشرعية</span>
-                        <span>الرقم المرجعي: <strong class="text-emerald-900" x-text="goodConductCertModal.cert.ref_number"></strong></span>
-                    </div>
-
-                </div>
-            </template>
-        </div>
-    </div>border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold">
-                        
-                        <div class="space-y-6">
-                            <div>
-                                <div class="text-slate-500 text-[10px]">الموظف المستخرج للشهادة:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="enrollmentCertModal.cert.issuer.name"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="enrollmentCertModal.cert.issuer.timestamp"></div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
-                        </div>
-
-                        <div class="space-y-6">
-                            <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
-                        </div>
-
-                        <div class="space-y-6 relative">
-                            <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url" 
-                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
-                                     alt="الختم الرسمي">
-                            </template>
-                            <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').name || getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').title">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
-                            </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم المعتمد: ............................</div>
-                        </div>
-
-                    </div>
-
-                    <!-- باركود التحقق الرقمي -->
-                    <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400">
-                        <span>شهادة رسمية صادرة إلكترونياً ومؤمنة برقم مرجعي</span>
                         <span>رمز التحقق: <strong class="text-slate-700" x-text="enrollmentCertModal.cert.ref_number"></strong></span>
                     </div>
 
@@ -2578,8 +2374,8 @@
 
                         <div class="space-y-6 relative">
                             <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url" 
+                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || goodConductCertModal.cert.stamp_url">
+                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || goodConductCertModal.cert.stamp_url" 
                                      class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
                                      alt="الختم الرسمي">
                             </template>
@@ -3600,12 +3396,4 @@
 
         </div>
     </div>
-
-
-            <!-- ============================================================ -->
-            <!-- STUDENT FILE VIEW — وحدة إدارة ملف الطالب الشاملة             -->
-            <!-- ============================================================ -->
-            
-            <!-- ========================================================================= -->
-            <!-- 3a. وحدة حضور وانصراف الطلاب المركزية (STUDENT ATTENDANCE & DEPARTURE) -->
-            <!-- ========================================================================= -->
+</div>{{-- end students section --}}

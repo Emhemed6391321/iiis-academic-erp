@@ -1,4 +1,4 @@
-﻿    <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>البوابة الإلكترونية للمعهد التخصصي للدراسات الإسلامية (IIIS Enterprise ERP)</title>
@@ -136,23 +136,29 @@
         body {
             display: flex;
             flex-direction: column;
+            height: 100vh;
         }
         body > header {
             flex-shrink: 0;
+            width: 100%;
         }
         body > div.layout-wrapper {
             flex: 1 1 0%;
             min-height: 0;
-            display: flex;
+            display: flex !important;
+            flex-direction: row !important;
             overflow: hidden;
+            width: 100%;
         }
         body > div.layout-wrapper > aside {
             flex-shrink: 0;
+            height: 100%;
             overflow-y: auto;
         }
         body > div.layout-wrapper > main {
             flex: 1 1 0%;
             min-width: 0;
+            height: 100%;
             overflow-y: auto;
         }
         /* ─────────────────────────────────────────────────────── */

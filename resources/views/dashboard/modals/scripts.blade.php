@@ -1,4 +1,4 @@
-﻿    <script>
+    <script>
         function academicApp() {
             return {
                 // =========================================================================
@@ -946,6 +946,29 @@
                     loading: false,
                     student: null,
                     activeTab: 'personal',
+                    docSlotModal: {
+                        open: false,
+                        type: '',
+                        slotTitle: '',
+                        typeLabel: '',
+                        file: null,
+                        capturedPhoto: null,
+                        capturedBase64: null,
+                        mode: 'file',
+                        cameraActive: false,
+                        cameraStream: null,
+                        notes: '',
+                        issueDate: '',
+                        submitting: false
+                    },
+                    docPreviewModal: {
+                        open: false,
+                        title: '',
+                        url: '',
+                        type: '',
+                        isPdf: false,
+                        isImage: false
+                    },
                     tabs: [
                         { id: 'personal',   icon: '👤', label: 'البيانات الشخصية',   count: 0 },
                         { id: 'notes',      icon: '📝', label: 'الملاحظات',          count: 0 },

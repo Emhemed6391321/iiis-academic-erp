@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl" x-data="academicApp()" x-init="initApp()" x-cloak :class="{ 'dark': darkMode }">
 <head>
     @include('dashboard.partials.head')
@@ -73,6 +73,5 @@
     @include('dashboard.modals.all_modals')
     @include('dashboard.modals.scripts')
 
-</div>
 </body>
 </html>

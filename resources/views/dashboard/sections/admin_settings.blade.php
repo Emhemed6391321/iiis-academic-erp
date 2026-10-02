@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'admin_settings'" class="space-y-6" x-init="$watch('currentSection', val => { if(val === 'admin_settings') loadAdminSettingsMaster(); })">
+            <div x-show="currentSection === 'admin_settings'" class="space-y-6" x-init="$watch('currentSection', val => { if(val === 'admin_settings') loadAdminSettingsMaster(); })">
                 
                 <!-- Main Header Banner -->
                 <div class="relative overflow-hidden rounded-[20px] p-6 md:p-8 border shadow-sm transition-all"
@@ -213,12 +213,12 @@
                                     <label class="block text-xs font-extrabold text-slate-400">الختم الرسمي المعتمد (Official Stamp)</label>
                                     <div class="p-4 rounded-[16px] border text-center flex flex-col items-center justify-center gap-3 transition-all"
                                          :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'">
-                                        <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url">
-                                            <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url" 
+                                        <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url">
+                                            <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url" 
                                                  class="w-20 h-20 object-contain rounded-xl p-1 bg-white shadow-sm border border-slate-200"
                                                  alt="الختم الرسمي">
                                         </template>
-                                        <template x-if="!adminSettings.stampPreviewUrl && !adminSettings.profile.stamp_url">
+                                        <template x-if="!adminSettings.stampPreviewUrl && !adminSettings.profile?.stamp_url">
                                             <div class="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 text-xs">
                                                 لا يوجد ختم
                                             </div>
