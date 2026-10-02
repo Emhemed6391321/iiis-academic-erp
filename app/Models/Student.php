@@ -36,6 +36,10 @@ class Student extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'is_archived',
+        'archived_at',
+        'archived_by',
+        'archive_reason',
         // حقول إضافية لملف الطالب الكامل
         'profile_photo_path',
         'is_special_needs',
@@ -76,6 +80,8 @@ class Student extends Model
         'birth_date'       => 'date',
         'approved_at'      => 'datetime',
         'data_verified_at' => 'datetime',
+        'archived_at'      => 'datetime',
+        'is_archived'      => 'boolean',
         'is_special_needs' => 'boolean',
         'has_disability'   => 'boolean',
         'chronic_diseases_list' => 'array',
@@ -139,6 +145,7 @@ class Student extends Model
             'TRANSFERRED'       => 'منقول',
             'GRADUATED'         => 'خريج',
             'EXPELLED'          => 'مطرود',
+            'ARCHIVED'          => 'مؤرشف',
             default             => (string)$status,
         };
     }
@@ -248,5 +255,10 @@ class Student extends Model
     public function attendance(): HasMany
     {
         return $this->hasMany(StudentAttendance::class)->latest('record_date');
+    }
+
+    public function archiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by');
     }
 }

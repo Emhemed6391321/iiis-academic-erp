@@ -40,6 +40,24 @@ class StudentPolicy
         return $user->isSuperAdmin();
     }
 
+    public function archive(User $user, Student $student): bool
+    {
+        if ($user->hasGlobalAccessScope()) {
+            return true;
+        }
+
+        return ((int)$user->branch_id === (int)$student->branch_id);
+    }
+
+    public function restore(User $user, Student $student): bool
+    {
+        if ($user->hasGlobalAccessScope()) {
+            return true;
+        }
+
+        return ((int)$user->branch_id === (int)$student->branch_id);
+    }
+
     public function changeStatus(User $user, Student $student): bool
     {
         if ($user->hasGlobalAccessScope()) {

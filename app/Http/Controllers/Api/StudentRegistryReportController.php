@@ -105,6 +105,18 @@ class StudentRegistryReportController extends Controller
             $query->where('has_disability', filter_var($request->has_disability, FILTER_VALIDATE_BOOLEAN));
         }
 
+        // 9b. حساب عدد المؤرشفين استناداً لمعايير البحث الأخرى
+        $archivedCount = (clone $query)->where('is_archived', true)->count();
+
+        // 9c. تصفية بالأرشفة (مؤرشف / غير مؤرشف)
+        if ($request->filled('is_archived') && $request->is_archived !== 'all') {
+            $query->where('is_archived', filter_var($request->is_archived, FILTER_VALIDATE_BOOLEAN));
+        } elseif ($request->get('tab') === 'archived') {
+            $query->where('is_archived', true);
+        } elseif (!$request->filled('is_archived') && !$request->filled('search')) {
+            $query->where('is_archived', false);
+        }
+
         // حساب الإحصائيات التجميعية للاستعلام الحالي
         $totalCount = (clone $query)->count();
         $maleCount = (clone $query)->where('gender', 'MALE')->count();
@@ -175,6 +187,7 @@ class StudentRegistryReportController extends Controller
                 'suspended'   => $suspendedCount,
                 'transferred' => $transferredCount,
                 'graduated'   => $graduatedCount,
+                'archived'    => $archivedCount,
             ],
             'filters_data' => [
                 'branches'       => (function() use ($user) {
@@ -231,6 +244,32 @@ class StudentRegistryReportController extends Controller
         $departmentBody = $profile['supervising_department'];
         $signatories = \App\Services\AdminSettingsService::getSignatoriesFor('enrollment_cert', $student->branch_id);
 
+        // إنشاء أو استرجاع قيد التوثيق الرقمي المؤمن بالسلسلة المشفرة
+        $ledgerService = app(\App\Services\DocumentLedgerService::class);
+        $verification = \App\Models\DocumentVerification::where('student_id', $student->id)
+            ->where('document_type', 'ENROLLMENT_CERTIFICATE')
+            ->where('status', 'VALID')
+            ->latest('id')
+            ->first();
+
+        if (!$verification) {
+            $verification = $ledgerService->issueDocument(
+                'ENROLLMENT_CERTIFICATE',
+                $student,
+                [
+                    'academic_year' => $academicYearName,
+                    'stage'         => $stageName,
+                    'section'       => $sectionName,
+                    'study_type'    => $studyType,
+                ],
+                'مدير عام المعهد التخصصي للعلوم الشرعية',
+                $user?->id
+            );
+        }
+
+        $refNumber = 'تعريف-' . date('Y') . '-' . substr($verification->document_uuid, 0, 8);
+        $qrCodeUrl = url("/verify/doc/{$verification->document_uuid}");
+
         // النص الرسمي المعتمد لتعريف الطالب
         $officialText = "تشهد إدارة {$instituteName} – فرع ({$branchName}) بأن الطالب: ({$student->full_name})، مواليد ({$birthPlace} - {$birthDateFormatted})، جنسيته ({$nationality})، ورقمه الوطني ({$nationalId})، المقيد بالمعهد بالمرحلة الدراسية ({$stageName})، بشعبة ({$sectionName})، وبصفة قيد ({$studyType})، تحت رقم قيد ({$academicNumber})، وذلك عن العام الدراسي ({$academicYearName}). وقد أُعطي له هذا التعريف بناءً على طلبه لتقديمه إلى الجهات ذات العلاقة دون أدنى مسؤولية أو التزام مالي على المعهد.";
 
@@ -241,7 +280,8 @@ class StudentRegistryReportController extends Controller
             'logo_url'           => $profile['logo_url'],
             'stamp_url'          => $profile['stamp_url'],
             'certificate_type'   => 'تعريف طالب مقيد',
-            'ref_number'         => 'تعريف-' . date('Y') . '-' . str_pad($student->id, 5, '0', STR_PAD_LEFT),
+            'ref_number'         => $refNumber,
+            'document_uuid'      => $verification->document_uuid,
             'issued_date'        => Carbon::now()->format('Y/m/d'),
             'student'            => [
                 'id'                 => $student->id,
@@ -270,7 +310,7 @@ class StudentRegistryReportController extends Controller
                 'timestamp'          => Carbon::now()->format('Y-m-d H:i:s'),
             ],
             'signatories'        => $signatories,
-            'qr_verification_code' => url("/api/v1/students/{$student->id}/card"),
+            'qr_verification_code' => $qrCodeUrl,
         ];
 
         return response()->json([
@@ -314,6 +354,33 @@ class StudentRegistryReportController extends Controller
         $departmentBody = $profile['supervising_department'];
         $signatories = \App\Services\AdminSettingsService::getSignatoriesFor('conduct_cert', $student->branch_id);
 
+        // إنشاء أو استرجاع قيد التوثيق الرقمي المؤمن بالسلسلة المشفرة
+        $ledgerService = app(\App\Services\DocumentLedgerService::class);
+        $verification = \App\Models\DocumentVerification::where('student_id', $student->id)
+            ->where('document_type', 'GOOD_CONDUCT_CERTIFICATE')
+            ->where('status', 'VALID')
+            ->latest('id')
+            ->first();
+
+        if (!$verification) {
+            $verification = $ledgerService->issueDocument(
+                'GOOD_CONDUCT_CERTIFICATE',
+                $student,
+                [
+                    'academic_year' => $academicYearName,
+                    'stage'         => $stageName,
+                    'section'       => $sectionName,
+                    'study_type'    => $studyType,
+                    'clean_record'  => $hasCleanRecord,
+                ],
+                'مدير عام المعهد التخصصي للعلوم الشرعية',
+                $user?->id
+            );
+        }
+
+        $refNumber = 'سلوك-' . date('Y') . '-' . substr($verification->document_uuid, 0, 8);
+        $qrCodeUrl = url("/verify/doc/{$verification->document_uuid}");
+
         // النص الرسمي المعتمد لشهادة حسن السيرة والسلوك
         $officialText = "تشهد إدارة {$instituteName} – فرع ({$branchName}) بأن الطالب: ({$student->full_name})، ورقمه الوطني ({$nationalId})، ورقم قيده الأكاديمي ({$academicNumber})، المقيد بالمعهد بالمرحلة الدراسية ({$stageName}) بشعبة ({$sectionName}) وبصفة قيد ({$studyType}) عن العام الدراسي ({$academicYearName})، كان خلال فترة دراسته بالمعهد مثالاً للطالب الملتزم، وحسن السيرة والسلوك، ولم يصدر منه طيلة فترة قيده ما يخل بأنظمة المعهد وقوانينه ولوائحه المعمول بها. وقد مُنح هذه الشهادة بناءً على طلبه لاستعمالها فيما يسمح به القانون دون أدنى مسؤولية على المعهد.";
 
@@ -324,7 +391,8 @@ class StudentRegistryReportController extends Controller
             'logo_url'           => $profile['logo_url'],
             'stamp_url'          => $profile['stamp_url'],
             'certificate_type'   => 'شهادة حسن سيرة وسلوك',
-            'ref_number'         => 'سلوك-' . date('Y') . '-' . str_pad($student->id, 5, '0', STR_PAD_LEFT),
+            'ref_number'         => $refNumber,
+            'document_uuid'      => $verification->document_uuid,
             'issued_date'        => Carbon::now()->format('Y/m/d'),
             'student'            => [
                 'id'                 => $student->id,
@@ -349,7 +417,7 @@ class StudentRegistryReportController extends Controller
                 'timestamp'          => Carbon::now()->format('Y-m-d H:i:s'),
             ],
             'signatories'        => $signatories,
-            'qr_verification_code' => url("/api/v1/students/{$student->id}/card"),
+            'qr_verification_code' => $qrCodeUrl,
         ];
 
         return response()->json([

@@ -58,6 +58,14 @@ class StudentController extends Controller
             $query->where('branch_id', $request->branch_id);
         }
 
+        if ($request->filled('is_archived') && $request->is_archived !== 'all') {
+            $query->where('is_archived', filter_var($request->is_archived, FILTER_VALIDATE_BOOLEAN));
+        } elseif ($request->get('tab') === 'archived') {
+            $query->where('is_archived', true);
+        } elseif (!$request->filled('is_archived') && !$request->filled('search')) {
+            $query->where('is_archived', false);
+        }
+
         return response()->json([
             'success' => true,
             'data' => $query->orderBy('id', 'desc')->paginate(25),
@@ -1336,5 +1344,158 @@ class StudentController extends Controller
                 }
             }
         }
+    }
+
+    /**
+     * أرشفة ملف الطالب (مسموحة لمدير الفرع لطلابه وللمدير العام لكافة الطلاب)
+     */
+    public function archive(Request $request, Student $student): JsonResponse
+    {
+        $user = Auth::user();
+        if ($user && $user->cannot('archive', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: ليس لديك صلاحية أرشفة طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
+        $reason = $request->input('reason', 'أرشفة السجل الأكاديمي للطالب');
+
+        $student->update([
+            'is_archived'    => true,
+            'archived_at'    => Carbon::now(),
+            'archived_by'    => $user?->id,
+            'archive_reason' => $reason,
+        ]);
+
+        // تسجيل في سجل التدقيق الأمني
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_ARCHIVED',
+            description: "تمت أرشفة ملف الطالب [{$student->full_name}] (رقم القيد: {$student->academic_number}) بواسطة المستخدم [{$user?->name}] - سبب الأرشفة: {$reason}",
+            payload: [
+                'student_id'      => $student->id,
+                'full_name'       => $student->full_name,
+                'academic_number' => $student->academic_number,
+                'national_id'     => $student->national_id,
+                'branch_id'       => $student->branch_id,
+                'reason'          => $reason,
+            ],
+            userId: $user?->id,
+            branchId: $student->branch_id,
+            modelType: 'Student',
+            modelId: $student->id,
+            oldValues: ['is_archived' => false],
+            newValues: ['is_archived' => true, 'archive_reason' => $reason]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "تمت أرشفة ملف الطالب «{$student->full_name}» بنجاح.",
+            'student' => $student->fresh(['branch', 'department', 'currentStudyYear']),
+        ]);
+    }
+
+    /**
+     * استعادة الطالب من الأرشيف إلى السجل الفعال
+     */
+    public function restore(Request $request, Student $student): JsonResponse
+    {
+        $user = Auth::user();
+        if ($user && $user->cannot('restore', $student)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: ليس لديك صلاحية استرجاع طالب يتبع فرعاً تعليمياً آخر.',
+            ], 403);
+        }
+
+        $student->update([
+            'is_archived'    => false,
+            'archived_at'    => null,
+            'archived_by'    => null,
+            'archive_reason' => null,
+        ]);
+
+        // تسجيل في سجل التدقيق الأمني
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_RESTORED',
+            description: "تم استرجاع ملف الطالب [{$student->full_name}] (رقم القيد: {$student->academic_number}) من الأرشيف بواسطة المستخدم [{$user?->name}]",
+            payload: [
+                'student_id'      => $student->id,
+                'full_name'       => $student->full_name,
+                'academic_number' => $student->academic_number,
+                'national_id'     => $student->national_id,
+                'branch_id'       => $student->branch_id,
+            ],
+            userId: $user?->id,
+            branchId: $student->branch_id,
+            modelType: 'Student',
+            modelId: $student->id,
+            oldValues: ['is_archived' => true],
+            newValues: ['is_archived' => false]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => "تم استرجاع ملف الطالب «{$student->full_name}» من الأرشيف بنجاح.",
+            'student' => $student->fresh(['branch', 'department', 'currentStudyYear']),
+        ]);
+    }
+
+    /**
+     * حذف الطالب نهائياً من المنظومة (صلاحية حصرية للمدير العام فقط لا غير)
+     */
+    public function destroy(Request $request, Student $student): JsonResponse
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: صلاحية حذف الطالب نهائياً مقتصرة حصراً على المدير العام للمعهد التخصصي للعلوم الشرعية.',
+            ], 403);
+        }
+
+        $snapshot = [
+            'student_id'      => $student->id,
+            'full_name'       => $student->full_name,
+            'academic_number' => $student->academic_number,
+            'national_id'     => $student->national_id,
+            'branch_id'       => $student->branch_id,
+            'branch_name'     => $student->branch?->name,
+            'stage'           => $student->currentStudyYear?->name,
+            'department'      => $student->department?->name,
+        ];
+
+        DB::transaction(function () use ($student, $snapshot, $user) {
+            // تسجيل الحدث غير القابل للتراجع في سجل التدقيق الأمني الموثق بالسلسلة
+            SystemAuditTrail::log(
+                eventType: 'STUDENT_DELETED_PERMANENTLY',
+                description: "تم حذف ملف الطالب [{$snapshot['full_name']}] (رقم القيد: {$snapshot['academic_number']} / الرقم الوطني: {$snapshot['national_id']}) نهائياً من قاعدة البيانات بقرار من المدير العام [{$user->name}]",
+                payload: $snapshot,
+                userId: $user->id,
+                branchId: $snapshot['branch_id'],
+                modelType: 'Student',
+                modelId: $student->id,
+                oldValues: $snapshot,
+                newValues: [],
+                severity: 'CRITICAL'
+            );
+
+            // تنظيف السجلات التابعة
+            $student->documents()->delete();
+            $student->attendance()->delete();
+            $student->behaviors()->delete();
+            $student->excuses()->delete();
+            $student->enrollmentStatusRequests()->delete();
+            $student->statusHistory()->delete();
+            \App\Models\DocumentVerification::where('student_id', $student->id)->delete();
+            \App\Models\StudentGrade::where('student_id', $student->id)->delete();
+
+            $student->delete();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => "تم حذف ملف الطالب «{$snapshot['full_name']}» نهائياً من المنظومة بنجاح.",
+        ]);
     }
 }

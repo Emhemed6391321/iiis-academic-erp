@@ -1567,19 +1567,27 @@
                                     : (darkMode ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200')">
                             🚻 سجل الطلاب حسب الجنس
                         </button>
+
+                        <button @click="applyRegistryPreset('archived')"
+                                class="px-3 py-1.5 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all"
+                                :class="studentRegistry.activePreset === 'archived'
+                                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-sm'
+                                    : (darkMode ? 'bg-slate-800 text-amber-400 hover:bg-slate-700' : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100')">
+                            📦 الأرشيف الأكاديمي (المؤرشفون)
+                        </button>
                     </div>
 
                     <!-- شريط الفلاتر والبحث متعدد المعايير -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2.5">
                         
                         <!-- 1. البحث النصي -->
-                        <div class="lg:col-span-2">
+                        <div class="lg:col-span-1">
                             <label class="block text-[11px] font-bold text-slate-500 mb-1">بحث متعدد المعايير</label>
                             <div class="relative">
                                 <input type="text" 
                                        x-model="studentRegistry.filters.search"
                                        @input.debounce.350ms="loadRegistry(1)"
-                                       placeholder="الاسم، رقم القيد، الوطني، الهاتف..." 
+                                       placeholder="الاسم، رقم القيد..." 
                                        class="w-full text-xs px-3 py-2 pr-8 rounded-[10px] border outline-none transition-all focus:border-[#2b78a5] focus:ring-1 focus:ring-[#2b78a5]"
                                        :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200 placeholder-slate-500' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-800 placeholder-slate-400'">
                                 <svg class="w-3.5 h-3.5 absolute right-2.5 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -1673,6 +1681,19 @@
                             </select>
                         </div>
 
+                        <!-- 8. حالة الأرشفة -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">الأرشفة الأكاديمية</label>
+                            <select x-model="studentRegistry.filters.is_archived"
+                                    @change="loadRegistry(1)"
+                                    class="w-full text-xs px-2.5 py-2 rounded-[10px] border outline-none font-semibold transition-all focus:border-[#2b78a5]"
+                                    :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-700'">
+                                <option value="0">النشطون (غير مؤرشف)</option>
+                                <option value="1">📦 الأرشيف فقط</option>
+                                <option value="all">الكل (النشط والمؤرشف)</option>
+                            </select>
+                        </div>
+
                     </div>
 
                     <!-- شريط الإحصائيات السريعة والملخص التجميعي للسجل -->
@@ -1690,6 +1711,9 @@
                                   x-text="'الانتساب: ' + (studentRegistry.stats.intisab || 0)"></span>
                             <span class="px-2.5 py-1 rounded-[8px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                                   x-text="'إيقاف القيد: ' + (studentRegistry.stats.suspended || 0)"></span>
+                            <span class="px-2.5 py-1 rounded-[8px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25"
+                                  x-text="'المؤرشفون: ' + (studentRegistry.stats.archived || 0)"></span>
+                        </div>
                         </div>
 
                         <div class="flex items-center gap-3">
@@ -1868,20 +1892,25 @@
                                             </td>
                                         </template>
 
-                                        <!-- حالة القيد -->
+                                        <!-- حالة القيد والأرشفة -->
                                         <template x-if="studentRegistry.columns.academic_status">
                                             <td class="p-3 whitespace-nowrap">
-                                                <span class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold border inline-block"
-                                                      :class="{
-                                                          'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': ['ENROLLED_ACTIVE','ACTIVE'].includes(st.academic_status),
-                                                          'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20': st.academic_status === 'PENDING_HQ',
-                                                          'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20': st.academic_status === 'NEW_DRAFT',
-                                                          'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20': ['EXPELLED','REJECTED_REVISION'].includes(st.academic_status),
-                                                          'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/20': ['SUSPENDED','TRANSFERRED'].includes(st.academic_status),
-                                                          'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20': st.academic_status === 'GRADUATED'
-                                                      }"
-                                                      x-text="st.status_label || st.academic_status">
-                                                </span>
+                                                <div class="flex items-center gap-1">
+                                                    <span class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold border inline-block"
+                                                          :class="{
+                                                              'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': ['ENROLLED_ACTIVE','ACTIVE'].includes(st.academic_status),
+                                                              'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20': st.academic_status === 'PENDING_HQ',
+                                                              'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20': st.academic_status === 'NEW_DRAFT',
+                                                              'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20': ['EXPELLED','REJECTED_REVISION'].includes(st.academic_status),
+                                                              'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/20': ['SUSPENDED','TRANSFERRED'].includes(st.academic_status),
+                                                              'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20': st.academic_status === 'GRADUATED'
+                                                          }"
+                                                          x-text="st.status_label || st.academic_status">
+                                                    </span>
+                                                    <span x-show="st.is_archived" class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+                                                        📦 مؤرشف
+                                                    </span>
+                                                </div>
                                             </td>
                                         </template>
 
@@ -1946,13 +1975,37 @@
                                                     <span>الملف</span>
                                                 </button>
 
-
                                                 <!-- تعديل -->
                                                 <button @click="openEditStudentModal(st)"
                                                         title="تعديل بيانات الطالب"
                                                         class="px-2 py-1 rounded-[8px] bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-[10px] font-bold transition-all shadow-xs cursor-pointer">
                                                     ✏️
                                                 </button>
+
+                                                <!-- أرشفة / استرجاع من الأرشيف -->
+                                                <template x-if="st.is_archived">
+                                                    <button @click="restoreStudentFromArchive(st)"
+                                                            title="استرجاع الطالب من الأرشيف الأكاديمي"
+                                                            class="px-2 py-1 rounded-[8px] bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-[10px] font-bold flex items-center gap-0.5 transition-all shadow-xs cursor-pointer">
+                                                        <span>♻️</span>
+                                                    </button>
+                                                </template>
+                                                <template x-if="!st.is_archived">
+                                                    <button @click="openArchiveStudentModal(st)"
+                                                            title="أرشفة الطالب ونقله للأرشيف الأكاديمي"
+                                                            class="px-2 py-1 rounded-[8px] bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 hover:bg-amber-100 text-[10px] font-bold flex items-center gap-0.5 transition-all shadow-xs cursor-pointer">
+                                                        <span>📦</span>
+                                                    </button>
+                                                </template>
+
+                                                <!-- حذف نهائي (المدير العام فقط) -->
+                                                <template x-if="isSuperAdminUser">
+                                                    <button @click="openDeleteStudentModal(st)"
+                                                            title="حذف الطالب نهائياً من المنظومة (صلاحية المدير العام)"
+                                                            class="px-2 py-1 rounded-[8px] bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 text-[10px] font-bold flex items-center gap-0.5 transition-all shadow-xs cursor-pointer">
+                                                        <span>🗑️</span>
+                                                    </button>
+                                                </template>
                                             </div>
                                         </td>
                                     </tr>
@@ -3452,149 +3505,14 @@
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 mb-1">العام الدراسي للكشف</label>
                     <input type="text" x-model="officialRegistryPrintModal.academicYear"
-                           class="w-full text-xs px-3 py-2 rounded-lg border outline-none font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-amber-600">
-                </div>
-            </div>
-
-            <!-- المعاينة الحية للكشف المطبوع (PRINTABLE CONTAINER) -->
-            <div id="printableOfficialRegistry" class="p-6 bg-white text-slate-900 rounded-xl border border-slate-200 overflow-x-auto print-page-layout">
-                
-                <!-- الترويسة الحكومية الرسمية المرتبطة بالإعدادات الإدارية المركزية -->
-                <div class="flex items-center justify-between pb-4 border-b-2 border-slate-900 text-center mb-4">
-                    <div class="text-right space-y-0.5">
-                        <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
-                        <div class="font-bold text-xs text-slate-700" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
-                        <div class="font-bold text-xs text-slate-700" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                        <div class="font-black text-sm text-[#14268d]" x-text="adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'">المعهد المتوسط للدراسات الإسلامية</div>
-                        <div class="text-[10px] font-bold text-amber-700" x-show="adminSettings.profile.branch_label" x-text="'الفرع: ' + (officialRegistryPrintModal.branchName || adminSettings.profile.branch_label)"></div>
-                    </div>
-
-                    <!-- شعار المعهد المركزي المعتمد عالي الدقة -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-16 h-16 rounded-full border-2 border-slate-800 flex items-center justify-center p-1 font-serif font-black text-xl text-slate-900 shadow-xs bg-white overflow-hidden">
-                            <img :src="adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
-                                 class="w-full h-full object-contain" 
-                                 alt="شعار المعهد المركزي">
-                        </div>
-                        <span class="text-[9px] font-mono mt-1 font-bold text-slate-800" x-text="adminSettings.profile.header_title || 'إدارة شؤون الطلاب والامتحانات'">إدارة شؤون الطلاب والامتحانات</span>
-                    </div>
-
-                    <div class="text-left space-y-0.5 font-mono text-[11px]">
-                        <div><strong>تاريخ الاستخراج:</strong> <span x-text="new Date().toLocaleDateString('ar-LY')"></span></div>
-                        <div><strong>وقت الاستخراج:</strong> <span x-text="new Date().toLocaleTimeString('ar-LY')"></span></div>
-                        <div><strong>العام الدراسي:</strong> <span x-text="officialRegistryPrintModal.academicYear || '2026/2027'"></span></div>
-                        <div><strong>الفرع:</strong> <span x-text="officialRegistryPrintModal.branchName || 'كافة الفروع'"></span></div>
-                    </div>
-                </div>
-
-                <!-- عنوان الكشف والشريط الوصفي -->
-                <div class="text-center my-3">
-                    <h2 class="text-base font-black text-slate-900 border-b-2 border-slate-400 inline-block pb-1" x-text="officialRegistryPrintModal.title"></h2>
-                    <div class="text-[10px] text-slate-600 mt-1 font-semibold flex items-center justify-center gap-4">
-                        <span>إجمالي الطلاب بالكشف: <strong x-text="studentsList.length"></strong> طالب</span>
-                        <span>•</span>
-                        <span>صفة القيد: <strong x-text="studentRegistry.filters.study_type === 'REGULAR' ? 'نظامي فقط' : (studentRegistry.filters.study_type === 'INTISAB' ? 'انتساب فقط' : 'عام (نظامي وانتساب)')"></strong></span>
-                        <span>•</span>
-                        <span>المرحلة: <strong x-text="studentRegistry.filters.study_year_id !== 'all' ? 'محددة' : 'كافة المراحل'"></strong></span>
-                    </div>
-                </div>
-
-                <!-- جدول السجل الرسمي المطبوع -->
-                <table class="w-full text-right text-[10px] border-collapse border border-slate-900 mt-3">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-900 font-black border-b border-slate-900">
-                            <template x-if="studentRegistry.columns.seq"><th class="p-1.5 border border-slate-900 text-center w-8">#</th></template>
-                            <template x-if="studentRegistry.columns.academic_number"><th class="p-1.5 border border-slate-900">رقم القيد</th></template>
-                            <template x-if="studentRegistry.columns.full_name"><th class="p-1.5 border border-slate-900">اسم الطالب الرباعي</th></template>
-                            <template x-if="studentRegistry.columns.national_id"><th class="p-1.5 border border-slate-900">الرقم الوطني</th></template>
-                            <template x-if="studentRegistry.columns.gender"><th class="p-1.5 border border-slate-900 text-center">الجنس</th></template>
-                            <template x-if="studentRegistry.columns.birth_date"><th class="p-1.5 border border-slate-900">الميلاد (السن)</th></template>
-                            <template x-if="studentRegistry.columns.birth_place"><th class="p-1.5 border border-slate-900">مكان الميلاد</th></template>
-                            <template x-if="studentRegistry.columns.nationality"><th class="p-1.5 border border-slate-900">الجنسية</th></template>
-                            <template x-if="studentRegistry.columns.branch"><th class="p-1.5 border border-slate-900">الفرع</th></template>
-                            <template x-if="studentRegistry.columns.stage"><th class="p-1.5 border border-slate-900">المرحلة</th></template>
-                            <template x-if="studentRegistry.columns.section"><th class="p-1.5 border border-slate-900">الشعبة</th></template>
-                            <template x-if="studentRegistry.columns.study_type"><th class="p-1.5 border border-slate-900">صفة القيد</th></template>
-                            <template x-if="studentRegistry.columns.academic_status"><th class="p-1.5 border border-slate-900">حالة القيد</th></template>
-                            <template x-if="studentRegistry.columns.phone"><th class="p-1.5 border border-slate-900">الهاتف</th></template>
-                            <template x-if="studentRegistry.columns.guardian_phone"><th class="p-1.5 border border-slate-900">ولي الأمر</th></template>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="(st, idx) in studentsList" :key="st.id">
-                            <tr class="border-b border-slate-400">
-                                <template x-if="studentRegistry.columns.seq"><td class="p-1.5 border border-slate-400 text-center font-mono font-bold" x-text="idx + 1"></td></template>
-                                <template x-if="studentRegistry.columns.academic_number"><td class="p-1.5 border border-slate-400 font-mono font-bold" x-text="st.academic_number || st.id"></td></template>
-                                <template x-if="studentRegistry.columns.full_name"><td class="p-1.5 border border-slate-400 font-bold" x-text="st.full_name"></td></template>
-                                <template x-if="studentRegistry.columns.national_id"><td class="p-1.5 border border-slate-400 font-mono" x-text="st.national_id"></td></template>
-                                <template x-if="studentRegistry.columns.gender"><td class="p-1.5 border border-slate-400 text-center" x-text="st.gender === 'MALE' ? 'ذكر' : 'أنثى'"></td></template>
-                                <template x-if="studentRegistry.columns.birth_date"><td class="p-1.5 border border-slate-400 font-mono" x-text="(st.birth_date_formatted || st.birth_date || '—') + ' (' + (st.age !== null && st.age !== undefined ? st.age + ' سنة' : '—') + ')'"></td></template>
-                                <template x-if="studentRegistry.columns.birth_place"><td class="p-1.5 border border-slate-400" x-text="st.birth_place || '—'"></td></template>
-                                <template x-if="studentRegistry.columns.nationality"><td class="p-1.5 border border-slate-400" x-text="st.nationality || 'ليبي'"></td></template>
-                                <template x-if="studentRegistry.columns.branch"><td class="p-1.5 border border-slate-400" x-text="st.branch ? st.branch.name : 'الرئيسي'"></td></template>
-                                <template x-if="studentRegistry.columns.stage"><td class="p-1.5 border border-slate-400" x-text="st.current_study_year ? st.current_study_year.name : 'السنة الأولى'"></td></template>
-                                <template x-if="studentRegistry.columns.section"><td class="p-1.5 border border-slate-400" x-text="st.department ? st.department.name : 'الدراسات الإسلامية'"></td></template>
-                                <template x-if="studentRegistry.columns.study_type"><td class="p-1.5 border border-slate-400" x-text="st.study_type === 'INTISAB' ? 'انتساب' : 'نظامي'"></td></template>
-                                <template x-if="studentRegistry.columns.academic_status"><td class="p-1.5 border border-slate-400 font-semibold" x-text="st.status_label || st.academic_status"></td></template>
-                                <template x-if="studentRegistry.columns.phone"><td class="p-1.5 border border-slate-400 font-mono" x-text="st.phone || '—'"></td></template>
-                                <template x-if="studentRegistry.columns.guardian_phone"><td class="p-1.5 border border-slate-400 font-mono" x-text="st.guardian_phone || '—'"></td></template>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
-
-                <!-- تذييل التوثيق والتوقيعات الرسمية مع اسم الموظف المستخرج -->
-                <div class="mt-8 pt-4 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold">
-                    
-                    <!-- خانة مستخرج الكشف المعتمدة -->
-                    <div class="space-y-6">
-                        <div>
-                            <div class="text-slate-500 text-[10px]">استخرج بواسطة الموظف:</div>
-                            <div class="font-black text-slate-900 mt-1" x-text="officialRegistryPrintModal.extractedBy || 'مسؤول المنظومة وشؤون الطلاب'"></div>
-                            <div class="text-[9px] text-slate-400 font-mono" x-text="'تاريخ الاستخراج: ' + new Date().toLocaleString('ar-LY')"></div>
-                        </div>
-                        <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
-                    </div>
-
-                    <!-- خانة مسجل الكلية / رئيس قسم الامتحانات - مربوط بالإعدادات الإدارية -->
-                    <div class="space-y-6">
-                        <div>
-                            <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('student_registry', 'verified_by', 'تدقيق / رئيس قسم التسجيل وشؤون الطلاب', 'أ. مسجل عام المعهد').label">تدقيق / رئيس قسم التسجيل وشؤون الطلاب:</div>
-                            <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('student_registry', 'verified_by', 'تدقيق / رئيس قسم التسجيل وشؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('student_registry', 'verified_by', 'تدقيق / رئيس قسم التسجيل وشؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
-                        </div>
-                        <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
-                    </div>
-
-                    <!-- خانة اعتماد مدير عام المعهد - مربوط بالإعدادات الإدارية -->
-                    <div class="space-y-6">
-                        <div>
-                            <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('student_registry', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').label">يعتمد / مدير عام المعهد:</div>
-                            <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('student_registry', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').name || getSignatoryInfo('student_registry', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').title">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
-                        </div>
-                        <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
-                    </div>
-
-                </div>
-
-                <!-- شريط الباركود والتأمين السفلي -->
-                <div class="mt-6 pt-2 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400">
-                    <span>منظومة المعهد التخصصي لإدارة التعليم الأصيل • كشف رسمي معتمد</span>
-                    <span>كود التوثيق الأمني: <strong class="text-slate-700" x-text="'REG-DOC-' + Math.floor(100000 + Math.random() * 900000)"></strong></span>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========================================================================= -->
+                           class="w-full text-xs px-3 py-2 rounded-lg border outline-none fon    <!-- ========================================================================= -->
     <!-- 3. نافذة طباعة وثيقة تعريف طالب رسمي (STUDENT ENROLLMENT CERTIFICATE)      -->
     <!-- ========================================================================= -->
     <div x-show="enrollmentCertModal.open"
          class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
          x-cloak
          @keydown.escape.window="enrollmentCertModal.open = false" style="display: none;">
-        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-3xl w-full p-6 space-y-5 text-xs transition-all"
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full p-6 space-y-5 text-xs transition-all"
              @click.away="enrollmentCertModal.open = false">
             
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 no-print">
@@ -3604,7 +3522,7 @@
                     </div>
                     <div>
                         <h3 class="font-bold text-sm text-slate-900 dark:text-white">شهادة تعريف وقيد طالب معتمدة</h3>
-                        <p class="text-[11px] text-slate-400">نموذج رسمي موجه للجهات والمؤسسات الرسمية ذات العلاقة</p>
+                        <p class="text-[11px] text-slate-400">وثيقة أكاديمية رسمية معتمدة وموجهة للجهات والمؤسسات ذات العلاقة</p>
                     </div>
                 </div>
 
@@ -3619,13 +3537,13 @@
                             :disabled="enrollmentCertModal.loading || !enrollmentCertModal.cert"
                             class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-[#2b78a5] hover:brightness-110 text-white font-black flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                        <span>طباعة التعريف الرسمي 🖨️</span>
+                        <span>طباعة الشهادة الرسمية 🖨️</span>
                     </button>
                     <button @click="enrollmentCertModal.open = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
                 </div>
             </div>
 
-                        <!-- حالة جاري التحميل -->
+            <!-- حالة جاري التحميل -->
             <div x-show="enrollmentCertModal.loading" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
                 <svg class="w-8 h-8 text-[#2b78a5] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 <span class="text-xs font-bold text-slate-600 dark:text-slate-300">جاري استخراج بيانات شهادة القيد المعتمدة...</span>
@@ -3633,18 +3551,18 @@
 
             <!-- محتوى الشهادة الرسمي المطبوع (PRINTABLE CERTIFICATE CONTAINER) -->
             <template x-if="enrollmentCertModal.cert">
-                <div id="printableEnrollmentCertificate" class="p-8 bg-white text-slate-900 rounded-2xl border-4 border-double border-slate-800 relative select-none print-cert-container">
+                <div id="printableEnrollmentCertificate" class="p-8 sm:p-10 bg-white text-slate-900 rounded-2xl border-4 border-double border-slate-900 relative select-none print-cert-container shadow-sm">
                     
-                    <!-- زخرفة مائية خفيفة للمعهد -->
-                    <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#14268d_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+                    <!-- إطار مائي زخرفي داخلي -->
+                    <div class="absolute inset-2 border border-slate-300 rounded-xl pointer-events-none"></div>
 
-                    <!-- الترويسة الرسمية للشهادة المرتبطة بالإعدادات الإدارية والشعار -->
-                    <div class="flex items-center justify-between pb-4 border-b-2 border-slate-900 mb-6">
+                    <!-- الترويسة الرسمية للشهادة -->
+                    <div class="flex items-center justify-between pb-4 border-b-2 border-slate-900 mb-6 relative z-10">
                         <div class="text-right space-y-0.5">
                             <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                            <div class="font-black text-sm text-[#14268d]" x-text="enrollmentCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'"></div>
+                            <div class="font-black text-sm text-[#14268d]" x-text="enrollmentCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
                             <div class="text-[11px] font-bold text-amber-700" x-text="'فرع: ' + (enrollmentCertModal.cert.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
                         </div>
 
@@ -3655,7 +3573,7 @@
                                      class="w-full h-full object-contain" 
                                      alt="شعار المعهد المركزي">
                             </div>
-                            <span class="text-[9px] font-mono mt-1 font-black tracking-widest text-slate-800" x-text="adminSettings.profile.header_title || 'إدارة شؤون الطلاب'">إدارة شؤون الطلاب</span>
+                            <span class="text-[9px] font-mono mt-1 font-black tracking-widest text-slate-800" x-text="adminSettings.profile.header_title || 'إدارة شؤون الطلاب والامتحانات'">إدارة شؤون الطلاب والامتحانات</span>
                         </div>
 
                         <div class="text-left space-y-1 font-mono text-[11px]">
@@ -3666,44 +3584,289 @@
                     </div>
 
                     <!-- عنوان الشهادة -->
-                    <div class="text-center my-6">
-                        <div class="inline-block px-8 py-2 rounded-xl border-2 border-slate-900 bg-slate-50 shadow-xs">
-                            <h1 class="text-xl font-black tracking-wider text-slate-900">شهادة تعريف وقيد طالب</h1>
+                    <div class="text-center my-6 relative z-10">
+                        <div class="inline-block px-10 py-2.5 rounded-xl border-2 border-slate-900 bg-slate-50 shadow-xs">
+                            <h1 class="text-xl font-black tracking-wider text-slate-900">شهادة تعريف وقيد طالب معتمدة</h1>
+                            <div class="text-[9px] font-mono tracking-widest text-slate-500 uppercase mt-0.5">OFFICIAL ENROLLMENT CERTIFICATE</div>
                         </div>
                     </div>
 
-                    <!-- الصورة الشخصية مع نص الإفادة المعتمد -->
-                    <div class="flex items-start gap-6 my-6">
-                        
+                    <!-- صندوق بيانات الطالب التفصيلية والصورة -->
+                    <div class="flex items-start gap-4 my-5 relative z-10">
                         <!-- إطار الصورة الشخصية إن كان مفعلاً -->
                         <div x-show="enrollmentCertModal.showPhoto" class="flex-shrink-0">
-                            <div class="w-28 h-36 rounded-xl border-2 border-slate-900 overflow-hidden bg-slate-100 flex items-center justify-center p-1 shadow-sm">
+                            <div class="w-24 h-32 rounded-xl border-2 border-slate-900 overflow-hidden bg-slate-100 flex items-center justify-center p-1 shadow-sm">
                                 <template x-if="enrollmentCertModal.cert.student.photo_url">
                                     <img :src="enrollmentCertModal.cert.student.photo_url" class="w-full h-full object-cover rounded-lg">
                                 </template>
                                 <template x-if="!enrollmentCertModal.cert.student.photo_url">
                                     <div class="flex flex-col items-center text-slate-400">
-                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                        <span class="text-[9px] mt-1 font-bold">صورة الطالب</span>
+                                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        <span class="text-[8px] mt-1 font-bold">صورة الطالب</span>
                                     </div>
                                 </template>
                             </div>
                         </div>
 
-                        <!-- نص الإفادة المعتمد بالنص المطلوب -->
-                        <div class="flex-1 space-y-4 text-justify leading-relaxed text-sm font-semibold text-slate-800">
-                            <p class="text-base font-black text-slate-900 mb-2">إلى من يهمه الأمر،،،</p>
-                            
-                            <p class="leading-loose text-[13px]" x-text="enrollmentCertModal.cert.official_text"></p>
+                        <!-- جدول بيانات الطالب -->
+                        <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-slate-50/80 border border-slate-300 text-xs">
+                            <div class="col-span-2">
+                                <span class="text-slate-500 block text-[10px]">اسم الطالب الرباعي:</span>
+                                <strong class="text-slate-950 font-black text-[13px]" x-text="enrollmentCertModal.cert.student.full_name"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">الرقم الوطني:</span>
+                                <strong class="font-mono text-slate-900" x-text="enrollmentCertModal.cert.student.national_id"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">رقم القيد:</span>
+                                <strong class="font-mono text-[#14268d] font-black" x-text="enrollmentCertModal.cert.student.academic_number"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">تاريخ ومكان الميلاد:</span>
+                                <strong class="text-slate-800" x-text="(enrollmentCertModal.cert.student.birth_place || 'ليبيا') + ' - ' + (enrollmentCertModal.cert.student.birth_date || '—')"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">الجنسية:</span>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.nationality || 'ليبي'"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">المرحلة الدراسية:</span>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.stage_name"></strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">الشعبة / التخصص:</span>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.section_name"></strong>
+                            </div>
+                        </div>
+                    </div>
 
-                            <p class="text-xs text-slate-600 font-bold mt-2">
-                                * هذا التعريف ساري المفعول للفصل الدراسي المسجل به الطالب خلال العام الدراسي المذكور أعلاه.
-                            </p>
+                    <!-- نص الإفادة المعتمد -->
+                    <div class="my-6 space-y-4 text-justify leading-loose text-sm font-semibold text-slate-800 relative z-10">
+                        <p class="text-base font-black text-slate-900">إلى من يهمه الأمر،،،</p>
+                        
+                        <p class="leading-loose text-[13.5px] indent-6 text-justify" x-text="enrollmentCertModal.cert.official_text"></p>
+
+                        <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-950 flex items-center gap-2">
+                            <span>📌 هذا التعريف ساري المفعول للفصل الدراسي المسجل به الطالب خلال العام الدراسي المذكور أعلاه، وصادر لتقديمه للجهات الرسمية دون أدنى مسؤولية مالية أو قانونية على المعهد.</span>
                         </div>
                     </div>
 
                     <!-- التوقيعات والاعتماد الرسمي وتأكيد اسم الموظف المستخرج -->
-                    <div class="mt-12 pt-6 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold">
+                    <div class="mt-10 pt-6 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold relative z-10">
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-slate-500 text-[10px]">الموظف المختص بالتسجيل:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="enrollmentCertModal.cert.issuer.name"></div>
+                                <div class="text-[9px] text-slate-400 font-mono" x-text="enrollmentCertModal.cert.issuer.timestamp"></div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
+                        </div>
+
+                        <div class="space-y-6 relative">
+                            <!-- الختم الرسمي إن وجد -->
+                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url">
+                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || enrollmentCertModal.cert.stamp_url" 
+                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
+                                     alt="الختم الرسمي">
+                            </template>
+                            <div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').label">يعتمد مدير عام المعهد:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').name || getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع والختم المعتمد: ............................</div>
+                        </div>
+
+                    </div>
+
+                    <!-- باركود التحقق الرقمي والرمز المشفر -->
+                    <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
+                        <span>شهادة رسمية صادرة إلكترونياً ومسجلة بالسجل الإلكتروني العام للمعهد التخصصي</span>
+                        <span>رمز التحقق: <strong class="text-slate-700" x-text="enrollmentCertModal.cert.ref_number"></strong></span>
+                    </div>
+
+                </div>
+            </template>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- 4. نافذة طباعة شهادة حسن السيرة والسلوك (GOOD CONDUCT CERTIFICATE MODAL)  -->
+    <!-- ========================================================================= -->
+    <div x-show="goodConductCertModal.open"
+         class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
+         x-cloak
+         @keydown.escape.window="goodConductCertModal.open = false" style="display: none;">
+        <div class="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full p-6 space-y-5 text-xs transition-all"
+             @click.away="goodConductCertModal.open = false">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 no-print">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg font-bold">
+                        🎖️
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900 dark:text-white">شهادة حسن سيرة وسلوك وانضباط أكاديمي</h3>
+                        <p class="text-[11px] text-slate-400">إفادة رسمية معتمدة بانضباط الطالب وخلو سجله من أي مخالفات تأديبية</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button @click="printGoodConductDoc()"
+                            :disabled="goodConductCertModal.loading || !goodConductCertModal.cert"
+                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:brightness-110 text-white font-black flex items-center gap-1.5 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        <span>طباعة الشهادة الرسمية 🖨️</span>
+                    </button>
+                    <button @click="goodConductCertModal.open = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">✕</button>
+                </div>
+            </div>
+
+            <!-- حالة جاري التحميل -->
+            <div x-show="goodConductCertModal.loading" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-3">
+                <svg class="w-8 h-8 text-emerald-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-300">جاري استخراج وفحص شهادة حسن السيرة والسلوك...</span>
+            </div>
+
+            <!-- محتوى شهادة حسن السيرة والسلوك المطبوع -->
+            <template x-if="goodConductCertModal.cert">
+                <div id="printableGoodConductCertificate" class="p-8 sm:p-10 bg-white text-slate-900 rounded-2xl border-4 border-double border-emerald-900 relative select-none print-cert-container shadow-sm">
+                    
+                    <!-- إطار مائي زخرفي داخلي -->
+                    <div class="absolute inset-2 border border-emerald-200 rounded-xl pointer-events-none"></div>
+
+                    <!-- الترويسة الرسمية -->
+                    <div class="flex items-center justify-between pb-4 border-b-2 border-emerald-900 mb-6 relative z-10">
+                        <div class="text-right space-y-0.5">
+                            <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
+                            <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
+                            <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
+                            <div class="font-black text-sm text-emerald-950" x-text="goodConductCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
+                            <div class="text-[11px] font-bold text-emerald-700" x-text="'فرع: ' + (goodConductCertModal.cert.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
+                        </div>
+
+                        <div class="flex flex-col items-center">
+                            <div class="w-20 h-20 rounded-full border-2 border-emerald-900 flex items-center justify-center p-1 bg-white overflow-hidden shadow-xs">
+                                <img :src="goodConductCertModal.cert.logo_url || adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
+                                     class="w-full h-full object-contain" 
+                                     alt="شعار المعهد المركزي">
+                            </div>
+                            <span class="text-[9px] font-mono mt-1 font-black tracking-widest text-emerald-900" x-text="adminSettings.profile.header_title || 'شؤون الطلاب والرعاية التربوية'">شؤون الطلاب والرعاية التربوية</span>
+                        </div>
+
+                        <div class="text-left space-y-1 font-mono text-[11px]">
+                            <div><strong>الرقم الإشاري:</strong> <span class="text-slate-800 font-bold" x-text="goodConductCertModal.cert.ref_number"></span></div>
+                            <div><strong>التاريخ:</strong> <span x-text="goodConductCertModal.cert.issued_date"></span></div>
+                            <div><strong>العام الدراسي:</strong> <span x-text="goodConductCertModal.cert.student.academic_year"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- عنوان الشهادة -->
+                    <div class="text-center my-6 relative z-10">
+                        <div class="inline-block px-10 py-2.5 rounded-xl border-2 border-emerald-900 bg-emerald-50/50 shadow-xs">
+                            <h1 class="text-xl font-black tracking-wider text-emerald-950">شهادة حسن سيرة وسلوك وانضباط أكاديمي</h1>
+                            <div class="text-[9px] font-mono tracking-widest text-emerald-800 uppercase mt-0.5">CERTIFICATE OF GOOD CONDUCT & DISCIPLINE</div>
+                        </div>
+                    </div>
+
+                    <!-- صندوق بيانات الطالب المميز -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200 text-xs my-5 relative z-10">
+                        <div class="col-span-2">
+                            <span class="text-slate-500 block text-[10px]">اسم الطالب الرباعي:</span>
+                            <strong class="text-slate-950 font-black text-[13px]" x-text="goodConductCertModal.cert.student.full_name"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">رقم القيد الأكاديمي:</span>
+                            <strong class="font-mono text-emerald-800 font-black" x-text="goodConductCertModal.cert.student.academic_number"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">الرقم الوطني:</span>
+                            <strong class="font-mono text-slate-800" x-text="goodConductCertModal.cert.student.national_id"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">المرحلة الدراسية:</span>
+                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.stage_name"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">الشعبة / القسم:</span>
+                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.section_name"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">صفة القيد:</span>
+                            <strong class="text-slate-800" x-text="goodConductCertModal.cert.student.study_type"></strong>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block text-[10px]">الحالة الأكاديمية:</span>
+                            <strong class="text-emerald-800 font-bold" x-text="goodConductCertModal.cert.student.academic_status"></strong>
+                        </div>
+                    </div>
+
+                    <!-- النص الرسمي لشهادة حسن السيرة والسلوك -->
+                    <div class="my-6 space-y-4 text-justify leading-loose text-sm font-semibold text-slate-800 relative z-10">
+                        <p class="text-base font-black text-slate-900">إلى من يهمه الأمر،،،</p>
+                        
+                        <p class="leading-loose text-[13.5px] indent-6 text-justify" x-text="goodConductCertModal.cert.official_text"></p>
+
+                        <div class="p-3.5 rounded-xl bg-emerald-100/60 border border-emerald-300 text-xs font-bold text-emerald-950 flex items-center gap-2">
+                            <span>✅ تشهد وتؤكد إدارة المعهد بأن السجل السلوكي والتربوي للطالب المذكور نظيف تماماً وخالٍ من أية عقوبات أو إنذارات أو مخالفات للوائح المنظمة للمعهد.</span>
+                        </div>
+                    </div>
+
+                    <!-- التوقيعات والاعتماد الرسمي مع اسم الموظف المستخرج -->
+                    <div class="mt-10 pt-6 border-t-2 border-emerald-900 grid grid-cols-3 gap-6 text-center text-xs font-bold relative z-10">
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-slate-500 text-[10px]">الموظف المستخرج للشهادة:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="goodConductCertModal.cert.issuer.name"></div>
+                                <div class="text-[9px] text-slate-400 font-mono" x-text="goodConductCertModal.cert.issuer.timestamp"></div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
+                        </div>
+
+                        <div class="space-y-6 relative">
+                            <!-- الختم الرسمي إن وجد -->
+                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url">
+                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile.stamp_url || goodConductCertModal.cert.stamp_url" 
+                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
+                                     alt="الختم الرسمي">
+                            </template>
+                            <div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').label">يعتمد مدير عام المعهد:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').name || getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
+                        <span>شهادة رسمية صادرة إلكترونياً وموثقة بالسجل الإلكتروني العام للمعهد التخصصي للعلوم الشرعية</span>
+                        <span>الرقم المرجعي: <strong class="text-emerald-900" x-text="goodConductCertModal.cert.ref_number"></strong></span>
+                    </div>
+
+                </div>
+            </template>
+        </div>
+    </div>border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold">
                         
                         <div class="space-y-6">
                             <div>
@@ -4152,6 +4315,172 @@
                         <span class="font-bold">رمز التتبع الأمني: <strong class="text-rose-900" x-text="confidentialReportModal.report.header.report_code"></strong></span>
                     </div>
 
+                </div>
+            </template>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- نافذة أرشفة قيد الطالب (STUDENT ARCHIVE MODAL)                             -->
+    <!-- ========================================================================= -->
+    <div x-show="archiveStudentModal.open"
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+         x-cloak
+         @keydown.escape.window="archiveStudentModal.open = false" style="display: none;">
+        <div class="bg-white dark:bg-slate-900 rounded-[20px] border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-5 text-xs transition-all"
+             @click.away="archiveStudentModal.open = false">
+            
+            <div class="flex items-center justify-between border-b pb-3 dark:border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xl shadow-xs">
+                        📦
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white">أرشفة قيد الطالب</h3>
+                        <p class="text-[11px] text-slate-500">نقل ملف الطالب للأرشيف الأكاديمي مع إمكانية استرجاعه لاحقاً</p>
+                    </div>
+                </div>
+                <button @click="archiveStudentModal.open = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <template x-if="archiveStudentModal.student">
+                <div class="space-y-4">
+                    <!-- Student details pill -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <div class="font-bold text-slate-800 dark:text-slate-100 text-sm" x-text="archiveStudentModal.student.full_name"></div>
+                            <div class="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+                                <span class="font-mono font-semibold text-[#2b78a5]" x-text="archiveStudentModal.student.academic_number || archiveStudentModal.student.id"></span>
+                                <span>•</span>
+                                <span x-text="archiveStudentModal.student.branch ? archiveStudentModal.student.branch.name : (archiveStudentModal.student.branch_name || 'الفرع')"></span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-[8px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-bold text-[10px]">
+                            سيتم نقله للأرشيف
+                        </span>
+                    </div>
+
+                    <!-- Informational Alert -->
+                    <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800/60 text-blue-800 dark:text-blue-300 text-[11px] flex gap-2">
+                        <span class="text-base">ℹ️</span>
+                        <div>
+                            <strong>ملاحظة إدارية:</strong> عند أرشفة الطالب سيتم استثناؤه من الكشوفات والقوائم النشطة اليومية، وستبقى كافة سجلاته الأكاديمية والوثائقية محفوظة بالكامل ويمكن استرجاعه بأي وقت.
+                        </div>
+                    </div>
+
+                    <!-- Archive Reason -->
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                            سبب الأرشفة / ملاحظات إدارية (اختياري):
+                        </label>
+                        <textarea x-model="archiveStudentModal.reason"
+                                  rows="3"
+                                  placeholder="اكتب سبب الأرشفة (مثال: تخرج الطالب، انسحاب برغبة ولي الأمر، انتقال خارج البلاد...)"
+                                  class="w-full px-3 py-2 text-xs rounded-xl border outline-none font-medium transition-all focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20"
+                                  :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-800'"></textarea>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t dark:border-slate-800">
+                        <button type="button"
+                                @click="archiveStudentModal.open = false"
+                                class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition-all">
+                            إلغاء
+                        </button>
+                        <button type="button"
+                                @click="submitArchiveStudent()"
+                                :disabled="archiveStudentModal.loading"
+                                class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:brightness-110 text-white font-bold transition-all shadow-md shadow-amber-900/20 flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+                            <span x-show="archiveStudentModal.loading" class="animate-spin inline-block">⏳</span>
+                            <span>تأكيد أرشفة الطالب 📦</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- نافذة الحذف النهائي للطالب (PERMANENT DELETE - SUPER ADMIN EXCLUSIVE)        -->
+    <!-- ========================================================================= -->
+    <div x-show="deleteStudentModal.open"
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-red-950/85 backdrop-blur-md overflow-y-auto"
+         x-cloak
+         @keydown.escape.window="deleteStudentModal.open = false" style="display: none;">
+        <div class="bg-white dark:bg-slate-900 rounded-[20px] border-2 border-red-500/50 shadow-2xl max-w-lg w-full p-6 space-y-5 text-xs transition-all"
+             @click.away="deleteStudentModal.open = false">
+            
+            <div class="flex items-center justify-between border-b pb-3 dark:border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 flex items-center justify-center font-bold text-xl shadow-xs">
+                        ⚠️
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-black text-red-600 dark:text-red-400">حذف الطالب نهائياً من المنظومة</h3>
+                        <p class="text-[11px] text-slate-500">صلاحية سيادية مقيدة بالمدير العام فقط (SUPER_ADMIN)</p>
+                    </div>
+                </div>
+                <button @click="deleteStudentModal.open = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">✕</button>
+            </div>
+
+            <template x-if="deleteStudentModal.student">
+                <div class="space-y-4">
+                    <!-- Danger Warning Box -->
+                    <div class="p-3.5 bg-red-50 dark:bg-red-950/50 rounded-xl border border-red-200 dark:border-red-800/80 text-red-800 dark:text-red-300 text-xs space-y-2">
+                        <div class="font-bold flex items-center gap-1.5 text-red-700 dark:text-red-400">
+                            <span>🚨</span>
+                            <span>تحذير أمني وإداري مشدد:</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed">
+                            أنت على وشك حذف الطالب <strong class="underline font-bold" x-text="deleteStudentModal.student.full_name"></strong> بشكل <strong>نهائي لا رجعة فيه</strong>.
+                            سيؤدي هذا الإجراء إلى مسح كافة سجلات الحضور، الوثائق المرفوعة، التقييمات، والبيانات الأكاديمية للطالب نهائياً وتوثيق العملية في سجل التدقيق الأمني السيادي.
+                        </p>
+                    </div>
+
+                    <!-- Student Info Summary -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                        <div class="grid grid-cols-2 gap-2 text-[11px]">
+                            <div>اسم الطالب: <strong class="font-bold text-slate-900 dark:text-white" x-text="deleteStudentModal.student.full_name"></strong></div>
+                            <div>رقم القيد: <strong class="font-mono font-bold text-[#2b78a5]" x-text="deleteStudentModal.student.academic_number || deleteStudentModal.student.id"></strong></div>
+                            <div>الفرع: <span x-text="deleteStudentModal.student.branch ? deleteStudentModal.student.branch.name : (deleteStudentModal.student.branch_name || 'الفرع')"></span></div>
+                            <div>الرقم الوطني: <span class="font-mono" x-text="deleteStudentModal.student.national_id || '—'"></span></div>
+                        </div>
+                    </div>
+
+                    <!-- Safety confirmation input -->
+                    <div class="space-y-1.5">
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 text-[11px]">
+                            لتأكيد الحذف النهائي، اكتب اسم الطالب كاملاً كما هو أدناه:
+                        </label>
+                        <div class="font-mono font-bold text-red-600 dark:text-red-400 text-xs p-1.5 bg-red-50 dark:bg-red-950/30 rounded border border-red-200 dark:border-red-900 select-all"
+                             x-text="deleteStudentModal.student.full_name"></div>
+                        <input type="text"
+                               x-model="deleteStudentModal.inputName"
+                               placeholder="اكتب اسم الطالب هنا للمطابقة والتأكيد"
+                               class="w-full px-3 py-2 text-xs rounded-xl border outline-none font-bold transition-all focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                               :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-300 text-slate-800'" />
+                    </div>
+
+                    <!-- Error display -->
+                    <div x-show="deleteStudentModal.error" class="p-2 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-lg text-xs font-bold" x-text="deleteStudentModal.error"></div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t dark:border-slate-800">
+                        <button type="button"
+                                @click="deleteStudentModal.open = false"
+                                class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold transition-all">
+                            إلغاء التراجع
+                        </button>
+                        <button type="button"
+                                @click="submitDeleteStudentPermanently()"
+                                :disabled="deleteStudentModal.loading || deleteStudentModal.inputName.trim() !== deleteStudentModal.student.full_name.trim()"
+                                class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black transition-all shadow-md shadow-red-900/30 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                            <span x-show="deleteStudentModal.loading" class="animate-spin inline-block">⏳</span>
+                            <span>حذف الطالب نهائياً 🗑️</span>
+                        </button>
+                    </div>
                 </div>
             </template>
         </div>
@@ -5510,6 +5839,28 @@
                 <template x-if="!studentFile.loading && studentFile.student">
                     <div class="space-y-5">
 
+                        <!-- شريط تنبيه الأرشفة إن وجد -->
+                        <div x-show="studentFile.student && studentFile.student.is_archived"
+                             class="p-4 bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 rounded-[16px] flex flex-wrap items-center justify-between gap-3 text-amber-800 dark:text-amber-300">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-2xl">📦</span>
+                                <div>
+                                    <div class="font-black text-sm">هذا الملف في الأرشيف الأكاديمي</div>
+                                    <div class="text-xs text-slate-600 dark:text-slate-400 mt-0.5 flex flex-wrap items-center gap-2">
+                                        <span x-text="studentFile.student.archive_reason ? ('سبب الأرشفة: ' + studentFile.student.archive_reason) : 'تمت أرشفة قيد الطالب'"></span>
+                                        <span x-show="studentFile.student.archived_at" class="font-mono text-[11px] opacity-75" x-text="' | تاريخ الأرشفة: ' + studentFile.student.archived_at"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="restoreStudentFromArchive(studentFile.student)"
+                                        class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer">
+                                    <span>♻️</span>
+                                    <span>استرجاع من الأرشيف</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- رأس الملف: صورة + بيانات مفتاحية + badges -->
                         <div class="rounded-[20px] border overflow-hidden"
                              :class="darkMode ? 'bg-slate-900/90 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'bg-white border-[#e8ebf2] shadow-[0_12px_24px_rgba(15,23,42,0.04)]'">
@@ -5548,6 +5899,7 @@
                                                       'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/25': studentFile.student.academic_status === 'NEW_DRAFT',
                                                   }"
                                                   x-text="studentFile.student.status_label"></span>
+                                            <span x-show="studentFile.student.is_archived" class="px-2.5 py-0.5 rounded-[10px] text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">📦 مؤرشف</span>
                                             <span class="px-2.5 py-0.5 rounded-[10px] text-xs font-bold border"
                                                   :class="studentFile.student.study_type === 'INTISAB' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/25'"
                                                   x-text="studentFile.student.study_type_label"></span>
@@ -5631,6 +5983,30 @@
                                             <button @click="openStudentAttendanceHistoryModal(studentFile.student)"
                                                     class="w-full px-2 py-1.5 rounded-[10px] text-[11px] font-bold border border-blue-200 dark:border-blue-800 text-[#2b78a5] dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center gap-1 transition-all cursor-pointer">
                                                 <span>سجل الحضور والانضباط ⏱️</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- أرشفة / استرجاع من الأرشيف -->
+                                        <div>
+                                            <template x-if="studentFile.student && studentFile.student.is_archived">
+                                                <button @click="restoreStudentFromArchive(studentFile.student)"
+                                                        class="w-full px-2.5 py-2 rounded-[10px] text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                                                    <span>♻️ استرجاع من الأرشيف</span>
+                                                </button>
+                                            </template>
+                                            <template x-if="studentFile.student && !studentFile.student.is_archived">
+                                                <button @click="openArchiveStudentModal(studentFile.student)"
+                                                        class="w-full px-2.5 py-2 rounded-[10px] text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                                                    <span>📦 أرشفة ملف الطالب</span>
+                                                </button>
+                                            </template>
+                                        </div>
+
+                                        <!-- حذف نهائي (المدير العام فقط) -->
+                                        <div x-show="isSuperAdminUser">
+                                            <button @click="openDeleteStudentModal(studentFile.student)"
+                                                    class="w-full px-2.5 py-2 rounded-[10px] text-xs font-bold bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-red-900/20 cursor-pointer">
+                                                <span>🗑️ حذف الطالب نهائياً</span>
                                             </button>
                                         </div>
                                     </div>
@@ -21386,25 +21762,77 @@
                 },
 
                 // Enrollment Certificate
-                openEnrollmentCertModal(target) {
-                    this.comingSoonTitle = 'شهادة تعريف وقيد طالب معتمدة';
-                    this.showComingSoonModal = true;
-                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».');
+                async openEnrollmentCertModal(target) {
+                    const id = (target && typeof target === 'object') ? target.id : target;
+                    if (!id) {
+                        this.showToast('معرف الطالب غير صالح');
+                        return;
+                    }
+                    this.enrollmentCertModal.loading = true;
+                    this.enrollmentCertModal.cert = null;
+                    this.enrollmentCertModal.open = true;
+                    try {
+                        const res = await fetch(`/api/v1/students/${id}/certificates/enrollment`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await res.json();
+                        const cert = data.data || data.certificate;
+                        if (res.ok && data.success && cert) {
+                            this.enrollmentCertModal.cert = cert;
+                        } else {
+                            this.showToast(data.message || 'تعذر جلب بيانات شهادة القيد');
+                        }
+                    } catch (e) {
+                        console.error('Error fetching enrollment certificate:', e);
+                        this.showToast('تعذر استخراج تعريف الطالب');
+                    } finally {
+                        this.enrollmentCertModal.loading = false;
+                    }
                 },
 
                 printEnrollmentCertDoc() {
-                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً');
+                    if (!this.enrollmentCertModal.cert) {
+                        this.showToast('يرجى الانتظار حتى اكتمال تحميل بيانات الشهادة');
+                        return;
+                    }
+                    this.printCustomHtmlElement('printableEnrollmentCertificate', 'شهادة تعريف وقيد طالب معتمدة');
                 },
 
                 // Good Conduct Certificate
-                openGoodConductCertModal(target) {
-                    this.comingSoonTitle = 'شهادة حسن سيرة وسلوك وانضباط أكاديمي';
-                    this.showComingSoonModal = true;
-                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».');
+                async openGoodConductCertModal(target) {
+                    const id = (target && typeof target === 'object') ? target.id : target;
+                    if (!id) {
+                        this.showToast('معرف الطالب غير صالح');
+                        return;
+                    }
+                    this.goodConductCertModal.loading = true;
+                    this.goodConductCertModal.cert = null;
+                    this.goodConductCertModal.open = true;
+                    try {
+                        const res = await fetch(`/api/v1/students/${id}/certificates/conduct`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await res.json();
+                        const cert = data.data || data.certificate;
+                        if (res.ok && data.success && cert) {
+                            this.goodConductCertModal.cert = cert;
+                        } else {
+                            this.showToast(data.message || 'تعذر جلب شهادة السلوك');
+                        }
+                    } catch (e) {
+                        console.error('Error fetching good conduct cert:', e);
+                        this.showToast('تعذر استخراج شهادة السلوك');
+                    } finally {
+                        this.goodConductCertModal.loading = false;
+                    }
                 },
 
                 printGoodConductDoc() {
-                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً');
+                    if (!this.goodConductCertModal.cert) {
+                        this.showToast('يرجى الانتظار حتى اكتمال تحميل بيانات الشهادة');
+                        return;
+                    }
+                    this.printCustomHtmlElement('printableGoodConductCertificate', 'شهادة حسن سيرة وسلوك وانضباط أكاديمي');
                 },
 
                 // Confidential Dossier Report

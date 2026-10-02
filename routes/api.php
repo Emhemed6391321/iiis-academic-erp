@@ -53,11 +53,11 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/students/registry', [StudentRegistryReportController::class, 'index']);
     Route::get('/students/registry/export', [StudentRegistryReportController::class, 'exportRegistry']);
     Route::get('/students/{student}/confidential-report', [StudentRegistryReportController::class, 'getConfidentialReport']);
+    Route::get('/students/{student}/certificates/enrollment', [StudentRegistryReportController::class, 'getEnrollmentCertificate']);
+    Route::get('/students/{student}/certificates/conduct', [StudentRegistryReportController::class, 'getGoodConductCertificate']);
 
     // Shielded Documentation & Examination Routes (حجب الاستدعاء المباشر لوحدات قريباً وفق البند 15 و 16)
     Route::middleware(\App\Http\Middleware\ShieldedFeatureMiddleware::class)->group(function () {
-        Route::get('/students/{student}/certificates/enrollment', [StudentRegistryReportController::class, 'getEnrollmentCertificate']);
-        Route::get('/students/{student}/certificates/conduct', [StudentRegistryReportController::class, 'getGoodConductCertificate']);
         Route::get('/students/{student}/transcript', [\App\Http\Controllers\Api\TranscriptEngineController::class, 'generate']);
         Route::get('/transcripts/students/{student}', [\App\Http\Controllers\Api\TranscriptEngineController::class, 'generate']);
         Route::get('/exams/pending-batches', [\App\Http\Controllers\Api\ExamApprovalController::class, 'getPendingBatches']);
@@ -88,6 +88,9 @@ Route::prefix('v1')->middleware(['auth', 'throttle:60,1'])->group(function () {
     Route::get('/students/{student}', [StudentController::class, 'show']);
     Route::match(['put', 'patch', 'post'], '/students/{student}', [StudentController::class, 'update']);
     Route::get('/students/{student}/card', [StudentController::class, 'getCard']);
+    Route::post('/students/{student}/archive', [StudentController::class, 'archive']);
+    Route::post('/students/{student}/restore', [StudentController::class, 'restore']);
+    Route::delete('/students/{student}', [StudentController::class, 'destroy']);
     Route::post('/students/{student}/submit-hq', [StudentController::class, 'submitToHq']);
     Route::post('/students/{student}/approve-hq', [StudentController::class, 'approveByHq']);
     Route::post('/students/{student}/reject-hq', [StudentController::class, 'rejectByHq']);
