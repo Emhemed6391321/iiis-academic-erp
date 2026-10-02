@@ -8221,7 +8221,7 @@
             </div>
             <h3 class="text-lg font-black mb-2" x-text="comingSoonTitle || 'قسم الدراسة والامتحانات'"></h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-                هذه الوحدة قيد التطوير وستكون متاحة قريبًا وفق خطة التطوير الشاملة لمنظومة «منهل».
+                هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».
             </p>
             <button @click="showComingSoonModal = false"
                     class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:opacity-95 shadow-md">
@@ -21386,77 +21386,25 @@
                 },
 
                 // Enrollment Certificate
-                async openEnrollmentCertModal(target) {
-                    const id = (target && typeof target === 'object') ? target.id : target;
-                    if (!id) {
-                        this.showToast('معرف الطالب غير صالح');
-                        return;
-                    }
-                    this.enrollmentCertModal.loading = true;
-                    this.enrollmentCertModal.cert = null;
-                    this.enrollmentCertModal.open = true;
-                    try {
-                        const res = await fetch(`/api/v1/students/${id}/certificates/enrollment`, {
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        const data = await res.json();
-                        const cert = data.data || data.certificate;
-                        if (res.ok && data.success && cert) {
-                            this.enrollmentCertModal.cert = cert;
-                        } else {
-                            this.showToast(data.message || 'تعذر جلب بيانات شهادة القيد');
-                        }
-                    } catch (e) {
-                        console.error('Error fetching enrollment certificate:', e);
-                        this.showToast('تعذر استخراج تعريف الطالب');
-                    } finally {
-                        this.enrollmentCertModal.loading = false;
-                    }
+                openEnrollmentCertModal(target) {
+                    this.comingSoonTitle = 'شهادة تعريف وقيد طالب معتمدة';
+                    this.showComingSoonModal = true;
+                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».');
                 },
 
                 printEnrollmentCertDoc() {
-                    if (!this.enrollmentCertModal.cert) {
-                        this.showToast('يرجى الانتظار حتى اكتمال تحميل بيانات الشهادة');
-                        return;
-                    }
-                    this.printCustomHtmlElement('printableEnrollmentCertificate', 'شهادة تعريف وقيد طالب');
+                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً');
                 },
 
                 // Good Conduct Certificate
-                async openGoodConductCertModal(target) {
-                    const id = (target && typeof target === 'object') ? target.id : target;
-                    if (!id) {
-                        this.showToast('معرف الطالب غير صالح');
-                        return;
-                    }
-                    this.goodConductCertModal.loading = true;
-                    this.goodConductCertModal.cert = null;
-                    this.goodConductCertModal.open = true;
-                    try {
-                        const res = await fetch(`/api/v1/students/${id}/certificates/conduct`, {
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        const data = await res.json();
-                        const cert = data.data || data.certificate;
-                        if (res.ok && data.success && cert) {
-                            this.goodConductCertModal.cert = cert;
-                        } else {
-                            this.showToast(data.message || 'تعذر جلب شهادة السلوك');
-                        }
-                    } catch (e) {
-                        console.error('Error fetching good conduct cert:', e);
-                        this.showToast('تعذر استخراج شهادة السلوك');
-                    } finally {
-                        this.goodConductCertModal.loading = false;
-                    }
+                openGoodConductCertModal(target) {
+                    this.comingSoonTitle = 'شهادة حسن سيرة وسلوك وانضباط أكاديمي';
+                    this.showComingSoonModal = true;
+                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».');
                 },
 
                 printGoodConductDoc() {
-                    if (!this.goodConductCertModal.cert) {
-                        this.showToast('يرجى الانتظار حتى اكتمال تحميل بيانات الشهادة');
-                        return;
-                    }
-                    this.printCustomHtmlElement('printableGoodConductCertificate', 'شهادة حسن سيرة وسلوك');
+                    this.showToast('هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً');
                 },
 
                 // Confidential Dossier Report
@@ -26448,7 +26396,7 @@ async loadBranchOperations() {
                     }
 
                     try {
-                        const req = window.indexedDB.open('ManhalOfflineDB', 1);
+                        const req = window.indexedDB.open('IIISOfflineDB', 1);
                         req.onupgradeneeded = function(e) {
                             const db = e.target.result;
                             if (!db.objectStoreNames.contains('attendance_queue')) {
@@ -26459,14 +26407,14 @@ async loadBranchOperations() {
                             self.updateOfflineQueueCount();
                         };
                     } catch (e) {
-                        console.warn('Could not initialize ManhalOfflineDB:', e);
+                        console.warn('Could not initialize IIISOfflineDB:', e);
                     }
                 },
 
                 getOfflineDb() {
                     return new Promise((resolve, reject) => {
                         if (!window.indexedDB) return reject(new Error('IndexedDB not supported'));
-                        const req = window.indexedDB.open('ManhalOfflineDB', 1);
+                        const req = window.indexedDB.open('IIISOfflineDB', 1);
                         req.onsuccess = () => resolve(req.result);
                         req.onerror = () => reject(req.error);
                     });
@@ -26534,9 +26482,9 @@ async loadBranchOperations() {
                             this.isSyncingOfflineQueue = true;
                             const batchPayload = {
                                 batch_id: 'BATCH_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
-                                device_uuid: localStorage.getItem('manhal_device_uuid') || (function() {
+                                device_uuid: localStorage.getItem('iiis_device_uuid') || (function() {
                                     const uuid = 'DEV_' + Math.random().toString(36).substring(2, 11);
-                                    localStorage.setItem('manhal_device_uuid', uuid);
+                                    localStorage.setItem('iiis_device_uuid', uuid);
                                     return uuid;
                                 })(),
                                 records: records

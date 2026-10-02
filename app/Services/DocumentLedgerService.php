@@ -41,7 +41,7 @@ class DocumentLedgerService
         ];
 
         // Generate tamper-evident HMAC-SHA256 signature with secure application key
-        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'manhal-secure-hmac-key-2026';
+        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'iiis-secure-hmac-key-2026';
         $hashMaterial = $documentUuid . '|' . $documentType . '|' . $student->id . '|' . $branchId . '|' . $issueDate . '|' . json_encode($sanitizedMetadata, JSON_UNESCAPED_UNICODE);
         $hashSignature = hash_hmac('sha256', $hashMaterial, $secretKey);
 
@@ -78,7 +78,7 @@ class DocumentLedgerService
         }
 
         // 1. Verify HMAC-SHA256 signature (with legacy SHA-256 fallback)
-        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'manhal-secure-hmac-key-2026';
+        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'iiis-secure-hmac-key-2026';
         $hashMaterial = $verification->document_uuid . '|' . $verification->document_type . '|' . $verification->student_id . '|' . $verification->branch_id . '|' . Carbon::parse($verification->issue_date)->format('Y-m-d') . '|' . json_encode($verification->metadata_payload, JSON_UNESCAPED_UNICODE);
 
         $computedHmac = hash_hmac('sha256', $hashMaterial, $secretKey);

@@ -419,7 +419,7 @@
             @endif
 
             <footer class="card-footer">
-                <div>منظومة منهل الأكاديمية — الإصدار 2.0</div>
+                <div>منظومة المعهد التخصصي للعلوم الشرعية — الإصدار 2.0</div>
                 <div style="font-family: 'JetBrains Mono', monospace;">UUID: {{ substr($uuid, 0, 8) }}...{{ substr($uuid, -4) }}</div>
             </footer>
         </main>
