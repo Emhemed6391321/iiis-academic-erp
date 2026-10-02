@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>البوابة الإلكترونية للمعهد التخصصي للدراسات الإسلامية (IIIS Enterprise ERP)</title>
     
-    <!-- Tailwind CSS with Dark Mode Support -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS with Dark Mode Support (Local + CDN Fallback) -->
+    <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -79,9 +79,9 @@
     <!-- SheetJS for Live Client-Side Excel (.xlsx) Parsing & Generation -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <!-- Alpine.js Plugins & Core -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js Plugins & Core (Local + CDN Fallback) -->
+    <script defer src="/js/alpine-collapse.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js'"></script>
+    <script defer src="/js/alpine.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
     
     <!-- Google Fonts: Cairo, Readex Pro, Almarai, IBM Plex Sans Arabic, Amiri, Tajawal -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
