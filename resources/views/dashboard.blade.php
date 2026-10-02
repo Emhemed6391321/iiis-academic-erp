@@ -20377,6 +20377,8 @@
                     this.branchImportModal.results = null;
                     this.branchImportModal.errorMessage = '';
                     this.branchImportModal.successMessage = '';
+                },
+
                 async initApp() {
                     if (typeof this.initAppearance === 'function') {
                         this.initAppearance();
