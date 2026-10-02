@@ -177,7 +177,14 @@ class StudentRegistryReportController extends Controller
                 'graduated'   => $graduatedCount,
             ],
             'filters_data' => [
-                'branches'       => Branch::where('is_active', true)->get(['id', 'name', 'code', 'gender']),
+                'branches'       => (function() use ($user) {
+                    $bq = Branch::where('is_active', true)
+                        ->whereNotIn('branch_status', ['CLOSED', 'SUSPENDED', 'CANCELED']);
+                    if ($user && $user->branch_id && !$user->hasGlobalAccessScope()) {
+                        $bq->where('id', $user->branch_id);
+                    }
+                    return $bq->orderBy('name')->get(['id', 'name', 'code', 'gender']);
+                })(),
                 'study_years'    => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
                 'departments'    => Department::where('is_active', true)->get(['id', 'name', 'code']),
                 'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name', 'code', 'is_current']),
@@ -409,22 +416,34 @@ class StudentRegistryReportController extends Controller
             ? round(($attendanceStats['PRESENT'] / $attendanceStats['TOTAL']) * 100, 1) 
             : 100;
 
-        // ملخص الدرجات والنتائج الأكاديمية
-        $grades = $student->grades->map(function ($g) {
-            return [
-                'course_code'      => $g->course?->code ?? '—',
-                'course_name'      => $g->course?->name ?? '—',
-                'semester'         => $g->course?->semester ?? 1,
-                'coursework_grade' => $g->coursework_grade,
-                'midterm_grade'    => $g->midterm_grade,
-                'final_grade'      => $g->final_grade,
-                'total_grade'      => $g->total_grade,
-                'is_passed'        => $g->is_passed,
-                'notes'            => $g->notes,
-            ];
-        });
+        // التحقق من صلاحيات الاطلاع على الدرجات وكشوف الامتحانات (RBAC Gate)
+        $roleName = strtolower($user?->role?->name ?? '');
+        $canViewControlGrades = $user && (
+            $user->isSuperAdmin() || 
+            $user->hasPermission('grades.view') || 
+            in_array($roleName, ['super_admin', 'hq_exams_director', 'branch_control_officer', 'control_officer', 'exam_director', 'exams_officer'])
+        );
 
-        $gpaTotal = $grades->whereNotNull('total_grade')->avg('total_grade');
+        // ملخص الدرجات والنتائج الأكاديمية (محجوب إذا لم تتوفر الصلاحية)
+        if ($canViewControlGrades) {
+            $grades = $student->grades->map(function ($g) {
+                return [
+                    'course_code'      => $g->course?->code ?? '—',
+                    'course_name'      => $g->course?->name ?? '—',
+                    'semester'         => $g->course?->semester ?? 1,
+                    'coursework_grade' => $g->coursework_grade,
+                    'midterm_grade'    => $g->midterm_grade,
+                    'final_grade'      => $g->final_grade,
+                    'total_grade'      => $g->total_grade,
+                    'is_passed'        => $g->is_passed,
+                    'notes'            => $g->notes,
+                ];
+            });
+            $gpaTotal = $grades->whereNotNull('total_grade')->avg('total_grade');
+        } else {
+            $grades = collect([]);
+            $gpaTotal = null;
+        }
 
         // ملخص الوثائق والمستندات
         $documentsList = $student->documents->map(function ($doc) {
@@ -443,6 +462,7 @@ class StudentRegistryReportController extends Controller
 
         // تجميع التقرير السري الكامل
         $reportPayload = [
+            'can_view_grades' => $canViewControlGrades,
             'header' => [
                 'classification'    => 'سري للغاية وخاص بإدارة المعهد',
                 'institute_name'    => $profile['institute_name'],

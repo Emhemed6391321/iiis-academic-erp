@@ -33,7 +33,7 @@ class AdminSettingsService
                 'state_name'             => $settings['state_name'] ?? 'دولة ليبيا',
                 'supervising_body'       => $settings['supervising_body'] ?? 'الهيئة العامة للأوقاف والشؤون الإسلامية',
                 'supervising_department' => $settings['supervising_department'] ?? 'إدارة التعليم الأصيل',
-                'institute_name'         => $settings['institute_name'] ?? 'المعهد المتوسط للدراسات الإسلامية',
+                'institute_name'         => $settings['institute_name'] ?? 'المعهد التخصصي للعلوم الشرعية',
                 'branch_label'           => $settings['branch_label'] ?? 'الفرع الرئيسي',
                 'phone'                  => $settings['phone'] ?? '+218 21 000 0000',
                 'email'                  => $settings['email'] ?? 'info@islamic-institute.edu.ly',
@@ -42,8 +42,8 @@ class AdminSettingsService
                 'pobox'                  => $settings['pobox'] ?? 'ص.ب 12345',
                 'logo_url'               => $settings['logo_url'] ?? '/images/logo.png',
                 'stamp_url'              => $settings['stamp_url'] ?? '',
-                'header_title'           => $settings['header_title'] ?? 'المعهد المتوسط للدراسات الإسلامية',
-                'footer_text'            => $settings['footer_text'] ?? 'المعهد المتوسط للدراسات الإسلامية - إدارة التعليم الأصيل',
+                'header_title'           => $settings['header_title'] ?? 'المعهد التخصصي للعلوم الشرعية',
+                'footer_text'            => $settings['footer_text'] ?? 'المعهد التخصصي للعلوم الشرعية - إدارة التعليم الأصيل',
             ];
         });
     }

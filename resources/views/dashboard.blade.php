@@ -2370,26 +2370,98 @@
                         </div>
 
                         <!-- 2. قسم التوقيع الإلكتروني الحي -->
-                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 space-y-4">
+                        <div x-data="{
+                            drawing: false,
+                            hasSignature: false,
+                            ctx: null,
+                            canvas: null,
+                            initCanvas() {
+                                this.canvas = this.$refs.sigCanvas;
+                                if (!this.canvas) return;
+                                this.ctx = this.canvas.getContext('2d');
+                                this.ctx.lineWidth = 2.5;
+                                this.ctx.lineCap = 'round';
+                                this.ctx.lineJoin = 'round';
+                                this.ctx.strokeStyle = '#0f172a';
+                            },
+                            getPos(e) {
+                                const rect = this.canvas.getBoundingClientRect();
+                                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                                const scaleX = this.canvas.width / rect.width;
+                                const scaleY = this.canvas.height / rect.height;
+                                return {
+                                    x: (clientX - rect.left) * scaleX,
+                                    y: (clientY - rect.top) * scaleY
+                                };
+                            },
+                            start(e) {
+                                if (!this.ctx) this.initCanvas();
+                                this.drawing = true;
+                                const pos = this.getPos(e);
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(pos.x, pos.y);
+                            },
+                            draw(e) {
+                                if (!this.drawing) return;
+                                const pos = this.getPos(e);
+                                this.ctx.lineTo(pos.x, pos.y);
+                                this.ctx.stroke();
+                                this.hasSignature = true;
+                                this.exportSig();
+                            },
+                            stop() {
+                                if (this.drawing) {
+                                    this.drawing = false;
+                                    this.exportSig();
+                                }
+                            },
+                            clearCanvas() {
+                                if (!this.canvas) this.initCanvas();
+                                if (!this.canvas) return;
+                                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                                this.hasSignature = false;
+                                createStudentModal.form.signature_base64 = null;
+                            },
+                            exportSig() {
+                                if (this.canvas && this.hasSignature) {
+                                    createStudentModal.form.signature_base64 = this.canvas.toDataURL('image/png');
+                                }
+                            }
+                        }" 
+                        x-init="setTimeout(() => initCanvas(), 300)"
+                        class="p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/30 space-y-4">
                             <div class="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
                                 <h4 class="font-extrabold text-xs text-slate-900 dark:text-white flex items-center gap-2">
                                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
                                     <span>لوحة توقيع الطالب الإلكتروني ✍️</span>
                                 </h4>
-                                <span class="text-[10px] text-slate-400">بالماوس أو اللمس</span>
+                                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">يدعم اللمس والفأرة</span>
                             </div>
 
-                            <p class="text-[11px] text-slate-500 dark:text-slate-400">قم بأخذ توقيع الطالب إلكترونياً داخل المربع أدناه لاعتماده بملفه وبطاقته الجامعية:</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">قم بأخذ توقيع الطالب إلكترونياً داخل المربع أدناه لاعتماده بملفه وبطاقة الطالب المعتمدة:</p>
 
                             <!-- لوحة Canvas للرسم الحي -->
                             <div class="rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 p-2 shadow-inner flex flex-col items-center">
-                                <canvas id="studentSignatureCanvas" width="380" height="150" class="w-full h-36 bg-white dark:bg-slate-900 rounded-xl cursor-crosshair touch-none"></canvas>
+                                <canvas x-ref="sigCanvas" 
+                                        id="studentSignatureCanvas" 
+                                        width="400" 
+                                        height="160" 
+                                        class="w-full h-36 bg-white dark:bg-slate-900 rounded-xl cursor-crosshair touch-none select-none"
+                                        @mousedown="start($event)"
+                                        @mousemove="draw($event)"
+                                        @mouseup="stop()"
+                                        @mouseleave="stop()"
+                                        @touchstart.prevent="start($event)"
+                                        @touchmove.prevent="draw($event)"
+                                        @touchend="stop()"
+                                        @touchcancel="stop()"></canvas>
                             </div>
 
                             <!-- أزرار لوحة التوقيع -->
                             <div class="flex items-center justify-between gap-3">
-                                <button type="button" @click="clearSignature()"
-                                        class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors">
+                                <button type="button" @click="clearCanvas()"
+                                        class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     <span>مسح وإعادة التوقيع</span>
                                 </button>
@@ -3966,44 +4038,57 @@
                         </div>
                     </div>
 
-                    <!-- 4. السجل الدراسي والدرجات والامتحانات -->
+                    <!-- 4. السجل الدراسي والدرجات والامتحانات (RBAC Protected) -->
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 relative z-10">
                         <div class="flex items-center justify-between pb-2 border-b border-slate-200 mb-3">
                             <h4 class="font-black text-xs text-slate-900">رابعاً: سجل الدرجات والنتائج والتقييم الأكاديمي</h4>
-                            <span class="text-[10px] font-bold text-slate-600" x-text="'المعدل العام التراكمي: ' + (confidentialReportModal.report.grades_summary.average_score || '—') + '%'"></span>
+                            <template x-if="confidentialReportModal.report.can_view_grades !== false">
+                                <span class="text-[10px] font-bold text-slate-600" x-text="'المعدل العام التراكمي: ' + (confidentialReportModal.report.grades_summary.average_score || '—') + '%'"></span>
+                            </template>
                         </div>
 
-                        <table class="w-full text-right text-[10px] border border-slate-300">
-                            <thead class="bg-slate-200 text-slate-800 font-bold">
-                                <tr>
-                                    <th class="p-1.5 border border-slate-300">رمز المادة</th>
-                                    <th class="p-1.5 border border-slate-300">اسم المادة والمقرر</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">الفصل</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">أعمال السنة (30)</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">النصفي (20)</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">النهائي (50)</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">المجموع (100)</th>
-                                    <th class="p-1.5 border border-slate-300 text-center">النتيجة</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-if="confidentialReportModal.report.grades_summary.records.length === 0">
-                                    <tr><td colspan="8" class="p-2 text-center text-slate-400">لا توجد درجات مرصودة حتى الآن</td></tr>
-                                </template>
-                                <template x-for="g in confidentialReportModal.report.grades_summary.records" :key="g.course_code">
-                                    <tr class="border-b border-slate-200">
-                                        <td class="p-1.5 border border-slate-200 font-mono font-bold" x-text="g.course_code"></td>
-                                        <td class="p-1.5 border border-slate-200 font-semibold" x-text="g.course_name"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.semester"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.coursework_grade ?? '—'"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.midterm_grade ?? '—'"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.final_grade ?? '—'"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-mono font-bold text-[#2b78a5]" x-text="g.total_grade ?? '—'"></td>
-                                        <td class="p-1.5 border border-slate-200 text-center font-bold" :class="g.is_passed ? 'text-emerald-700' : 'text-rose-700'" x-text="g.is_passed ? 'ناجح' : (g.total_grade !== null ? 'راسب' : 'قيد الرصد')"></td>
+                        <!-- في حالة توفر الصلاحية للكنترول والامتحانات -->
+                        <template x-if="confidentialReportModal.report.can_view_grades !== false">
+                            <table class="w-full text-right text-[10px] border border-slate-300">
+                                <thead class="bg-slate-200 text-slate-800 font-bold">
+                                    <tr>
+                                        <th class="p-1.5 border border-slate-300">رمز المادة</th>
+                                        <th class="p-1.5 border border-slate-300">اسم المادة والمقرر</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">الفصل</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">أعمال السنة (30)</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">النصفي (20)</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">النهائي (50)</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">المجموع (100)</th>
+                                        <th class="p-1.5 border border-slate-300 text-center">النتيجة</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <template x-if="confidentialReportModal.report.grades_summary.records.length === 0">
+                                        <tr><td colspan="8" class="p-2 text-center text-slate-400">لا توجد درجات مرصودة حتى الآن</td></tr>
+                                    </template>
+                                    <template x-for="g in confidentialReportModal.report.grades_summary.records" :key="g.course_code">
+                                        <tr class="border-b border-slate-200">
+                                            <td class="p-1.5 border border-slate-200 font-mono font-bold" x-text="g.course_code"></td>
+                                            <td class="p-1.5 border border-slate-200 font-semibold" x-text="g.course_name"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.semester"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.coursework_grade ?? '—'"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.midterm_grade ?? '—'"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-mono" x-text="g.final_grade ?? '—'"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-mono font-bold text-[#2b78a5]" x-text="g.total_grade ?? '—'"></td>
+                                            <td class="p-1.5 border border-slate-200 text-center font-bold" :class="g.is_passed ? 'text-emerald-700' : 'text-rose-700'" x-text="g.is_passed ? 'ناجح' : (g.total_grade !== null ? 'راسب' : 'قيد الرصد')"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </template>
+
+                        <!-- في حالة عدم توفر صلاحية الكنترول -->
+                        <template x-if="confidentialReportModal.report.can_view_grades === false">
+                            <div class="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2">
+                                <span>🔒</span>
+                                <span class="font-bold">سجل الدرجات والنتائج وكشوف الامتحانات محجوب ويقتصر الاطلاع عليه حصرياً على موظفي ومسؤولي وحدة الكنترول والامتحانات وفق مصفوفة الصلاحيات.</span>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- 5. سجل الحضور والانضباط + السلوكيات + الأعذار في شبكة مقسمة -->
@@ -4132,7 +4217,7 @@
 
 
     <!-- ========================================================================= -->
-    <!-- بطاقة الطالب الجامعية الرسمية المعتمدة (LUXURY PRINTABLE ID CARD)             -->
+    <!-- بطاقة الطالب الرسمية المعتمدة (OFFICIAL A6 PRINTABLE ID CARD)                -->
     <!-- ========================================================================= -->
     <div x-show="studentCardModal.open"
          class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto"
@@ -4168,131 +4253,151 @@
                 </div>
             </div>
 
-            <!-- بطاقة الطالب المطبوعة (FRONT & BACK CARDS WRAPPER) -->
+            <!-- بطاقة الطالب المطبوعة المعتمدة (OFFICIAL WHITE A6 PRINTABLE ID CARD) -->
             <template x-if="studentCardModal.card">
-                <div id="printableStudentCardWrapper" class="space-y-4 max-w-xl mx-auto">
+                <div id="printableStudentCardWrapper" class="space-y-6 max-w-xl mx-auto">
                     
-                    <!-- 1. وجه البطاقة الأمامي (FRONT FACE) -->
-                    <div class="w-full rounded-[20px] overflow-hidden luxury-card-front text-white shadow-xl relative p-5 select-none print-card-front">
+                    <!-- 1. وجه البطاقة الأمامي (FRONT FACE - A6 STANDARD) -->
+                    <div class="w-full bg-white text-slate-900 rounded-2xl border-2 border-slate-800 shadow-xl relative p-5 select-none print-card-front overflow-hidden">
                         
-                        <!-- الزخرفة الإسلامية الخلفية الخفيفة -->
-                        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:14px_14px] pointer-events-none"></div>
+                        <!-- إطار داخلي رفيع رسمي -->
+                        <div class="absolute inset-1.5 border border-slate-300 rounded-xl pointer-events-none"></div>
 
                         <!-- رأس البطاقة الرسمي المرتبط بالإعدادات والشعار -->
-                        <div class="flex items-center justify-between pb-3 border-b border-amber-400/25 relative z-10">
+                        <div class="flex items-center justify-between pb-3 border-b-2 border-slate-800 relative z-10">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-white p-0.5 flex items-center justify-center border border-amber-300/30 shadow-inner overflow-hidden">
+                                <div class="w-12 h-12 rounded-xl bg-white p-1 flex items-center justify-center border border-slate-400 shadow-xs overflow-hidden flex-shrink-0">
                                     <img :src="adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
                                          class="w-full h-full object-contain" 
-                                         alt="شعار">
+                                         alt="شعار المعهد">
                                 </div>
-                                <div>
-                                    <div class="text-[10px] font-bold text-amber-300 tracking-wider" x-text="(adminSettings.profile.state_name || 'دولة ليبيا') + ' • ' + (adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية')">دولة ليبيا • الهيئة العامة للأوقاف والشؤون الإسلامية</div>
-                                    <div class="text-xs font-black text-white" x-text="adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'">المعهد المتوسط للدراسات الإسلامية</div>
+                                <div class="text-right space-y-0.5">
+                                    <div class="text-[10px] font-bold text-slate-700 tracking-wide" x-text="(adminSettings.profile.state_name || 'دولة ليبيا') + ' • ' + (adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية')">دولة ليبيا • الهيئة العامة للأوقاف والشؤون الإسلامية</div>
+                                    <div class="text-xs font-black text-slate-900" x-text="(adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل') + ' • ' + (adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية')">إدارة التعليم الأصيل • المعهد التخصصي للعلوم الشرعية</div>
+                                    <div class="text-[11px] font-bold text-emerald-800" x-text="'فرع: ' + (studentCardModal.card.branch_name || 'الفرع الرئيسي')"></div>
                                 </div>
                             </div>
-                            <div class="text-left">
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mono" x-text="studentCardModal.card.academic_year || '2026/2027'"></span>
+                            <div class="text-left flex flex-col items-end gap-1">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-100 text-slate-900 border border-slate-300 font-mono" x-text="studentCardModal.card.academic_year || '2026/2027'"></span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase">بطاقة طالب معتمدة</span>
                             </div>
                         </div>
 
                         <!-- محتوى البطاقة الأمامي -->
-                        <div class="flex items-center gap-4.5 pt-4 relative z-10">
+                        <div class="flex items-center gap-4 pt-3.5 relative z-10">
                             
-                            <!-- صورة الطالب الرسمية -->
+                            <!-- صورة الطالب الرسمية مع إطار رسمي واضح -->
                             <div class="flex-shrink-0">
-                                <div class="w-24 h-28 rounded-2xl border-2 border-amber-400/80 bg-slate-900/60 backdrop-blur-md overflow-hidden flex items-center justify-center shadow-lg relative">
+                                <div class="w-24 h-32 rounded-xl border-2 border-slate-800 bg-slate-50 overflow-hidden flex items-center justify-center shadow-xs relative p-0.5">
                                     <template x-if="studentCardModal.card.profile_photo_url">
-                                        <img :src="studentCardModal.card.profile_photo_url" class="w-full h-full object-cover">
+                                        <img :src="studentCardModal.card.profile_photo_url" class="w-full h-full object-cover rounded-lg">
                                     </template>
                                     <template x-if="!studentCardModal.card.profile_photo_url">
-                                        <svg class="w-12 h-12 text-amber-300/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                        <div class="flex flex-col items-center justify-center text-slate-400 text-center">
+                                            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                            <span class="text-[8px] font-bold mt-1">صورة رسمية</span>
+                                        </div>
                                     </template>
                                 </div>
                             </div>
 
-                            <!-- البيانات الأساسية المنظمة والواضحة -->
+                            <!-- البيانات الأساسية المنظمة والواضحة بعالية التباين -->
                             <div class="flex-1 space-y-2 text-xs">
                                 <div>
-                                    <span class="text-[9px] text-amber-200/80 block font-semibold">اسم الطالب الرباعي:</span>
-                                    <div class="font-black text-sm text-white leading-tight" x-text="studentCardModal.card.full_name"></div>
+                                    <span class="text-[9px] text-slate-500 block font-semibold">اسم الطالب الرباعي:</span>
+                                    <div class="font-black text-sm text-slate-950 leading-tight" x-text="studentCardModal.card.full_name"></div>
                                 </div>
 
                                 <div class="grid grid-cols-2 gap-2 pt-0.5">
                                     <div>
-                                        <span class="text-[9px] text-amber-200/80 block font-semibold">رقم القيد الرسمي:</span>
-                                        <div class="font-mono font-black text-sm text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/30 inline-block" x-text="studentCardModal.card.academic_number"></div>
+                                        <span class="text-[9px] text-slate-500 block font-semibold">رقم القيد الأكاديمي:</span>
+                                        <div class="font-mono font-black text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded border border-slate-300 inline-block" x-text="studentCardModal.card.academic_number"></div>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] text-amber-200/80 block font-semibold">الرقم الوطني:</span>
-                                        <div class="font-mono font-bold text-xs text-white" x-text="studentCardModal.card.national_id"></div>
+                                        <span class="text-[9px] text-slate-500 block font-semibold">الرقم الوطني:</span>
+                                        <div class="font-mono font-bold text-xs text-slate-900 bg-slate-50 px-2 py-0.5 rounded border border-slate-200 inline-block" x-text="studentCardModal.card.national_id"></div>
                                     </div>
                                 </div>
 
-                                <div class="pt-0.5">
-                                    <span class="text-[9px] text-amber-200/80 block font-semibold">الفرع والشعبة:</span>
-                                    <div class="text-[11px] font-bold text-white/95" x-text="(studentCardModal.card.branch_name || 'الفرع الرئيسي') + ' • ' + (studentCardModal.card.department_name || 'الدراسات الإسلامية')"></div>
+                                <div class="grid grid-cols-2 gap-2 pt-0.5 text-[11px]">
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block font-semibold">المرحلة والتخصص:</span>
+                                        <div class="font-bold text-slate-800" x-text="(studentCardModal.card.stage_name || 'السنة الأولى') + ' - ' + (studentCardModal.card.section_name || studentCardModal.card.department_name || 'عام')"></div>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block font-semibold">صفة القيد:</span>
+                                        <div class="font-bold text-emerald-800" x-text="studentCardModal.card.study_type_label || 'نظامي'"></div>
+                                    </div>
                                 </div>
                             </div>
 
                         </div>
 
                         <!-- شريط التوثيق السفلي للوجه -->
-                        <div class="mt-3.5 pt-2.5 border-t border-amber-400/20 flex items-center justify-between relative z-10 text-[10px]">
-                            <div class="flex items-center gap-2">
-                                <span class="text-amber-200 font-semibold">الصفة: <strong class="text-white" x-text="studentCardModal.card.study_type_label || 'نظامي'"></strong></span>
-                                <span x-show="studentCardModal.card.blood_type && studentCardModal.card.blood_type !== '—'" class="text-amber-200">فصيلة الدم: <strong class="text-white font-mono" x-text="studentCardModal.card.blood_type"></strong></span>
+                        <div class="mt-3.5 pt-2 border-t border-slate-300 flex items-center justify-between relative z-10 text-[10px]">
+                            <div class="flex items-center gap-3">
+                                <span class="text-slate-600 font-semibold">الفرع: <strong class="text-slate-900" x-text="studentCardModal.card.branch_name || 'الفرع الرئيسي'"></strong></span>
+                                <span x-show="studentCardModal.card.blood_type && studentCardModal.card.blood_type !== '—'" class="text-slate-600">فصيلة الدم: <strong class="text-slate-900 font-mono" x-text="studentCardModal.card.blood_type"></strong></span>
                             </div>
-                            <span class="text-[9px] text-amber-300/80 font-mono">بطاقة جامعية رسمية معتمدة</span>
+                            <span class="text-[9px] text-slate-500 font-mono">وثيقة رسمية معتمدة لإثبات الهوية</span>
                         </div>
                     </div>
 
-                    <!-- 2. ظهر البطاقة الأمني (BACK FACE) -->
-                    <div class="w-full rounded-[20px] overflow-hidden luxury-card-back dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-4 space-y-3 relative print-card-back shadow-md">
-                        <div class="flex items-center justify-between border-b pb-1.5 border-slate-200 dark:border-slate-800 text-[10px] font-bold">
-                            <span class="text-[#174276] dark:text-sky-400">الإدارة العامة للامتحانات وشؤون الطلاب</span>
-                            <span class="font-mono text-[9px] text-slate-400" x-text="'تاريخ الإصدار: ' + (studentCardModal.card.issued_date || new Date().toISOString().split('T')[0])"></span>
+                    <!-- 2. ظهر البطاقة الأمني (BACK FACE - A6 STANDARD) -->
+                    <div class="w-full bg-white text-slate-900 rounded-2xl border-2 border-slate-800 shadow-md p-5 space-y-3 relative print-card-back select-none overflow-hidden">
+                        
+                        <!-- إطار داخلي رفيع رسمي -->
+                        <div class="absolute inset-1.5 border border-slate-300 rounded-xl pointer-events-none"></div>
+
+                        <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2 text-[10px] font-bold relative z-10">
+                            <span class="text-slate-900">الإدارة العامة للامتحانات وشؤون الطلاب • بطاقة الطالب</span>
+                            <span class="font-mono text-[9px] text-slate-500" x-text="'تاريخ الإصدار: ' + (studentCardModal.card.issued_date || new Date().toISOString().split('T')[0])"></span>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-3 items-center">
+                        <div class="grid grid-cols-3 gap-3 items-center relative z-10">
                             <!-- رمز التحقق الذكي QR -->
-                            <div class="p-2 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-center shadow-sm">
-                                <div class="w-14 h-14 bg-slate-50 dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center p-1">
-                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent('IIIS:STU:' + (studentCardModal.card.academic_number || '') + ':NID:' + (studentCardModal.card.national_id || ''))"
+                            <div class="p-2 bg-slate-50 rounded-xl border border-slate-300 flex flex-col items-center justify-center text-center shadow-2xs">
+                                <div class="w-16 h-16 bg-white rounded border border-slate-300 flex items-center justify-center p-1">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=' + encodeURIComponent('IIIS:STU:' + (studentCardModal.card.academic_number || '') + ':NID:' + (studentCardModal.card.national_id || '') + ':BR:' + (studentCardModal.card.branch_name || ''))"
                                          class="w-full h-full object-contain"
                                          alt="QR Code">
                                 </div>
-                                <span class="text-[8px] font-mono text-slate-400 mt-0.5">مسح للتحقق</span>
+                                <span class="text-[8px] font-mono font-bold text-slate-600 mt-1">رمز التحقق الإلكتروني</span>
                             </div>
 
                             <!-- تعليمات البطاقة المختصرة والأكاديمية -->
-                            <div class="col-span-2 text-[10px] text-slate-600 dark:text-slate-400 space-y-1 leading-relaxed">
+                            <div class="col-span-2 text-[10px] text-slate-700 space-y-1.5 leading-relaxed pr-1">
                                 <div class="flex items-start gap-1">
-                                    <span class="text-amber-500 font-bold">•</span>
-                                    <span>تعتبر هذه البطاقة وثيقة دراسية رسمية خاصة بحاملها وتبرز عند دخول القاعات والامتحانات.</span>
+                                    <span class="text-emerald-700 font-bold">•</span>
+                                    <span>تعتبر هذه البطاقة وثيقة دراسية رسمية خاصة بحاملها ويجب إبرازها عند دخول قاعات الامتحانات ولجان التقييم.</span>
                                 </div>
                                 <div class="flex items-start gap-1">
-                                    <span class="text-amber-500 font-bold">•</span>
-                                    <span>في حال فقدان البطاقة يرجى إبلاغ شؤون الطلاب بفرع المعهد فوراً.</span>
+                                    <span class="text-emerald-700 font-bold">•</span>
+                                    <span>في حال فقدان البطاقة يرجى إبلاغ إدارة شؤون الطلاب بفرع المعهد فوراً لتجميدها وإصدار بدل فاقد.</span>
+                                </div>
+                                <div class="flex items-start gap-1">
+                                    <span class="text-emerald-700 font-bold">•</span>
+                                    <span>يحظر التنازل عن هذه البطاقة أو استخدامها من قبل شخص آخر تحت طائلة المساءلة القانونية.</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- توقيع الطالب واعتماد العميد -->
-                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-[10px]">
-                            <div class="text-center">
-                                <span class="text-slate-400 text-[9px] block">توقيع الطالب المعتمد</span>
+                        <!-- توقيع الطالب واعتماد ومدير الفرع -->
+                        <div class="flex items-center justify-between pt-3 border-t-2 border-slate-800 text-[10px] relative z-10">
+                            <div class="text-center w-1/2">
+                                <span class="text-slate-500 text-[9px] block">توقيع الطالب المعتمد:</span>
                                 <template x-if="studentCardModal.card.signature_url">
-                                    <img :src="studentCardModal.card.signature_url" class="h-6 object-contain mt-0.5 mx-auto">
+                                    <img :src="studentCardModal.card.signature_url" class="h-7 object-contain mt-0.5 mx-auto">
                                 </template>
                                 <template x-if="!studentCardModal.card.signature_url">
-                                    <span class="text-[9px] font-serif italic text-slate-400">توقيع رقمي موثق</span>
+                                    <span class="text-[9px] font-mono italic text-slate-400 block mt-1">توقيع إلكتروني مسجل</span>
                                 </template>
                             </div>
 
-                            <div class="text-center">
-                                <span class="text-slate-400 text-[9px] block">ختم واعتماد المعهد</span>
-                                <span class="font-black text-xs text-[#174276] dark:text-sky-400">معهد الدراسات الإسلامية</span>
+                            <div class="text-center w-1/2 border-r border-slate-300">
+                                <span class="text-slate-500 text-[9px] block">ختم واعتماد مدير الفرع:</span>
+                                <span class="font-black text-xs text-slate-900 block mt-0.5" x-text="studentCardModal.card.branch_name || 'إدارة الفرع'">إدارة الفرع</span>
+                                <span class="text-[8px] text-slate-400">الختم والتوقيع الرسمي</span>
                             </div>
                         </div>
                     </div>
@@ -13948,16 +14053,16 @@
                         <!-- Official Signatures Footer -->
                         <div class="grid grid-cols-3 gap-6 text-center text-xs pt-6 border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
                             <div>
-                                <span class="text-slate-400 block mb-8">مسجل الكلية والامتحانات</span>
-                                <span class="font-bold">أ. عمر المهدوي</span>
+                                <span class="text-slate-400 block mb-8">مسجل شؤون الطلاب والامتحانات</span>
+                                <span class="font-bold">مسجل عام المعهد</span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block mb-8">مدير الكنترول المركزي</span>
-                                <span class="font-bold">د. عبد السلام الهاشمي</span>
+                                <span class="text-slate-400 block mb-8">مدير الكنترول والامتحانات</span>
+                                <span class="font-bold">رئيس لجنة الكنترول المركزي</span>
                             </div>
                             <div>
-                                <span class="text-slate-400 block mb-8">عميد المعهد التخصصي</span>
-                                <span class="font-bold">الشيخ د. الصادق الغرياني</span>
+                                <span class="text-slate-400 block mb-8">الاعتماد الرسمي / مدير المعهد</span>
+                                <span class="font-bold">إدارة المعهد التخصصي</span>
                             </div>
                         </div>
 
@@ -21457,7 +21562,7 @@
                 },
 
                 printStudentCard() {
-                    this.printCustomHtmlElement('printableStudentCardWrapper', 'بطاقة الطالب المعتمدة');
+                    this.printCustomHtmlElement('printableStudentCardWrapper', 'بطاقة الطالب الرسمية المعتمدة - A6');
                 },
 
                 printCustomHtmlElement(elementId, docTitle) {
@@ -21485,6 +21590,10 @@
                     iframe.style.pointerEvents = 'none';
                     document.body.appendChild(iframe);
 
+                    const isCard = elementId === 'printableStudentCardWrapper';
+                    const pageSizeCss = isCard ? 'size: A6 portrait; margin: 4mm;' : 'size: A4 portrait; margin: 8mm;';
+                    const pagePadding = isCard ? 'padding: 2mm;' : 'padding: 8mm;';
+
                     const frameDoc = iframe.contentWindow.document;
                     frameDoc.open();
                     frameDoc.write(`
@@ -21501,32 +21610,26 @@
                                     -webkit-print-color-adjust: exact !important; 
                                     print-color-adjust: exact !important;
                                     margin: 0;
-                                    padding: 8mm;
-                                    background: #ffffff;
+                                    ${pagePadding}
+                                    background: #ffffff !important;
                                     color: #0f172a;
                                 }
-                                @page { size: A4 auto; margin: 8mm; }
+                                @page { ${pageSizeCss} }
                                 .no-print { display: none !important; }
                                 table { page-break-inside: auto; width: 100%; border-collapse: collapse; }
                                 tr { page-break-inside: avoid; page-break-after: auto; }
-                                .luxury-card-front {
-                                    background: linear-gradient(135deg, #09152e 0%, #0f2b5c 50%, #174276 100%) !important;
-                                    border: 2px solid #d4af37 !important;
-                                    -webkit-print-color-adjust: exact !important;
-                                    print-color-adjust: exact !important;
-                                }
-                                .luxury-card-back {
-                                    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-                                    border: 1.5px solid #cbd5e1 !important;
-                                    -webkit-print-color-adjust: exact !important;
+                                .print-card-front, .print-card-back {
+                                    background-color: #ffffff !important;
+                                    color: #0f172a !important;
+                                    page-break-inside: avoid;
+                                    -webkit-print-color-adjust: exact !important; 
                                     print-color-adjust: exact !important;
                                 }
                             </style>
                         </head>
                         <body>
                             ${el.outerHTML}
-                        
-</body>
+                        </body>
                         </html>
                     `);
                     frameDoc.close();

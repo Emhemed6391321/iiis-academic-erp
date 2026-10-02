@@ -21,7 +21,7 @@ class AdminSettingsSeeder extends Seeder
             ['key' => 'state_name', 'value' => 'دولة ليبيا', 'label' => 'اسم الدولة', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'supervising_body', 'value' => 'الهيئة العامة للأوقاف والشؤون الإسلامية', 'label' => 'الهيئة / الوزارة المشرفة', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'supervising_department', 'value' => 'إدارة التعليم الأصيل', 'label' => 'الإدارة المشرفة', 'type' => 'string', 'setting_group' => 'institute_profile'],
-            ['key' => 'institute_name', 'value' => 'المعهد المتوسط للدراسات الإسلامية', 'label' => 'اسم المعهد المركزي', 'type' => 'string', 'setting_group' => 'institute_profile'],
+            ['key' => 'institute_name', 'value' => 'المعهد التخصصي للعلوم الشرعية', 'label' => 'اسم المعهد المركزي', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'branch_label', 'value' => 'الفرع الرئيسي', 'label' => 'مسمى الفرع الافتراضي', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'phone', 'value' => '+218 21 444 5555', 'label' => 'هاتف المعهد', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'email', 'value' => 'info@islamic-institute.edu.ly', 'label' => 'البريد الإلكتروني الرسمي', 'type' => 'string', 'setting_group' => 'institute_profile'],
@@ -30,8 +30,8 @@ class AdminSettingsSeeder extends Seeder
             ['key' => 'pobox', 'value' => 'ص.ب 80800', 'label' => 'صندوق البريد', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'logo_url', 'value' => '/images/logo.png', 'label' => 'شعار المعهد المركزي', 'type' => 'image', 'setting_group' => 'branding'],
             ['key' => 'stamp_url', 'value' => '', 'label' => 'الختم الرسمي للمعهد', 'type' => 'image', 'setting_group' => 'branding'],
-            ['key' => 'header_title', 'value' => 'المعهد المتوسط للدراسات الإسلامية', 'label' => 'ترويسة المستندات والتقارير', 'type' => 'string', 'setting_group' => 'branding'],
-            ['key' => 'footer_text', 'value' => 'المعهد المتوسط للدراسات الإسلامية - إدارة التعليم الأصيل', 'label' => 'تذييل المطبوعات الرسمية', 'type' => 'string', 'setting_group' => 'branding'],
+            ['key' => 'header_title', 'value' => 'المعهد التخصصي للعلوم الشرعية', 'label' => 'ترويسة المستندات والتقارير', 'type' => 'string', 'setting_group' => 'branding'],
+            ['key' => 'footer_text', 'value' => 'المعهد التخصصي للعلوم الشرعية - إدارة التعليم الأصيل', 'label' => 'تذييل المطبوعات الرسمية', 'type' => 'string', 'setting_group' => 'branding'],
         ];
 
         foreach ($profileSettings as $item) {
@@ -184,25 +184,25 @@ class AdminSettingsSeeder extends Seeder
 
             // Enrollment Certificate (شهادة قيد وتعريف)
             ['doc' => 'enrollment_cert', 'slot' => 'prepared_by', 'label' => 'رئيس قسم شؤون الطلبة والتسجيل', 'pos' => 'HEAD_STUDENTS', 'override' => 'رئيس قسم شؤون الطلبة والتسجيل'],
-            ['doc' => 'enrollment_cert', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير المعهد المتوسط للدراسات الإسلامية'],
+            ['doc' => 'enrollment_cert', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير عام المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير عام المعهد التخصصي للعلوم الشرعية'],
 
             // Good Conduct Certificate (شهادة حسن سيرة وسلوك)
             ['doc' => 'conduct_cert', 'slot' => 'prepared_by', 'label' => 'مسجل شؤون الطلاب', 'pos' => 'REGISTRAR', 'override' => 'مسجل شؤون الطلاب'],
-            ['doc' => 'conduct_cert', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير المعهد المتوسط للدراسات الإسلامية'],
+            ['doc' => 'conduct_cert', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير عام المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير عام المعهد التخصصي للعلوم الشرعية'],
 
             // Secret Confidential Report (التقرير السري للفرع)
             ['doc' => 'secret_report', 'slot' => 'prepared_by', 'label' => 'مدير مكتب تقنية المعلومات والتوثيق', 'pos' => 'HEAD_IT', 'override' => 'مدير مكتب تقنية المعلومات والتوثيق'],
             ['doc' => 'secret_report', 'slot' => 'approved_by', 'label' => 'يعتمد / المدير العام للمعهد', 'pos' => 'DIR_GEN', 'override' => 'المدير العام للمعهد'],
 
             // Academic Transcript (كشف الدرجات الأكاديمي)
-            ['doc' => 'transcript', 'slot' => 'prepared_by', 'label' => 'إعداد / مسجل الكلية', 'pos' => 'REGISTRAR', 'override' => 'مسجل الشؤون الأكاديمية'],
+            ['doc' => 'transcript', 'slot' => 'prepared_by', 'label' => 'إعداد / مسجل الشؤون الأكاديمية', 'pos' => 'REGISTRAR', 'override' => 'مسجل الشؤون الأكاديمية'],
             ['doc' => 'transcript', 'slot' => 'verified_by', 'label' => 'تدقيق / رئيس قسم الدراسة والامتحانات', 'pos' => 'HEAD_EXAMS', 'override' => 'رئيس قسم شؤون الدراسة والامتحانات'],
-            ['doc' => 'transcript', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير المعهد المتوسط للدراسات الإسلامية'],
+            ['doc' => 'transcript', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير عام المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير عام المعهد التخصصي للعلوم الشرعية'],
 
             // Official Student Registry (سجل الطلاب العام والملفات المعتمدة)
             ['doc' => 'student_registry', 'slot' => 'prepared_by', 'label' => 'إعداد / مستخرج الكشف', 'pos' => 'REGISTRAR', 'override' => 'مسؤول شؤون الطلاب والامتحانات'],
             ['doc' => 'student_registry', 'slot' => 'verified_by', 'label' => 'تدقيق ومراجعة / رئيس قسم شؤون الطلبة والتسجيل', 'pos' => 'HEAD_STUDENTS', 'override' => 'رئيس قسم التسجيل وشؤون الطلاب'],
-            ['doc' => 'student_registry', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير عام المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير المعهد المتوسط للدراسات الإسلامية'],
+            ['doc' => 'student_registry', 'slot' => 'approved_by', 'label' => 'يعتمد / مدير عام المعهد', 'pos' => 'DIR_GEN', 'override' => 'مدير عام المعهد التخصصي للعلوم الشرعية'],
         ];
 
         foreach ($signatoriesConfig as $sig) {
