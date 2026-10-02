@@ -104,6 +104,7 @@ class BugReportController extends Controller
             'success' => true,
             'message' => 'شكراً! تم استلام بلاغك وسيتم مراجعته من قِبل الفريق التقني قريباً.',
             'id'      => $report->id,
+            'data'    => $report,
         ], 201);
     }
 
