@@ -160,7 +160,9 @@ class StudentAttendanceController extends Controller
             ],
             'students' => $sheetData,
             'filters' => [
-                'branches'       => Branch::where('is_active', true)->get(['id', 'name', 'code']),
+                'branches'       => ($user && !$user->hasGlobalAccessScope() && !empty($user->branch_id))
+                    ? Branch::where('id', $user->branch_id)->get(['id', 'name', 'code'])
+                    : Branch::where('is_active', true)->get(['id', 'name', 'code']),
                 'study_years'    => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
                 'departments'    => Department::where('is_active', true)->get(['id', 'name', 'code']),
                 'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name', 'is_current']),
@@ -502,6 +504,10 @@ class StudentAttendanceController extends Controller
     {
         $dateStr = $request->get('date', Carbon::today()->format('Y-m-d'));
         $branchId = $request->get('branch_id');
+        $user = Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && !empty($user->branch_id)) {
+            $branchId = $user->branch_id;
+        }
 
         $totalActiveStudentsQuery = Student::where(function($q) {
             $q->where('academic_status', 'ENROLLED_ACTIVE')
@@ -533,7 +539,11 @@ class StudentAttendanceController extends Controller
         $absenceRate = $totalStudents > 0 ? round(($totalAbsenceToday / $totalStudents) * 100, 1) : 0;
 
         // مقارنة الحضور بين الفروع
-        $branches = Branch::where('is_active', true)->get();
+        $branchesQuery = Branch::where('is_active', true);
+        if ($branchId) {
+            $branchesQuery->where('id', $branchId);
+        }
+        $branches = $branchesQuery->get();
         $branchStats = [];
         foreach ($branches as $b) {
             $bStudentsCount = Student::where('branch_id', $b->id)->where('status', 'ACTIVE')->count();
@@ -554,8 +564,12 @@ class StudentAttendanceController extends Controller
 
         // أكثر 5 طلاب غياباً هذا الشهر للتنبيه السريع
         $startOfMonth = Carbon::parse($dateStr)->startOfMonth()->format('Y-m-d');
-        $atRiskStudents = StudentAttendance::where('record_date', '>=', $startOfMonth)
-            ->whereIn('status', ['ABSENT', 'ABSENT_UNEXCUSED'])
+        $atRiskQuery = StudentAttendance::where('record_date', '>=', $startOfMonth)
+            ->whereIn('status', ['ABSENT', 'ABSENT_UNEXCUSED']);
+        if ($branchId) {
+            $atRiskQuery->where('branch_id', $branchId);
+        }
+        $atRiskStudents = $atRiskQuery
             ->select('student_id', DB::raw('count(*) as unexcused_count'))
             ->groupBy('student_id')
             ->having('unexcused_count', '>=', 2)
@@ -856,6 +870,10 @@ class StudentAttendanceController extends Controller
         $departmentId = $request->get('department_id');
 
         $user = Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && !empty($user->branch_id)) {
+            $branchId = $user->branch_id;
+        }
+
         $currentYear = AcademicYear::where('is_current', true)->first();
 
         $branch = $branchId ? Branch::find($branchId) : null;

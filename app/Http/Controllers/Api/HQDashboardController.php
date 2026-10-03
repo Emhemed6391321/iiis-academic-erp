@@ -16,7 +16,10 @@ class HQDashboardController extends Controller
     public function getSummary(Request $request): JsonResponse
     {
         $forceRefresh = $request->boolean('refresh', false);
-        $data = $this->metricsCache->getHQSummary($forceRefresh);
+        $user = $request->user() ?: \Illuminate\Support\Facades\Auth::user();
+        $branchId = ($user && !$user->hasGlobalAccessScope()) ? $user->branch_id : null;
+
+        $data = $this->metricsCache->getHQSummary($branchId, $forceRefresh);
 
         return response()->json(array_merge([
             'success' => true,

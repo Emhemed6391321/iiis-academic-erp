@@ -169,7 +169,11 @@ class StudentDataQualityController extends Controller
         }
 
         // Count total active students per branch to calculate completion percentage
-        $branches = Branch::where('is_active', true)->get();
+        $branchesQuery = Branch::where('is_active', true);
+        if ($user && !$user->hasGlobalAccessScope() && !empty($user->branch_id)) {
+            $branchesQuery->where('id', $user->branch_id);
+        }
+        $branches = $branchesQuery->get();
         $branchSummaryCards = [];
 
         foreach ($branches as $br) {

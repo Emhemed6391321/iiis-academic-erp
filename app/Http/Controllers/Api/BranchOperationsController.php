@@ -538,6 +538,14 @@ class BranchOperationsController extends Controller
      */
     public function storeAssessment(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لك بإجراء تقييم وتفتيش ميداني. هذه الصلاحية محصورة بالإدارة العامة واللجان الرقابية المركزية.'
+            ], 403);
+        }
+
         $branch = Branch::find($id);
         if (!$branch) {
             return response()->json(['status' => 'error', 'message' => 'الفرع غير موجود'], 404);
@@ -640,6 +648,14 @@ class BranchOperationsController extends Controller
      */
     public function storeBranch(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لك بإضافة أو إنشاء فروع جديدة للمعهد. هذه الصلاحية محصورة بالإدارة العامة المركزية فقط.'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'short_name' => 'nullable|string|max:50',
@@ -1007,6 +1023,14 @@ class BranchOperationsController extends Controller
      */
     public function suspendBranch(Request $request, int $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لك بإيقاف الفرع مؤقتاً. هذه الصلاحية محصورة بالإدارة العامة المركزية فقط.'
+            ], 403);
+        }
+
         $request->validate([
             'suspension_reason' => 'required|string|min:4',
         ], [
@@ -1040,8 +1064,16 @@ class BranchOperationsController extends Controller
     /**
      * Activate Branch (إعادة تفعيل الفرع)
      */
-    public function activateBranch(int $id): JsonResponse
+    public function activateBranch(Request $request, int $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لك بإعادة تفعيل وتنشيط الفرع. هذه الصلاحية محصورة بالإدارة العامة المركزية فقط.'
+            ], 403);
+        }
+
         $branch = Branch::findOrFail($id);
 
         $branch->update([
@@ -1069,8 +1101,16 @@ class BranchOperationsController extends Controller
     /**
      * Safe Branch Deletion: Strictly check historical data (Section 1.2).
      */
-    public function safeDeleteBranch(int $id): JsonResponse
+    public function safeDeleteBranch(Request $request, int $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لك بحذف أو إزالة الفرع. هذه الصلاحية السيادية محصورة بالإدارة العامة المركزية فقط.'
+            ], 403);
+        }
+
         $branch = Branch::withCount(['students', 'contracts', 'classes', 'requests'])->findOrFail($id);
 
         $reasons = [];

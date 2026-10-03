@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'dashboard'" class="space-y-6">
+            <div x-show="currentSection === 'dashboard'" class="space-y-6">
                 
                 <!-- 1. ترويسة القيادة والموقف الميداني الفوري (Executive Mission Control Header) -->
                 <div class="p-6 rounded-[24px] border relative overflow-hidden transition-all duration-300"
@@ -12,10 +12,18 @@
                                 </span>
                                 <div>
                                     <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                        لوحة القيادة والمؤشرات الميدانية المركزية
+                                        @if(auth()->user() && !auth()->user()->hasGlobalAccessScope() && auth()->user()->branch_id)
+                                            لوحة قيادة ومؤشرات فرع {{ auth()->user()->branch?->name ?: '' }}
+                                        @else
+                                            لوحة القيادة والمؤشرات الميدانية المركزية
+                                        @endif
                                     </h2>
                                     <p class="text-xs text-slate-500 dark:text-slate-400">
-                                        المعهد التخصصي للدراسات الإسلامية • منصة الكفاءة التشغيلية والتحصين الميداني
+                                        @if(auth()->user() && !auth()->user()->hasGlobalAccessScope() && auth()->user()->branch_id)
+                                            المعهد التخصصي للدراسات الإسلامية • مؤشرات وإحصائيات العمليات الخاصة بالفرع
+                                        @else
+                                            المعهد التخصصي للدراسات الإسلامية • منصة الكفاءة التشغيلية والتحصين الميداني
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -94,6 +102,7 @@
                         <span class="text-[10px] text-slate-400">إضافة فورية</span>
                     </button>
 
+                    @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                     <button @click="openNewBranchModal()" 
                             class="p-4 rounded-[18px] border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group flex flex-col items-center justify-center gap-2"
                             :class="darkMode ? 'bg-slate-900/90 border-slate-800 hover:border-emerald-700' : 'bg-white border-[#e8ebf2] hover:border-emerald-300 shadow-sm'">
@@ -103,6 +112,7 @@
                         <span class="text-xs font-bold text-slate-800 dark:text-slate-200">مقر فرع جديد</span>
                         <span class="text-[10px] text-slate-400">توسع ميداني</span>
                     </button>
+                    @endif
 
                     <button @click="currentSection = 'attendance'" 
                             class="p-4 rounded-[18px] border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group flex flex-col items-center justify-center gap-2"

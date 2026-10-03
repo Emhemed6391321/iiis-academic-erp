@@ -381,6 +381,7 @@
 <!-- MODALS: BRANCH DETAILS & FIELD ASSESSMENT                                 -->
 <!-- ========================================================================= -->
 
+@if(auth()->user() && auth()->user()->hasGlobalAccessScope())
 <!-- نافذة تقييم ميداني جديد للمقر (Branch Assessment Modal) -->
 <div x-show="showBranchAssessmentModal"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
@@ -539,6 +540,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <!-- نافذة تفاصيل الفرع الشاملة (Branch Details Modal) -->
 <div x-show="showBranchDetailsModal"
@@ -1041,10 +1043,12 @@
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-xs text-slate-700 dark:text-slate-300">التقارير الرقابية والتفتيشية
                             السابقة:</span>
+                        @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                         <button @click="openNewAssessmentModal(branchDetailsData.branch.id)"
                             class="px-3 py-1.5 rounded-[8px] bg-emerald-600 text-white font-bold text-xs">
                             + تقييم جديد لهذا الفرع
                         </button>
+                        @endif
                     </div>
 
                     <div class="space-y-2">
@@ -1091,6 +1095,7 @@
 
         <div class="flex items-center justify-between pt-3 border-t"
             :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
+            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
             <div class="flex items-center gap-2">
                 <template
                     x-if="branchDetailsData && branchDetailsData.branch && branchDetailsData.branch.branch_status !== 'SUSPENDED'">
@@ -1111,12 +1116,16 @@
                     🗑️ إزالة / حذف الفرع
                 </button>
             </div>
+            @else
+            <div></div>
+            @endif
             <button @click="showBranchDetailsModal = false"
                 class="px-4 py-2 rounded-[12px] text-slate-400 hover:bg-slate-800">إغلاق</button>
         </div>
     </div>
 </div>
 
+@if(auth()->user() && auth()->user()->hasGlobalAccessScope())
 <!-- نافذة إضافة وتعديل الفرع والمقر (Create & Edit Branch Modal) -->
 <div x-show="showNewBranchModal"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md"
@@ -1363,6 +1372,7 @@
         </form>
     </div>
 </div>
+@endif
 
 <!-- نافذة إضافة / تعديل قاعة أو فصل أو معمل (Branch Hall/Class Modal) -->
 <div x-show="showBranchHallModal"

@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'branches_directory'" class="space-y-6" x-init="$watch('currentSection', value => { if (value === 'branches_directory') $nextTick(() => initBranchesMap()); })">
+            <div x-show="currentSection === 'branches_directory'" class="space-y-6" x-init="$watch('currentSection', value => { if (value === 'branches_directory') $nextTick(() => initBranchesMap()); })">
                 
                 <!-- رأس القسم وبطاقات المؤشرات القيادية -->
                 <div class="p-6 md:p-8 rounded-[20px] border space-y-6 transition-all duration-300"
@@ -42,6 +42,7 @@
                                 </button>
                             </div>
 
+                            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                             <!-- زر استيراد الفروع من Excel -->
                             <button @click="openBranchImportModal()"
                                     class="px-3.5 py-2 rounded-[12px] text-xs font-bold border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1.5 transition-all cursor-pointer">
@@ -62,6 +63,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span>إجراء تقييم ميداني جديد</span>
                             </button>
+                            @endif
                         </div>
                     </div>
 
@@ -241,7 +243,9 @@
                                                 <span x-text="'المدير: ' + (b.manager_name || 'معين')"></span>
                                                 <div class="flex items-center gap-1">
                                                     <button @click.stop="openBranchDetails(b)" class="px-2 py-0.5 rounded-[6px] bg-[#2b78a5]/15 text-[#2b78a5] dark:text-sky-400 hover:bg-[#2b78a5]/25 font-bold">الملف</button>
+                                                    @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                                     <button @click.stop="openNewAssessmentModal(b.id)" class="px-2 py-0.5 rounded-[6px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 font-bold">تقييم</button>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -315,9 +319,11 @@
                                     <button @click="openEditBranchModal(b)" class="px-2.5 py-2 rounded-[10px] text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all" title="تعديل بيانات الفرع">
                                         ✏️ تعديل
                                     </button>
+                                    @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                     <button @click="openNewAssessmentModal(b.id)" class="px-3 py-2 rounded-[10px] text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all">
                                         تقييم
                                     </button>
+                                    @endif
                                     <button @click="branchViewMode = 'map'; $nextTick(() => { initBranchesMap(); panToBranch(b); })" class="px-2.5 py-2 rounded-[10px] text-xs font-bold border border-slate-300 dark:border-slate-700 text-slate-400 hover:text-slate-200 transition-all" title="عرض على الخريطة">
                                         🗺️
                                     </button>
@@ -382,12 +388,14 @@
                                                 <button @click="openEditBranchModal(b)" class="px-2 py-1.5 rounded-[8px] bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 font-bold text-xs transition-all" title="تعديل بيانات الفرع">
                                                     ✏️ تعديل
                                                 </button>
+                                                @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                                 <button @click="openNewAssessmentModal(b.id)" class="px-2.5 py-1.5 rounded-[8px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 font-bold text-xs transition-all">
                                                     تقييم
                                                 </button>
                                                 <button @click="deleteBranchAction(b)" class="p-1.5 rounded-[8px] text-rose-500 hover:bg-rose-500/15 text-xs transition-all" title="إزالة أو حذف الفرع">
                                                     🗑️
                                                 </button>
+                                                @endif
                                                 <button @click="branchViewMode = 'map'; $nextTick(() => { initBranchesMap(); panToBranch(b); })" class="px-2 py-1.5 rounded-[8px] border border-slate-300 dark:border-slate-700 text-slate-400 hover:text-slate-200 text-xs" title="موقع الفرع">
                                                     📍
                                                 </button>

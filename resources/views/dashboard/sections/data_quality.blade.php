@@ -1,4 +1,4 @@
-﻿<div x-show="currentSection === 'data_quality'" class="space-y-6">
+<div x-show="currentSection === 'data_quality'" class="space-y-6">
 
     <!-- Official Printable Header (Visible only when printing) -->
     <div class="hidden print:block mb-8 pb-4 border-b-2 border-slate-900 text-center font-serif">
@@ -295,12 +295,18 @@
     <div class="print:hidden bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
         <!-- Branch Selector -->
         <div class="w-full md:w-48">
-            <select x-model="dataQuality.filters.branch_id" @change="loadDataQualityAudit()" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500">
-                <option value="all">كافة الفروع</option>
-                <template x-for="b in branches" :key="b.id">
-                    <option :value="b.id" x-text="b.name"></option>
-                </template>
-            </select>
+            @if(auth()->user() && !auth()->user()->hasGlobalAccessScope() && auth()->user()->branch_id)
+                <div class="w-full px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-[#2b78a5] dark:text-sky-400">
+                    🏢 {{ auth()->user()->branch?->name ?: 'فرعك المعتمد' }}
+                </div>
+            @else
+                <select x-model="dataQuality.filters.branch_id" @change="loadDataQualityAudit()" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500">
+                    <option value="all">كافة الفروع</option>
+                    <template x-for="b in branches" :key="b.id">
+                        <option :value="b.id" x-text="b.name"></option>
+                    </template>
+                </select>
+            @endif
         </div>
 
         <!-- Academic Year -->

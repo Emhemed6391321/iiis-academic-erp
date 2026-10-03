@@ -104,14 +104,20 @@
                             <!-- الفرع -->
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-400 mb-1">الفرع الدراسي</label>
-                                <select x-model="attendance.filters.branch_id" @change="loadAttendanceSheet()"
-                                        class="w-full p-2.5 rounded-xl border text-xs font-bold outline-none transition"
-                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                                    <option value="">جميع الفروع (أو اختر فرعاً)</option>
-                                    <template x-for="b in (attendance.sheet.filters?.branches || branches)" :key="b.id">
-                                        <option :value="b.id" x-text="b.name"></option>
-                                    </template>
-                                </select>
+                                @if(auth()->user() && !auth()->user()->hasGlobalAccessScope() && auth()->user()->branch_id)
+                                    <div class="w-full p-2.5 rounded-xl border text-xs font-bold bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-[#2b78a5] dark:text-sky-400">
+                                        🏢 {{ auth()->user()->branch?->name ?: 'فرعك المعتمد' }}
+                                    </div>
+                                @else
+                                    <select x-model="attendance.filters.branch_id" @change="loadAttendanceSheet()"
+                                            class="w-full p-2.5 rounded-xl border text-xs font-bold outline-none transition"
+                                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                                        <option value="">جميع الفروع (أو اختر فرعاً)</option>
+                                        <template x-for="b in (attendance.sheet.filters?.branches || branches)" :key="b.id">
+                                            <option :value="b.id" x-text="b.name"></option>
+                                        </template>
+                                    </select>
+                                @endif
                             </div>
 
                             <!-- المرحلة الدراسية -->
@@ -660,14 +666,20 @@
 
                             <div>
                                 <label class="block text-[11px] font-bold text-slate-400 mb-1">الفرع</label>
-                                <select x-model="attendance.reports.branch_id" @change="generateAttendanceReport()"
-                                        class="w-full p-2.5 rounded-xl border text-xs font-bold outline-none"
-                                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                                    <option value="">جميع الفروع</option>
-                                    <template x-for="b in (attendance.sheet.filters?.branches || branches)" :key="b.id">
-                                        <option :value="b.id" x-text="b.name"></option>
-                                    </template>
-                                </select>
+                                @if(auth()->user() && !auth()->user()->hasGlobalAccessScope() && auth()->user()->branch_id)
+                                    <div class="w-full p-2.5 rounded-xl border text-xs font-bold bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-[#2b78a5] dark:text-sky-400">
+                                        🏢 {{ auth()->user()->branch?->name ?: 'فرعك المعتمد' }}
+                                    </div>
+                                @else
+                                    <select x-model="attendance.reports.branch_id" @change="generateAttendanceReport()"
+                                            class="w-full p-2.5 rounded-xl border text-xs font-bold outline-none"
+                                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                                        <option value="">جميع الفروع</option>
+                                        <template x-for="b in (attendance.sheet.filters?.branches || branches)" :key="b.id">
+                                            <option :value="b.id" x-text="b.name"></option>
+                                        </template>
+                                    </select>
+                                @endif
                             </div>
 
                             <div>

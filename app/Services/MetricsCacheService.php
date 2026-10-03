@@ -17,45 +17,70 @@ class MetricsCacheService
     const BRANCH_METRICS_KEY_PREFIX = 'iiis_metrics_branch_';
 
     /**
-     * Get or calculate cached HQ executive dashboard summary.
+     * Get or calculate cached HQ / Branch executive dashboard summary.
      */
-    public function getHQSummary(bool $forceRefresh = false): array
+    public function getHQSummary(?int $branchId = null, bool $forceRefresh = false): array
     {
         $currentYear = AcademicYear::where('is_current', true)->first();
-        $cacheKey = self::HQ_SUMMARY_KEY_PREFIX . ($currentYear?->id ?? 'default');
+        $cacheSuffix = ($currentYear?->id ?? 'default') . ($branchId ? "_branch_{$branchId}" : '_hq');
+        $cacheKey = self::HQ_SUMMARY_KEY_PREFIX . $cacheSuffix;
 
         if ($forceRefresh) {
             Cache::forget($cacheKey);
         }
 
-        return Cache::remember($cacheKey, self::CACHE_TTL_SECONDS, function () use ($currentYear) {
-            $totalStudents       = Student::count();
-            $enrolledStudents    = Student::where('academic_status', 'ENROLLED_ACTIVE')->count();
-            $pendingStudents     = Student::where('academic_status', 'PENDING_HQ')->count();
-            $draftStudents       = Student::where('academic_status', 'NEW_DRAFT')->count();
+        return Cache::remember($cacheKey, self::CACHE_TTL_SECONDS, function () use ($currentYear, $branchId) {
+            $studentQuery = Student::query();
+            $batchQuery = GradeBatch::query();
+            $propertyQuery = \App\Models\Property::query();
+            $contractQuery = \App\Models\BranchContract::query();
+            $installmentQuery = \App\Models\ContractInstallment::query();
+            $attendanceQuery = \App\Models\StudentAttendance::whereDate('record_date', Carbon::today());
+            $branchRequestQuery = \App\Models\BranchRequest::query();
+            $verificationQuery = \App\Models\DocumentVerification::query();
 
-            $pendingGradeBatches  = GradeBatch::where('status', 'SUBMITTED_TO_HQ')->count();
-            $approvedGradeBatches = GradeBatch::where('status', 'HQ_APPROVED')->count();
+            if ($branchId) {
+                $studentQuery->where('branch_id', $branchId);
+                $batchQuery->where('branch_id', $branchId);
+                $propertyQuery->where('branch_id', $branchId);
+                $contractQuery->where('branch_id', $branchId);
+                $installmentQuery->whereHas('contract', fn($q) => $q->where('branch_id', $branchId));
+                $attendanceQuery->where('branch_id', $branchId);
+                $branchRequestQuery->where('branch_id', $branchId);
+                $verificationQuery->whereHas('student', fn($q) => $q->where('branch_id', $branchId));
+            }
+
+            $totalStudents        = (clone $studentQuery)->count();
+            $enrolledStudents     = (clone $studentQuery)->where('academic_status', 'ENROLLED_ACTIVE')->count();
+            $pendingStudents      = (clone $studentQuery)->where('academic_status', 'PENDING_HQ')->count();
+            $draftStudents        = (clone $studentQuery)->where('academic_status', 'NEW_DRAFT')->count();
+
+            $pendingGradeBatches  = (clone $batchQuery)->where('status', 'SUBMITTED_TO_HQ')->count();
+            $approvedGradeBatches = (clone $batchQuery)->where('status', 'HQ_APPROVED')->count();
 
             // Properties & Contracts KPIs
-            $totalProperties    = \App\Models\Property::count();
-            $activeContracts    = \App\Models\BranchContract::where('status', 'ACTIVE')->count();
-            $expiringContracts  = \App\Models\BranchContract::where('status', 'ACTIVE')
+            $totalProperties    = (clone $propertyQuery)->count();
+            $activeContracts    = (clone $contractQuery)->where('status', 'ACTIVE')->count();
+            $expiringContracts  = (clone $contractQuery)->where('status', 'ACTIVE')
                 ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(30)])
                 ->count();
-            $totalPaidInstallments = (float) \App\Models\ContractInstallment::where('status', 'PAID')->sum('amount');
-            $totalDueInstallments  = (float) \App\Models\ContractInstallment::where('status', '!=', 'PAID')->sum('amount');
+            $totalPaidInstallments = (float) (clone $installmentQuery)->where('status', 'PAID')->sum('amount');
+            $totalDueInstallments  = (float) (clone $installmentQuery)->where('status', '!=', 'PAID')->sum('amount');
 
             // Attendance & Document Verification KPIs
-            $todayAttendance     = \App\Models\StudentAttendance::whereDate('record_date', Carbon::today())->count();
-            $deprivationAlerts   = \App\Models\BranchRequest::where('request_type', 'ACADEMIC')
+            $todayAttendance     = (clone $attendanceQuery)->count();
+            $deprivationAlerts   = (clone $branchRequestQuery)->where('request_type', 'ACADEMIC')
                 ->where('title', 'like', '%تجاوز نسبة الغياب%')
                 ->count();
-            $verifiedDocuments   = \App\Models\DocumentVerification::count();
-            $pendingRequests     = \App\Models\BranchRequest::where('status', 'PENDING')->count();
+            $verifiedDocuments   = (clone $verificationQuery)->count();
+            $pendingRequests     = (clone $branchRequestQuery)->where('status', 'PENDING')->count();
 
             // Branches statistics
-            $branches = Branch::where('is_active', true)
+            $branchesQuery = Branch::where('is_active', true);
+            if ($branchId) {
+                $branchesQuery->where('id', $branchId);
+            }
+            $branches = $branchesQuery
                 ->withCount([
                     'students as total_students_count',
                     'students as pending_students_count' => fn($q) => $q->where('academic_status', 'PENDING_HQ'),
@@ -117,8 +142,17 @@ class MetricsCacheService
     public function invalidateHQSummary(): void
     {
         $currentYear = AcademicYear::where('is_current', true)->first();
-        Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . ($currentYear?->id ?? 'default'));
+        $yearId = $currentYear?->id ?? 'default';
+        Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . $yearId . '_hq');
+        Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . $yearId);
+        Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . 'default_hq');
         Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . 'default');
+
+        $branches = Branch::pluck('id');
+        foreach ($branches as $bId) {
+            Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . $yearId . "_branch_{$bId}");
+            Cache::forget(self::HQ_SUMMARY_KEY_PREFIX . "default_branch_{$bId}");
+        }
     }
 
     public function invalidateBranchMetrics(int $branchId): void

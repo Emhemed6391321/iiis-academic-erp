@@ -1,4 +1,4 @@
-﻿<div x-show="currentSection === 'student_workflow'" class="space-y-6">
+<div x-show="currentSection === 'student_workflow'" class="space-y-6">
 
     <!-- Header Area -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
@@ -866,11 +866,19 @@
                 <template x-if="branchRequestForm.track === 'transfer'">
                     <div class="space-y-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                         <label class="block font-black text-slate-700 dark:text-slate-200">الفرع المراد نقل الطالب إليه:</label>
+                        @php
+                            $userBranchId = auth()->user()?->branch_id;
+                            $transferTargetBranches = \App\Models\Branch::where('is_active', true)
+                                ->when($userBranchId, fn($q) => $q->where('id', '!=', $userBranchId))
+                                ->select('id', 'name', 'code', 'city')
+                                ->orderBy('name')
+                                ->get();
+                        @endphp
                         <select x-model="branchRequestForm.to_branch_id" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200">
-                            <option value="">-- اختر الفرع المستقبل --</option>
-                            <template x-for="b in branches" :key="b.id">
-                                <option :value="b.id" x-text="b.name"></option>
-                            </template>
+                            <option value="">-- اختر الفرع المستقبل للتحويل --</option>
+                            @foreach($transferTargetBranches as $tb)
+                                <option value="{{ $tb->id }}">{{ $tb->name }} ({{ $tb->city }})</option>
+                            @endforeach
                         </select>
                         <p class="text-[10px] text-slate-500">سيخضع الطلب لإفادة الشؤون التعليمية ثم موافقة الفرع المستقبل ضمن المصافحة الثلاثية.</p>
                     </div>
