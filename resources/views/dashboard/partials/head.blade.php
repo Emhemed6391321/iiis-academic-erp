@@ -175,10 +175,6 @@
             max-width: 88vw;
             z-index: 50;
             box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.25);
-            background-color: #ffffff;
-        }
-        .dark .sidebar-container {
-            background-color: #151f32;
         }
 
         /* Smooth Custom Drawer Scrollbar */
@@ -338,8 +334,7 @@
             try {
                 // 1. Theme Mode (Light / Dark / Auto)
                 const savedMode = localStorage.getItem('institute_theme_mode') || 'light';
-                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (savedMode === 'dark' || (savedMode === 'auto' && prefersDark)) {
+                if (savedMode === 'dark') {
                     document.documentElement.classList.add('dark');
                 } else {
                     document.documentElement.classList.remove('dark');
