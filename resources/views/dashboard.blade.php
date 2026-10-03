@@ -21,7 +21,7 @@
         @include('dashboard.partials.sidebar')
 
         <!-- مساحة العمل المركزية (Main Workspace) -->
-        <main class="flex-1 w-full min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main class="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
 
             {{-- 1. الرئيسية والقيادة --}}
             @include('dashboard.sections.dashboard')

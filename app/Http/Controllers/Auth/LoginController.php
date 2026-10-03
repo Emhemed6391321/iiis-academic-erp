@@ -30,7 +30,9 @@ class LoginController extends Controller
             return redirect('/');
         }
 
-        return view('auth.login');
+        $instituteProfile = \App\Services\AdminSettingsService::getInstituteProfile();
+
+        return view('auth.login', compact('instituteProfile'));
     }
 
     /**

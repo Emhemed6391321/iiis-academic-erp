@@ -1,15 +1,24 @@
 @php
-    $adminSettings = [];
-    try {
-        $adminSettings = \App\Services\AdminSettingsService::getProfile();
-    } catch (\Throwable $e) {
-        $adminSettings = [];
+    $instituteProfile = $instituteProfile ?? [];
+    if (empty($instituteProfile)) {
+        try {
+            $instituteProfile = \App\Services\AdminSettingsService::getInstituteProfile();
+        } catch (\Throwable $e) {
+            $instituteProfile = [];
+        }
     }
-    $logoUrl = $adminSettings['logo_url'] ?? '/images/logo.png';
-    $instituteName = $adminSettings['institute_name'] ?? 'المعهد التخصصي للعلوم الشرعية';
-    $supervisingBody = $adminSettings['supervising_body'] ?? 'الهيئة العامة للأوقاف والشؤون الإسلامية';
-    $supervisingDepartment = $adminSettings['supervising_department'] ?? 'إدارة التعليم الأصيل';
-    $stateName = $adminSettings['state_name'] ?? 'دولة ليبيا';
+    $logoUrl = !empty($instituteProfile['logo_url']) ? $instituteProfile['logo_url'] : '/images/logo.png';
+    $instituteName = !empty($instituteProfile['institute_name']) ? $instituteProfile['institute_name'] : 'المعهد التخصصي للدراسات الإسلامية';
+    $supervisingBody = !empty($instituteProfile['supervising_body']) ? $instituteProfile['supervising_body'] : 'الهيئة العامة للأوقاف والشؤون الإسلامية';
+    $supervisingDepartment = !empty($instituteProfile['supervising_department']) ? $instituteProfile['supervising_department'] : 'إدارة التعليم الأصيل';
+    $stateName = !empty($instituteProfile['state_name']) ? $instituteProfile['state_name'] : 'دولة ليبيا';
+    $branchLabel = !empty($instituteProfile['branch_label']) ? $instituteProfile['branch_label'] : 'الفرع الرئيسي';
+    $headerTitle = !empty($instituteProfile['header_title']) ? $instituteProfile['header_title'] : $instituteName;
+    $address = !empty($instituteProfile['address']) ? $instituteProfile['address'] : '';
+    $phone = !empty($instituteProfile['phone']) ? $instituteProfile['phone'] : '';
+    $email = !empty($instituteProfile['email']) ? $instituteProfile['email'] : '';
+    $website = !empty($instituteProfile['website']) ? $instituteProfile['website'] : '';
+    $footerText = !empty($instituteProfile['footer_text']) ? $instituteProfile['footer_text'] : "{$instituteName} — {$supervisingDepartment}";
 @endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="h-full">
@@ -241,12 +250,17 @@
                         </div>
                     </div>
 
-                    <!-- Titles -->
+                    <!-- Titles Directly from Central Governance Settings -->
+                    <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1.5">
+                        <span>{{ $supervisingBody }}</span>
+                        <span>•</span>
+                        <span>{{ $supervisingDepartment }}</span>
+                    </div>
                     <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                        تسجيل الدخول للمنظومة
-                    </h1>
-                    <div class="text-xs font-bold text-amber-700 dark:text-amber-400 mt-1">
                         {{ $instituteName }}
+                    </h1>
+                    <div class="text-xs font-bold text-[#2b78a5] dark:text-blue-400 mt-1">
+                        بوابة تسجيل الدخول الموحدة للمنظومة
                     </div>
                     <p class="text-[12px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">
                         أدخل بيانات الاعتماد الرسمية للوصول إلى لوحة الإدارة وشؤون الطلاب
@@ -375,10 +389,24 @@
     <!-- Official Enterprise Footer -->
     <footer class="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 py-3.5 text-center text-xs text-slate-500 dark:text-slate-400 relative z-20 transition-colors duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 font-semibold">
-            <div>
-                جميع الحقوق محفوظة © {{ date('Y') }} — <span class="text-slate-800 dark:text-slate-200 font-bold">{{ $instituteName }}</span>
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                <span>جميع الحقوق محفوظة © {{ date('Y') }} — <span class="text-slate-800 dark:text-slate-200 font-bold">{{ $instituteName }}</span></span>
+                @if(!empty($address))
+                    <span class="hidden md:inline text-slate-300 dark:text-slate-700">|</span>
+                    <span class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        {{ $address }}
+                    </span>
+                @endif
             </div>
             <div class="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500">
+                @if(!empty($phone))
+                    <span class="flex items-center gap-1 font-mono text-slate-600 dark:text-slate-400" dir="ltr">
+                        <svg class="w-3.5 h-3.5 text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                        {{ $phone }}
+                    </span>
+                    <span>•</span>
+                @endif
                 <span>{{ $supervisingBody }}</span>
                 <span>•</span>
                 <span class="font-mono">ERP-v2.0</span>

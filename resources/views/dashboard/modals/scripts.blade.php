@@ -31,23 +31,37 @@
                     { key: 'slate', name: 'الرمادي المؤسسي (المحايد)', primary: '#475569', dark: '#0f172a', desc: 'هادئ ومحايد بدون تشتيت بصري لعمليات الكنترول الدقيقة' }
                 ],
 
-                sidebarCollapsed: false,
+                sidebarCollapsed: localStorage.getItem('institute_sidebar_collapsed') === '1',
                 mobileSidebarOpen: false,
                 sidebarOpen: false,
+                isDesktopView() {
+                    return typeof window !== 'undefined' && window.innerWidth >= 1024;
+                },
                 toggleSidebar() {
-                    this.sidebarOpen = !this.sidebarOpen;
-                    this.mobileSidebarOpen = this.sidebarOpen;
+                    if (this.isDesktopView()) {
+                        this.sidebarCollapsed = !this.sidebarCollapsed;
+                        localStorage.setItem('institute_sidebar_collapsed', this.sidebarCollapsed ? '1' : '0');
+                    } else {
+                        this.mobileSidebarOpen = !this.mobileSidebarOpen;
+                        this.sidebarOpen = this.mobileSidebarOpen;
+                    }
                 },
                 closeSidebar() {
-                    this.sidebarOpen = false;
                     this.mobileSidebarOpen = false;
+                    this.sidebarOpen = false;
                 },
                 openSidebar() {
-                    this.sidebarOpen = true;
-                    this.mobileSidebarOpen = true;
+                    if (this.isDesktopView()) {
+                        this.sidebarCollapsed = false;
+                        localStorage.setItem('institute_sidebar_collapsed', '0');
+                    } else {
+                        this.mobileSidebarOpen = true;
+                        this.sidebarOpen = true;
+                    }
                 },
                 closeMobileSidebar() {
-                    this.closeSidebar();
+                    this.mobileSidebarOpen = false;
+                    this.sidebarOpen = false;
                 },
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
                 bugReportsNavBadge: 0,

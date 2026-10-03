@@ -49,6 +49,14 @@ class AdminSettingsService
     }
 
     /**
+     * Alias for getInstituteProfile() to maintain backward compatibility.
+     */
+    public static function getProfile(): array
+    {
+        return self::getInstituteProfile();
+    }
+
+    /**
      * Get a specific setting value by key with optional default fallback.
      */
     public static function getSetting(string $key, mixed $default = null): mixed

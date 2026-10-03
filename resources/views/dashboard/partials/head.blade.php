@@ -125,9 +125,9 @@
         }
 
         [x-cloak] { display: none !important; }
-        .transition-sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .transition-sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* ── UNIFIED FLOATING DRAWER ARCHITECTURE (Desktop & Mobile 100% Canvas Area) ── */
+        /* ── RESPONSIVE HYBRID SIDEBAR ARCHITECTURE (Desktop In-Flow + Mobile Drawer) ── */
         html, body {
             height: 100%;
             max-height: 100vh;
@@ -151,30 +151,61 @@
             flex: 1 1 0%;
             min-height: 0;
             display: flex !important;
-            flex-direction: column !important;
+            flex-direction: row !important;
             overflow: hidden;
             width: 100%;
             position: relative;
         }
-        .layout-wrapper > main {
-            width: 100% !important;
-            flex: 1 1 100% !important;
-            min-width: 0 !important;
-            height: 100% !important;
-            overflow-y: auto !important;
+
+        /* Desktop (>= 1024px): Permanent in-flow sidebar */
+        @media (min-width: 1024px) {
+            .sidebar-container {
+                position: relative !important;
+                top: auto !important;
+                bottom: auto !important;
+                right: auto !important;
+                transform: none !important;
+                height: 100% !important;
+                flex-shrink: 0 !important;
+                display: flex !important;
+                box-shadow: none !important;
+                background-color: #ffffff !important;
+            }
+            .dark .sidebar-container {
+                background-color: #151f32 !important;
+            }
+            .layout-wrapper > main {
+                flex: 1 1 0% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+            }
         }
 
-        /* Unified Floating Drawer Panel */
-        .sidebar-container {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            height: 100vh;
-            width: 20rem; /* 320px */
-            max-width: 88vw;
-            z-index: 50;
-            box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.25);
+        /* Mobile (< 1024px): Off-canvas sliding drawer */
+        @media (max-width: 1023px) {
+            .sidebar-container {
+                position: fixed !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                right: 0 !important;
+                height: 100vh !important;
+                width: 18rem !important; /* 288px */
+                max-width: 85vw !important;
+                z-index: 50 !important;
+                box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.3) !important;
+                background-color: #ffffff !important;
+            }
+            .dark .sidebar-container {
+                background-color: #151f32 !important;
+            }
+            .layout-wrapper > main {
+                width: 100% !important;
+                flex: 1 1 100% !important;
+                min-width: 0 !important;
+                height: 100% !important;
+                overflow-y: auto !important;
+            }
         }
 
         /* Smooth Custom Drawer Scrollbar */

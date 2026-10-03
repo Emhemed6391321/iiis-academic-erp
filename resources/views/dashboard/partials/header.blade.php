@@ -7,12 +7,12 @@
             <div class="flex items-center space-x-3 space-x-reverse flex-shrink-0">
                 <button @click.stop="toggleSidebar()" 
                         type="button"
-                        :aria-expanded="sidebarOpen.toString()"
+                        :aria-expanded="(isDesktopView() ? !sidebarCollapsed : mobileSidebarOpen).toString()"
                         aria-label="تبديل القائمة الجانبية"
                         class="p-2.5 rounded-xl transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2b78a5]/40"
-                        :class="sidebarOpen ? (darkMode ? 'bg-slate-800 text-blue-400 ring-2 ring-blue-500/30 shadow-inner' : 'bg-blue-50 text-[#2b78a5] ring-2 ring-[#2b78a5]/30 shadow-inner') : (darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600')"
-                        title="فتح / إغلاق القائمة الجانبية (Drawer)">
-                    <svg class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-90': sidebarOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        :class="(isDesktopView() ? !sidebarCollapsed : mobileSidebarOpen) ? (darkMode ? 'bg-slate-800 text-blue-400 ring-2 ring-blue-500/30 shadow-inner' : 'bg-blue-50 text-[#2b78a5] ring-2 ring-[#2b78a5]/30 shadow-inner') : (darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600')"
+                        title="طي / توسيع القائمة الجانبية">
+                    <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
                 </button>

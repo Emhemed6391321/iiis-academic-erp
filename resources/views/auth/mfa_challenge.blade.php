@@ -1,9 +1,13 @@
+@php
+    $instituteProfile = \App\Services\AdminSettingsService::getInstituteProfile();
+    $instituteName = !empty($instituteProfile['institute_name']) ? $instituteProfile['institute_name'] : 'المعهد التخصصي للدراسات الإسلامية';
+@endphp
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>تأكيد الهوية الرقمية (MFA) | المعهد التخصصي للدراسات الإسلامية</title>
+    <title>تأكيد الهوية الرقمية (MFA) | {{ $instituteName }}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
