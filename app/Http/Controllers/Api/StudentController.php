@@ -370,51 +370,96 @@ class StudentController extends Controller
      */
     public function importBatch(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
-        $yearId = $currentYear ? $currentYear->id : 1;
+        try {
+            $user = Auth::user();
+            $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
+            $yearId = $currentYear ? $currentYear->id : 1;
 
-        $rows = [];
-        $headerMap = $this->getStudentHeaderMap();
+            $rows = [];
+            $headerMap = $this->getStudentHeaderMap();
 
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $path = $file->getRealPath();
-            $ext = strtolower($file->getClientOriginalExtension());
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->getRealPath();
+                $ext = strtolower($file->getClientOriginalExtension());
 
-            if ($ext === 'xlsx' || $ext === 'xls') {
-                if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
-                    $sheetRows = $xlsx->rows();
-                    if (count($sheetRows) < 2) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
-                        ], 422);
+                if ($ext === 'xlsx' || $ext === 'xls') {
+                    if (!class_exists(\Shuchkin\SimpleXLSX::class)) {
+                        $fallback = app_path('Support/SimpleXLSX.php');
+                        if (file_exists($fallback)) {
+                            require_once $fallback;
+                        }
                     }
-                    $headers = array_shift($sheetRows);
-                    $headers = array_map(function($h) {
-                        return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', (string)$h)));
-                    }, $headers);
 
-                    foreach ($sheetRows as $lineIndex => $rowValues) {
-                        if (empty(array_filter($rowValues, fn($v) => trim((string)$v) !== ''))) {
-                            continue;
+                    $xlsx = null;
+                    if (class_exists(\Shuchkin\SimpleXLSX::class)) {
+                        $xlsx = \Shuchkin\SimpleXLSX::parse($path);
+                    }
+
+                    if ($xlsx) {
+                        $sheetRows = $xlsx->rows();
+                        if (count($sheetRows) < 2) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
+                            ], 422);
                         }
-                        $rowData = [];
-                        foreach ($headers as $idx => $headerName) {
-                            $key = $headerMap[$headerName] ?? $headerName;
-                            $rowData[$key] = trim((string)($rowValues[$idx] ?? ''));
+                        $headers = array_shift($sheetRows);
+                        $headers = array_map(function($h) {
+                            return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', (string)$h)));
+                        }, $headers);
+
+                        foreach ($sheetRows as $lineIndex => $rowValues) {
+                            if (empty(array_filter($rowValues, fn($v) => trim((string)$v) !== ''))) {
+                                continue;
+                            }
+                            $rowData = [];
+                            foreach ($headers as $idx => $headerName) {
+                                $key = $headerMap[$headerName] ?? $headerName;
+                                $rowData[$key] = trim((string)($rowValues[$idx] ?? ''));
+                            }
+                            $rowData['_row_number'] = $lineIndex + 2;
+                            $rows[] = $rowData;
                         }
-                        $rowData['_row_number'] = $lineIndex + 2;
-                        $rows[] = $rowData;
+                    } else {
+                        // Fallback: file might be CSV/TSV or HTML table saved with .xlsx extension
+                        $rawContent = @file_get_contents($path);
+                        if ($rawContent && !str_starts_with($rawContent, "PK\x03\x04")) {
+                            $bom = pack('H*','EFBBBF');
+                            $rawContent = preg_replace("/^$bom/", '', $rawContent);
+                            $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $rawContent));
+                            $lines = array_filter(array_map('trim', $lines));
+
+                            if (count($lines) >= 2) {
+                                $delimiter = str_contains($lines[0], ';') ? ';' : (str_contains($lines[0], "\t") ? "\t" : ',');
+                                $headers = str_getcsv(array_shift($lines), $delimiter);
+                                $headers = array_map(function($h) {
+                                    return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', $h)));
+                                }, $headers);
+
+                                foreach ($lines as $lineIndex => $line) {
+                                    if (empty(trim($line))) continue;
+                                    $rowValues = str_getcsv($line, $delimiter);
+                                    $rowData = [];
+                                    foreach ($headers as $idx => $headerName) {
+                                        $key = $headerMap[$headerName] ?? $headerName;
+                                        $rowData[$key] = trim($rowValues[$idx] ?? '');
+                                    }
+                                    $rowData['_row_number'] = $lineIndex + 2;
+                                    $rows[] = $rowData;
+                                }
+                            }
+                        }
+
+                        if (empty($rows)) {
+                            $errorMsg = class_exists(\Shuchkin\SimpleXLSX::class) ? \Shuchkin\SimpleXLSX::parseError() : 'محرك قراءة ملفات Excel غير متاح.';
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'تعذر قراءة ملف Excel: ' . ($errorMsg ?: 'يرجى التأكد من حفظ الملف بصيغة Excel الحديثة (.xlsx) أو استخدام صيغة CSV المعتمدة.'),
+                            ], 422);
+                        }
                     }
                 } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'تعذر قراءة ملف Excel: ' . \Shuchkin\SimpleXLSX::parseError(),
-                    ], 422);
-                }
-            } else {
                 // CSV Parsing
                 $content = file_get_contents($path);
                 $bom = pack('H*','EFBBBF');
@@ -802,7 +847,19 @@ class StudentController extends Controller
             'created_branches' => $createdBranchesUnique,
             'errors' => $errors,
         ], $importedCount > 0 ? 200 : 422);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Batch student import critical failure: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+            'user_id' => \Illuminate\Support\Facades\Auth::id(),
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'حدث خطأ أثناء معالجة ملف استيراد الطلاب: ' . $e->getMessage(),
+            'error'   => $e->getMessage(),
+        ], 422);
     }
+}
 
     /**
      * Unified Sample Template Downloader (Supports ?format=xlsx or ?format=csv).
@@ -821,51 +878,69 @@ class StudentController extends Controller
      */
     public function downloadSampleXlsx()
     {
-        $headers = [
-            'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اللقب (اسم العائلة)',
-            'اسم الأم', 'الجنس', 'تاريخ الميلاد', 'مكان الميلاد', 'الجنسية', 'الديانة',
-            'رقم الهاتف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'صلة القرابة', 'رقم الطوارئ',
-            'العنوان ومحل الإقامة', 'فصيلة الدم', 'الفرع التعليمي', 'القسم العلمي',
-            'السنة الدراسية', 'نظام القيد', 'رقم القيد الوزاري', 'ملاحظات'
-        ];
+        try {
+            if (!class_exists(\Shuchkin\SimpleXLSXGen::class)) {
+                $fallback = app_path('Support/SimpleXLSXGen.php');
+                if (file_exists($fallback)) {
+                    require_once $fallback;
+                }
+            }
 
-        $sampleBranch = Branch::where('is_active', true)->first()?->name ?? 'فرع طرابلس المركزي';
-        $sampleBranch2 = Branch::where('is_active', true)->skip(1)->first()?->name ?? 'فرع بنغازي التعليمي';
-        $sampleBranch3 = Branch::where('is_active', true)->skip(2)->first()?->name ?? 'فرع مصراتة التعليمي';
+            $headers = [
+                'الرقم الوطني', 'الاسم الأول', 'اسم الأب', 'اسم الجد', 'اللقب (اسم العائلة)',
+                'اسم الأم', 'الجنس', 'تاريخ الميلاد', 'مكان الميلاد', 'الجنسية', 'الديانة',
+                'رقم الهاتف', 'هاتف ولي الأمر', 'اسم ولي الأمر', 'صلة القرابة', 'رقم الطوارئ',
+                'العنوان ومحل الإقامة', 'فصيلة الدم', 'الفرع التعليمي', 'القسم العلمي',
+                'السنة الدراسية', 'نظام القيد', 'رقم القيد الوزاري', 'ملاحظات'
+            ];
 
-        $sampleRows = [
-            $headers,
-            [
-                '120050012345', 'عبدالرحمن', 'علي', 'محمد', 'الورفلي',
-                'عائشة سالم المبروك', 'ذكر', '2005-04-12', 'طرابلس', 'ليبي', 'مسلم',
-                '091-2345678', '092-3456789', 'علي محمد الورفلي', 'أب', '091-2345678',
-                'طرابلس - حي الأندلس', 'O+', $sampleBranch, 'قسم الشريعة والقانون',
-                'السنة الأولى', 'نظامي', 'MIN-2026-001', 'مستوفي كافة مسوغات القبول'
-            ],
-            [
-                '220060098765', 'فاطمة', 'عمر', 'إبراهيم', 'المصراتي',
-                'خديجة أحمد التاجوري', 'أنثى', '2006-08-20', 'مصراتة', 'ليبي', 'مسلم',
-                '091-8765432', '092-7654321', 'عمر إبراهيم المصراتي', 'أب', '092-7654321',
-                'مصراتة - شارع طرابلس', 'A+', $sampleBranch3, 'قسم أصول الدين',
-                'السنة الأولى', 'انتساب', 'MIN-2026-002', 'طالبة انتساب'
-            ],
-            [
-                '120040055443', 'إبراهيم', 'مصطفى', 'عبدالسلام', 'البرغثي',
-                'فاطمة عبد القادر', 'ذكر', '2004-11-05', 'بنغازي', 'ليبي', 'مسلم',
-                '091-5544332', '092-6655443', 'مصطفى عبدالسلام البرغثي', 'أب', '091-5544332',
-                'بنغازي - الحدائق', 'B+', $sampleBranch2, 'قسم الدراسات الإسلامية',
-                'السنة الثانية', 'نظامي', 'MIN-2026-003', 'منقول من السنة التمهيدية'
-            ],
-        ];
+            $sampleBranch = Branch::where('is_active', true)->first()?->name ?? 'فرع طرابلس المركزي';
+            $sampleBranch2 = Branch::where('is_active', true)->skip(1)->first()?->name ?? 'فرع بنغازي التعليمي';
+            $sampleBranch3 = Branch::where('is_active', true)->skip(2)->first()?->name ?? 'فرع مصراتة التعليمي';
 
-        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
-        $filename = 'استمارة_القبول_الموحدة_نموذج_الاستيراد_الجماعي.xlsx';
+            $sampleRows = [
+                $headers,
+                [
+                    '120050012345', 'عبدالرحمن', 'علي', 'محمد', 'الورفلي',
+                    'عائشة سالم المبروك', 'ذكر', '2005-04-12', 'طرابلس', 'ليبي', 'مسلم',
+                    '091-2345678', '092-3456789', 'علي محمد الورفلي', 'أب', '091-2345678',
+                    'طرابلس - حي الأندلس', 'O+', $sampleBranch, 'قسم الشريعة والقانون',
+                    'السنة الأولى', 'نظامي', 'MIN-2026-001', 'مستوفي كافة مسوغات القبول'
+                ],
+                [
+                    '220060098765', 'فاطمة', 'عمر', 'إبراهيم', 'المصراتي',
+                    'خديجة أحمد التاجوري', 'أنثى', '2006-08-20', 'مصراتة', 'ليبي', 'مسلم',
+                    '091-8765432', '092-7654321', 'عمر إبراهيم المصراتي', 'أب', '092-7654321',
+                    'مصراتة - شارع طرابلس', 'A+', $sampleBranch3, 'قسم أصول الدين',
+                    'السنة الأولى', 'انتساب', 'MIN-2026-002', 'طالبة انتساب'
+                ],
+                [
+                    '120040055443', 'إبراهيم', 'مصطفى', 'عبدالسلام', 'البرغثي',
+                    'فاطمة عبد القادر', 'ذكر', '2004-11-05', 'بنغازي', 'ليبي', 'مسلم',
+                    '091-5544332', '092-6655443', 'مصطفى عبدالسلام البرغثي', 'أب', '091-5544332',
+                    'بنغازي - الحدائق', 'B+', $sampleBranch2, 'قسم الدراسات الإسلامية',
+                    'السنة الثانية', 'نظامي', 'MIN-2026-003', 'منقول من السنة التمهيدية'
+                ],
+            ];
 
-        return response()->streamDownload(function () use ($xlsx) {
-            echo (string) $xlsx;
-        }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
+            if (class_exists(\Shuchkin\SimpleXLSXGen::class)) {
+                $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
+                $filename = 'استمارة_القبول_الموحدة_نموذج_الاستيراد_الجماعي.xlsx';
+
+                return response()->streamDownload(function () use ($xlsx) {
+                    echo (string) $xlsx;
+                }, $filename, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]);
+            }
+
+            return $this->downloadSampleCsv();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('downloadSampleXlsx failed: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+            return $this->downloadSampleCsv();
+        }
     }
 
     /**

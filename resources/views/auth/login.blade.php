@@ -99,18 +99,6 @@
             background-position: 0 0, 0 0, 0 0, 0 0, 14px 14px;
         }
 
-        .dark .login-bg-pattern {
-            background-color: #0b1120;
-            background-image: 
-                radial-gradient(at 10% 10%, rgba(43, 120, 165, 0.15) 0px, transparent 50%),
-                radial-gradient(at 90% 10%, rgba(20, 38, 141, 0.2) 0px, transparent 50%),
-                radial-gradient(at 50% 90%, rgba(217, 119, 6, 0.08) 0px, transparent 50%),
-                radial-gradient(#2b78a5 0.5px, transparent 0.5px),
-                radial-gradient(#14268d 0.5px, #0b1120 0.5px);
-            background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
-            background-position: 0 0, 0 0, 0 0, 0 0, 14px 14px;
-        }
-
         /* Glassmorphic Login Card */
         .login-card {
             background: rgba(255, 255, 255, 0.94);
@@ -119,11 +107,6 @@
             border: 1px solid rgba(226, 232, 240, 0.9);
             border-radius: 24px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .dark .login-card {
-            background: rgba(15, 23, 42, 0.92);
-            border-color: rgba(30, 41, 59, 0.9);
         }
 
         /* Interactive Inputs */
@@ -154,50 +137,36 @@
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col justify-between selection:bg-[#2b78a5] selection:text-white relative login-bg-pattern transition-colors duration-300"
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#2b78a5] selection:text-white relative login-bg-pattern"
       x-data="{
           showPassword: false,
           submitting: false,
-          isDark: localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches),
           init() {
-              if (this.isDark) {
-                  document.documentElement.classList.add('dark');
-              } else {
-                  document.documentElement.classList.remove('dark');
-              }
-          },
-          toggleDarkMode() {
-              this.isDark = !this.isDark;
-              if (this.isDark) {
-                  document.documentElement.classList.add('dark');
-                  localStorage.setItem('theme', 'dark');
-              } else {
-                  document.documentElement.classList.remove('dark');
-                  localStorage.setItem('theme', 'light');
-              }
+              document.documentElement.classList.remove('dark');
+              localStorage.setItem('login_theme', 'light');
           }
       }">
 
     <!-- Top Sticky Header -->
-    <header class="w-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 py-3 px-4 sm:px-8 shadow-xs sticky top-0 z-30 transition-colors duration-300">
+    <header class="w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 py-3 px-4 sm:px-8 shadow-xs sticky top-0 z-30">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             
             <!-- Institution Brand (Logo + Official Titles) -->
             <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-800 p-1.5 border border-slate-200/90 dark:border-slate-700 shadow-xs flex items-center justify-center flex-shrink-0">
+                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1.5 border border-slate-200/90 shadow-xs flex items-center justify-center flex-shrink-0">
                     <img src="{{ $logoUrl }}" 
                          alt="شعار المعهد" 
                          class="w-full h-full object-contain"
                          onerror="this.onerror=null; this.src='/images/logo.png';">
                 </div>
                 <div>
-                    <div class="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+                    <div class="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-2">
                         <span>{{ $instituteName }}</span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold bg-blue-50 dark:bg-blue-950/60 text-[#2b78a5] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 hidden sm:inline-block">
+                        <span class="text-[10px] px-2 py-0.5 rounded-md font-extrabold bg-blue-50 text-[#2b78a5] border border-blue-200/60 hidden sm:inline-block">
                             ERP v2.0
                         </span>
                     </div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1.5 mt-0.5">
+                    <div class="text-[11px] text-slate-500 font-bold flex items-center gap-1.5 mt-0.5">
                         <span>{{ $stateName }}</span>
                         <span>•</span>
                         <span>{{ $supervisingBody }}</span>
@@ -206,21 +175,12 @@
                 </div>
             </div>
 
-            <!-- Header Badges & Dark Mode Toggle -->
+            <!-- Header Badge -->
             <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="hidden sm:flex items-center gap-2 text-xs font-bold text-[#14268d] dark:text-blue-300 bg-blue-50/80 dark:bg-blue-950/50 px-3.5 py-1.5 rounded-xl border border-blue-200/70 dark:border-blue-800/60 shadow-2xs">
+                <div class="flex items-center gap-2 text-xs font-bold text-[#14268d] bg-blue-50/80 px-3.5 py-1.5 rounded-xl border border-blue-200/70 shadow-2xs">
                     <span class="w-2 h-2 rounded-full bg-[#2b78a5] animate-pulse"></span>
                     <span>البوابة المركزية الموحدة</span>
                 </div>
-
-                <!-- Dark Mode Toggle Button -->
-                <button type="button" 
-                        @click="toggleDarkMode()" 
-                        class="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
-                        :title="isDark ? 'تفعيل المظهر الفاتح' : 'تفعيل المظهر الليلي'">
-                    <svg x-show="!isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    <svg x-show="isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                </button>
             </div>
 
         </div>
@@ -387,26 +347,19 @@
     </main>
 
     <!-- Official Enterprise Footer -->
-    <footer class="w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 py-3.5 text-center text-xs text-slate-500 dark:text-slate-400 relative z-20 transition-colors duration-300">
+    <footer class="w-full bg-white/90 backdrop-blur-md border-t border-slate-200/80 py-3.5 text-center text-xs text-slate-500 relative z-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 font-semibold">
             <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <span>جميع الحقوق محفوظة © {{ date('Y') }} — <span class="text-slate-800 dark:text-slate-200 font-bold">{{ $instituteName }}</span></span>
+                <span>جميع الحقوق محفوظة © {{ date('Y') }} — <span class="text-slate-800 font-bold">{{ $instituteName }}</span></span>
                 @if(!empty($address))
-                    <span class="hidden md:inline text-slate-300 dark:text-slate-700">|</span>
-                    <span class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <span class="hidden md:inline text-slate-300">|</span>
+                    <span class="text-[11px] text-slate-500 flex items-center gap-1">
                         <svg class="w-3.5 h-3.5 text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         {{ $address }}
                     </span>
                 @endif
             </div>
-            <div class="flex items-center gap-3 text-[11px] text-slate-400 dark:text-slate-500">
-                @if(!empty($phone))
-                    <span class="flex items-center gap-1 font-mono text-slate-600 dark:text-slate-400" dir="ltr">
-                        <svg class="w-3.5 h-3.5 text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                        {{ $phone }}
-                    </span>
-                    <span>•</span>
-                @endif
+            <div class="flex items-center gap-3 text-[11px] text-slate-400 font-medium">
                 <span>{{ $supervisingBody }}</span>
                 <span>•</span>
                 <span class="font-mono">ERP-v2.0</span>

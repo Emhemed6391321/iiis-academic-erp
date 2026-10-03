@@ -1007,14 +1007,38 @@ class BranchOperationsController extends Controller
             ],
         ];
 
-        $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
-        $filename = 'دليل_الفروع_والمقرات_نموذج_الاستيراد.xlsx';
+        try {
+            if (!class_exists(\Shuchkin\SimpleXLSXGen::class)) {
+                $fallback = app_path('Support/SimpleXLSXGen.php');
+                if (file_exists($fallback)) {
+                    require_once $fallback;
+                }
+            }
 
-        return response()->streamDownload(function () use ($xlsx) {
-            echo (string) $xlsx;
-        }, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ]);
+            if (class_exists(\Shuchkin\SimpleXLSXGen::class)) {
+                $xlsx = \Shuchkin\SimpleXLSXGen::fromArray($sampleRows);
+                $filename = 'دليل_الفروع_والمقرات_نموذج_الاستيراد.xlsx';
+
+                return response()->streamDownload(function () use ($xlsx) {
+                    echo (string) $xlsx;
+                }, $filename, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('downloadBranchesSampleXlsx error: ' . $e->getMessage());
+        }
+
+        // Fallback to CSV
+        $filename = 'دليل_الفروع_والمقرات_نموذج_الاستيراد.csv';
+        return response()->streamDownload(function () use ($sampleRows) {
+            $f = fopen('php://output', 'w');
+            fputs($f, "\xEF\xBB\xBF");
+            foreach ($sampleRows as $row) {
+                fputcsv($f, $row);
+            }
+            fclose($f);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     /**
@@ -1022,30 +1046,38 @@ class BranchOperationsController extends Controller
      */
     public function importBranchesExcel(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        if ($user && !$user->hasGlobalAccessScope()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'غير مصرح: استيراد الفروع والمقرات محصور بصلاحيات الإدارة العامة فقط.',
-            ], 403);
-        }
+        try {
+            $user = Auth::user();
+            if ($user && !$user->hasGlobalAccessScope()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'غير مصرح: استيراد الفروع والمقرات محصور بصلاحيات الإدارة العامة فقط.',
+                ], 403);
+            }
 
-        $rows = [];
+            $rows = [];
 
-        if ($request->hasFile('file')) {
-            $file = $request->file('file');
-            $path = $file->getRealPath();
-            $ext = strtolower($file->getClientOriginalExtension());
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $path = $file->getRealPath();
+                $ext = strtolower($file->getClientOriginalExtension());
 
-            if ($ext === 'xlsx' || $ext === 'xls') {
-                if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
-                    $sheetRows = $xlsx->rows();
-                    if (count($sheetRows) < 2) {
-                        return response()->json([
-                            'status' => 'error',
-                            'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
-                        ], 422);
+                if ($ext === 'xlsx' || $ext === 'xls') {
+                    if (!class_exists(\Shuchkin\SimpleXLSX::class)) {
+                        $fallback = app_path('Support/SimpleXLSX.php');
+                        if (file_exists($fallback)) {
+                            require_once $fallback;
+                        }
                     }
+
+                    if ($xlsx = \Shuchkin\SimpleXLSX::parse($path)) {
+                        $sheetRows = $xlsx->rows();
+                        if (count($sheetRows) < 2) {
+                            return response()->json([
+                                'status' => 'error',
+                                'message' => 'ملف Excel فارغ أو لا يحتوي على صفوف بيانات.',
+                            ], 422);
+                        }
                     $headers = array_shift($sheetRows);
                     $headers = array_map(function ($h) {
                         return trim(strtolower(preg_replace('/[\x{200B}-\x{200D}\x{FEFF}]/u', '', (string)$h)));
@@ -1253,7 +1285,16 @@ class BranchOperationsController extends Controller
             'updated' => $updated,
             'errors' => $errors,
         ], $totalProcessed > 0 ? 200 : 422);
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('importBranchesExcel failed: ' . $e->getMessage(), [
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return response()->json([
+            'status' => 'error',
+            'message' => 'حدث خطأ أثناء معالجة ملف استيراد الفروع: ' . $e->getMessage(),
+        ], 422);
     }
+}
 
     private function getBranchHeaderMap(): array
     {

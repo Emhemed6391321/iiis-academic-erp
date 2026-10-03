@@ -11,7 +11,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Standalone XLSX Engine fallback autoloader
+        spl_autoload_register(function ($class) {
+            if ($class === 'Shuchkin\\SimpleXLSX' && !class_exists('Shuchkin\\SimpleXLSX', false)) {
+                $file = app_path('Support/SimpleXLSX.php');
+                if (file_exists($file)) {
+                    require_once $file;
+                }
+            } elseif ($class === 'Shuchkin\\SimpleXLSXGen' && !class_exists('Shuchkin\\SimpleXLSXGen', false)) {
+                $file = app_path('Support/SimpleXLSXGen.php');
+                if (file_exists($file)) {
+                    require_once $file;
+                }
+            }
+        });
     }
 
     public function boot(): void
