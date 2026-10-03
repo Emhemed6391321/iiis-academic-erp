@@ -9,6 +9,7 @@ use App\Models\Branch;
 use App\Models\BranchRequest;
 use App\Models\BranchRequestTracking;
 use App\Models\BranchContract;
+use App\Models\Property;
 use App\Models\BranchAssessment;
 use App\Models\BranchClass;
 use App\Models\BranchFacility;
@@ -203,22 +204,108 @@ class BranchOperationsController extends Controller
     }
 
     /**
-     * Get Branch Lease and Maintenance Contracts
+     * Get Branch Lease and Maintenance Contracts with Real KPIs & Normalized Financials
      */
     public function getContracts(Request $request): JsonResponse
     {
         $branchId = $request->query('branch_id');
-        $query = BranchContract::with('branch:id,name,code');
+        $query = BranchContract::with([
+            'branch:id,name,code,city,building_type',
+            'property:id,name,property_number,city,type,address,area_sqm,floors_count,halls_count,owner_name'
+        ]);
 
         if ($branchId && $branchId !== 'all') {
             $query->where('branch_id', $branchId);
         }
 
-        $contracts = $query->orderByDesc('id')->get();
+        $contracts = $query->orderByRaw("CASE WHEN rent_amount > 0 THEN 0 ELSE 1 END")
+            ->orderByDesc('rent_amount')
+            ->orderBy('id')
+            ->get();
+
+        // Calculate dynamic real KPIs across all branches and contracts
+        $totalProperties = Property::count() ?: Branch::count();
+        $ownedProperties = Property::whereIn('type', ['owned', 'state'])->count() ?: Branch::whereIn('building_type', ['owned', 'state'])->count();
+        $rentedProperties = Property::where('type', 'rented')->count() ?: Branch::where('building_type', 'rented')->count();
+
+        $activeLeaseQuery = BranchContract::where(function($q) {
+            $q->where('contract_type', 'like', '%إيجار%')->orWhere('rent_amount', '>', 0);
+        });
+        $totalAnnualRent = (float)$activeLeaseQuery->sum('rent_amount');
+        $totalContractValue = (float)BranchContract::sum('total_value');
+        $totalPaidValue = (float)BranchContract::sum('paid_value');
+        $totalRemaining = max(0, $totalContractValue - $totalPaidValue);
+
+        $activeCount = BranchContract::whereIn('status', ['ACTIVE', 'active', 'near_expiry'])->count();
+        $expiringCount = BranchContract::where('status', 'near_expiry')->count();
+        $complianceRate = $totalContractValue > 0 ? round(($totalPaidValue / $totalContractValue) * 100, 1) : 100.0;
+
+        $kpis = [
+            'total_properties' => $totalProperties,
+            'owned_properties' => $ownedProperties,
+            'rented_properties' => $rentedProperties,
+            'active_contracts' => $activeCount,
+            'expiring_contracts' => $expiringCount,
+            'total_annual_rent' => $totalAnnualRent,
+            'total_contract_value' => $totalContractValue,
+            'total_paid_value' => $totalPaidValue,
+            'total_remaining' => $totalRemaining,
+            'compliance_rate' => $complianceRate,
+        ];
+
+        $enrichedData = $contracts->map(function ($c) {
+            $isRented = $c->rent_amount > 0 || str_contains($c->contract_type, 'إيجار');
+            $monthlyRent = $c->installment_amount > 0 ? (float)$c->installment_amount : ($c->rent_amount > 0 ? round($c->rent_amount / 12, 2) : 0.0);
+            $remaining = max(0, (float)$c->total_value - (float)$c->paid_value);
+
+            return [
+                'id' => $c->id,
+                'contract_number' => $c->contract_number,
+                'internal_number' => $c->internal_number,
+                'title' => $c->title,
+                'contract_type' => $c->contract_type,
+                'branch_id' => $c->branch_id,
+                'branch' => $c->branch ? [
+                    'id' => $c->branch->id,
+                    'name' => $c->branch->name,
+                    'code' => $c->branch->code,
+                    'city' => $c->branch->city,
+                    'building_type' => $c->branch->building_type,
+                ] : null,
+                'property' => $c->property ? [
+                    'id' => $c->property->id,
+                    'name' => $c->property->name,
+                    'number' => $c->property->property_number,
+                    'type' => $c->property->type,
+                    'address' => $c->property->address,
+                    'area_sqm' => $c->property->area_sqm,
+                    'floors_count' => $c->property->floors_count,
+                    'halls_count' => $c->property->halls_count,
+                    'owner_name' => $c->property->owner_name,
+                ] : null,
+                'ownership_type' => $isRented ? 'rented' : 'owned',
+                'ownership_label' => $isRented ? 'مستأجر بعقد موثق' : 'أصل وقفي حكومي مملوك',
+                'landlord_name' => $c->lessor_name ?: ($c->contractor_name ?: 'الهيئة العامة للأوقاف والشؤون الإسلامية'),
+                'contractor_phone' => $c->contractor_phone,
+                'annual_rent' => (float)$c->rent_amount,
+                'monthly_rent' => $monthlyRent,
+                'total_value' => (float)$c->total_value,
+                'paid_value' => (float)$c->paid_value,
+                'remaining_value' => $remaining,
+                'duration_months' => $c->duration_months,
+                'start_date' => $c->start_date ? Carbon::parse($c->start_date)->format('Y-m-d') : null,
+                'end_date' => $c->end_date ? Carbon::parse($c->end_date)->format('Y-m-d') : null,
+                'status' => $c->status,
+                'status_label' => in_array($c->status, ['near_expiry', 'EXPIRING_SOON']) ? 'يوشك على الانتهاء' : (in_array($c->status, ['ACTIVE', 'active']) ? 'ساري ونشط' : 'مكتمل ومسدد'),
+                'progress_percentage' => (float)$c->progress_percentage,
+                'notes' => $c->notes,
+            ];
+        });
 
         return response()->json([
             'status' => 'success',
-            'data' => $contracts
+            'data' => $enrichedData,
+            'kpis' => $kpis,
         ]);
     }
 

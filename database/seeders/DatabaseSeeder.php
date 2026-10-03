@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             AcademicSystemSeeder::class,
             BranchesIntegrationSeeder::class,
+            RealBranchPropertiesAndContractsSeeder::class,
         ]);
     }
 }

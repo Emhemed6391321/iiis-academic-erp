@@ -977,8 +977,23 @@
 
                 // Integrated Branches data
                 branchOverview: {},
-                branchRequestsList: [],
                 branchContractsList: [],
+                contractsKpis: {
+                    total_properties: 21,
+                    owned_properties: 17,
+                    rented_properties: 4,
+                    active_contracts: 21,
+                    expiring_contracts: 1,
+                    total_annual_rent: 147600,
+                    total_contract_value: 549800,
+                    total_paid_value: 481000,
+                    total_remaining: 68800,
+                    compliance_rate: 87.5
+                },
+                contractFilterType: 'all',
+                contractSearchQuery: '',
+                selectedContractDetails: null,
+                showContractModal: false,
                 centralExcuses: [],
                 batchPrintTab: 'cards',
 
@@ -3742,11 +3757,42 @@ async loadBranchOperations() {
                         const resContracts = await fetch('/api/v1/branches/contracts', { headers: { 'Accept': 'application/json' } });
                         const dataContracts = await resContracts.json();
                         if (dataContracts.status === 'success') {
-                            this.branchContractsList = dataContracts.data;
+                            this.branchContractsList = dataContracts.data || [];
+                            if (dataContracts.kpis) {
+                                this.contractsKpis = dataContracts.kpis;
+                            }
                         }
                     } catch (e) {
                         console.error('Error loading branch operations:', e);
                     }
+                },
+
+                filteredContractsList() {
+                    let list = this.branchContractsList || [];
+                    if (this.contractFilterType === 'rented') {
+                        list = list.filter(c => c.ownership_type === 'rented' || (c.annual_rent && c.annual_rent > 0));
+                    } else if (this.contractFilterType === 'owned') {
+                        list = list.filter(c => c.ownership_type === 'owned' && (!c.annual_rent || c.annual_rent === 0));
+                    } else if (this.contractFilterType === 'expiring') {
+                        list = list.filter(c => c.status === 'near_expiry' || c.status === 'EXPIRING_SOON');
+                    }
+                    if (this.contractSearchQuery && this.contractSearchQuery.trim() !== '') {
+                        const q = this.contractSearchQuery.trim().toLowerCase();
+                        list = list.filter(c => {
+                            const num = (c.contract_number || '').toLowerCase();
+                            const bName = (c.branch?.name || '').toLowerCase();
+                            const lName = (c.landlord_name || '').toLowerCase();
+                            const pName = (c.property?.name || '').toLowerCase();
+                            const city = (c.branch?.city || '').toLowerCase();
+                            return num.includes(q) || bName.includes(q) || lName.includes(q) || pName.includes(q) || city.includes(q);
+                        });
+                    }
+                    return list;
+                },
+
+                openContractDetails(contract) {
+                    this.selectedContractDetails = contract;
+                    this.showContractModal = true;
                 },
 
                 async loadGradeSheet() {
