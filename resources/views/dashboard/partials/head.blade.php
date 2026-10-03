@@ -166,24 +166,15 @@
 
         /* Unified Floating Drawer Panel */
         .sidebar-container {
-            position: fixed !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            right: 0 !important;
-            height: 100vh !important;
-            width: 20rem !important; /* 320px */
-            max-width: 88vw !important;
-            z-index: 50 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.3) !important;
-        }
-        .sidebar-container.translate-x-full {
-            transform: translateX(100%) !important;
-        }
-        .sidebar-container.translate-x-0 {
-            transform: translateX(0) !important;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            height: 100vh;
+            width: 20rem; /* 320px */
+            max-width: 88vw;
+            z-index: 50;
+            box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.25);
         }
 
         /* Smooth Custom Drawer Scrollbar */
