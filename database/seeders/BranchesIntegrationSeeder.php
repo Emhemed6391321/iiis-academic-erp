@@ -124,30 +124,8 @@ class BranchesIntegrationSeeder extends Seeder
             );
         }
 
-        // 5. Import Contracts
-        $contracts = $sourceDb->query("SELECT * FROM contracts")->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($contracts as $ct) {
-            $branchId = $orgIdToBranchId[$ct['organization_id']] ?? 1;
-            DB::table('branch_contracts')->updateOrInsert(
-                ['contract_number' => $ct['contract_number']],
-                [
-                    'branch_id' => $branchId,
-                    'contract_type' => $ct['contract_type'],
-                    'title' => $ct['title'],
-                    'contractor_name' => $ct['contractor_name'],
-                    'contractor_phone' => $ct['contractor_phone'] ?? null,
-                    'total_value' => $ct['total_value'] ?? 0.00,
-                    'paid_value' => $ct['paid_value'] ?? 0.00,
-                    'start_date' => $ct['start_date'] ?? now()->toDateString(),
-                    'end_date' => $ct['end_date'] ?? now()->addYear()->toDateString(),
-                    'progress_percentage' => $ct['progress_percentage'] ?? 0,
-                    'status' => $ct['status'] ?? 'active',
-                    'notes' => $ct['notes'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
-        }
+        // 5. Contracts (cleared / kept empty per institute policy)
+        // DB::table('branch_contracts')->delete();
 
         // 6. Import Requests
         $requests = $sourceDb->query("SELECT * FROM requests")->fetchAll(PDO::FETCH_ASSOC);

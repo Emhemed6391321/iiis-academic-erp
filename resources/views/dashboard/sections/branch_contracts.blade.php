@@ -52,10 +52,11 @@
                                 <span class="text-xs">🏢</span>
                             </div>
                             <div class="text-2xl font-black mt-1.5 text-slate-900 dark:text-white"
-                                 x-text="(contractsKpis.total_properties || branchContractsList.length || 21) + ' مقراً'">
-                                21 مقراً
+                                 x-text="(contractsKpis.total_properties ?? branchContractsList.length ?? 0) + ' مقراً'">
+                                0 مقراً
                             </div>
-                            <span class="text-[10px] text-slate-400 font-medium mt-1 block">تغطي كافة مناطق ومدن ليبيا</span>
+                            <span class="text-[10px] text-slate-400 font-medium mt-1 block"
+                                  x-text="(contractsKpis.total_properties ?? 0) > 0 ? 'تغطي كافة مناطق ومدن ليبيا' : 'لا توجد مقرات مسجلة'"></span>
                         </div>
 
                         <!-- Owned Waqf Properties -->
@@ -65,10 +66,11 @@
                                 <span class="text-xs">🏛️</span>
                             </div>
                             <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5"
-                                 x-text="(contractsKpis.owned_properties || 17) + ' مقراً'">
-                                17 مقراً
+                                 x-text="(contractsKpis.owned_properties ?? 0) + ' مقراً'">
+                                0 مقراً
                             </div>
-                            <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-1 block">أصول حكومية (0 د.ل إيجار)</span>
+                            <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-1 block"
+                                  x-text="(contractsKpis.owned_properties ?? 0) > 0 ? 'أصول حكومية (0 د.ل إيجار)' : 'لا توجد أصول وقفية مسجلة'"></span>
                         </div>
 
                         <!-- Rented Properties -->
@@ -78,10 +80,11 @@
                                 <span class="text-xs">🔑</span>
                             </div>
                             <div class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1.5"
-                                 x-text="(contractsKpis.rented_properties || 4) + ' مقرات'">
-                                4 مقرات
+                                 x-text="(contractsKpis.rented_properties ?? 0) + ' مقرات'">
+                                0 مقرات
                             </div>
-                            <span class="text-[10px] text-blue-600/80 dark:text-blue-400/80 font-medium mt-1 block">عقود رسمية موثقة بالمحاكم</span>
+                            <span class="text-[10px] text-blue-600/80 dark:text-blue-400/80 font-medium mt-1 block"
+                                  x-text="(contractsKpis.rented_properties ?? 0) > 0 ? 'عقود رسمية موثقة' : 'لا توجد عقود إيجار مسجلة'"></span>
                         </div>
 
                         <!-- Near Expiry Warning Card -->
@@ -94,11 +97,11 @@
                                 <span class="text-xs">⏳</span>
                             </div>
                             <div class="text-2xl font-black mt-1.5"
-                                 x-text="(contractsKpis.expiring_contracts || 0) + ' عقود'">
-                                1 عقد
+                                 x-text="(contractsKpis.expiring_contracts ?? 0) + ' عقود'">
+                                0 عقود
                             </div>
                             <span class="text-[10px] font-medium mt-1 block"
-                                  x-text="(contractsKpis.expiring_contracts || 0) > 0 ? 'معهد أم الدرداء (إجراء التجديد جارٍ)' : 'جميع العقود سارية ومستقرة'">
+                                  x-text="(contractsKpis.expiring_contracts ?? 0) > 0 ? (contractsKpis.expiring_contracts + ' عقود تتطلب التجديد') : 'لا توجد عقود تشارف على الانتهاء'">
                             </span>
                         </div>
 
@@ -109,10 +112,11 @@
                                 <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500">سنوي</span>
                             </div>
                             <div class="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1.5 font-mono"
-                                 x-text="Number(contractsKpis.total_annual_rent || 147600).toLocaleString() + ' د.ل'">
-                                147,600 د.ل
+                                 x-text="Number(contractsKpis.total_annual_rent ?? 0).toLocaleString() + ' د.ل'">
+                                0 د.ل
                             </div>
-                            <span class="text-[10px] text-slate-400 font-medium mt-1 block">المعدل الشهري: 12,300 د.ل</span>
+                            <span class="text-[10px] text-slate-400 font-medium mt-1 block"
+                                  x-text="'المعدل الشهري: ' + Number(Math.round((contractsKpis.total_annual_rent ?? 0) / 12)).toLocaleString() + ' د.ل'"></span>
                         </div>
 
                         <!-- Total Value of Active Contracts -->
@@ -123,10 +127,11 @@
                                 <span class="text-xs">💰</span>
                             </div>
                             <div class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1.5 font-mono"
-                                 x-text="Number(contractsKpis.total_contract_value || 549800).toLocaleString() + ' د.ل'">
-                                549,800 د.ل
+                                 x-text="Number(contractsKpis.total_contract_value ?? 0).toLocaleString() + ' د.ل'">
+                                0 د.ل
                             </div>
-                            <span class="text-[10px] text-slate-400 font-medium mt-1 block">تشمل عقود الإيجار والصيانة</span>
+                            <span class="text-[10px] text-slate-400 font-medium mt-1 block"
+                                  x-text="(contractsKpis.total_contract_value ?? 0) > 0 ? 'تشمل عقود الإيجار والصيانة' : 'لا توجد التزامات تعاقدية مسجلة'"></span>
                         </div>
 
                         <!-- Total Paid Rent -->
@@ -136,10 +141,11 @@
                                 <span class="text-xs">✅</span>
                             </div>
                             <div class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5 font-mono"
-                                 x-text="Number(contractsKpis.total_paid_value || 481000).toLocaleString() + ' د.ل'">
-                                481,000 د.ل
+                                 x-text="Number(contractsKpis.total_paid_value ?? 0).toLocaleString() + ' د.ل'">
+                                0 د.ل
                             </div>
-                            <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-1 block">صكوك وتحويلات مصرفية معتمدة</span>
+                            <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium mt-1 block"
+                                  x-text="(contractsKpis.total_paid_value ?? 0) > 0 ? 'صكوك وتحويلات مصرفية معتمدة' : 'لا توجد دفعات مسددة'"></span>
                         </div>
 
                         <!-- Remaining Obligations & Compliance Rate -->
@@ -149,12 +155,12 @@
                                 <span class="text-xs">📊</span>
                             </div>
                             <div class="text-2xl font-black text-sky-600 dark:text-sky-400 mt-1.5 font-mono"
-                                 x-text="(contractsKpis.compliance_rate || 87.5) + '%'">
-                                87.5%
+                                 x-text="(contractsKpis.compliance_rate ?? 0) + '%'">
+                                0%
                             </div>
                             <span class="text-[10px] text-slate-400 font-medium mt-1 block"
-                                  x-text="'المتبقي: ' + Number(contractsKpis.total_remaining || 68800).toLocaleString() + ' د.ل'">
-                                المتبقي: 68,800 د.ل
+                                  x-text="'المتبقي: ' + Number(contractsKpis.total_remaining ?? 0).toLocaleString() + ' د.ل'">
+                                المتبقي: 0 د.ل
                             </span>
                         </div>
 
@@ -375,9 +381,11 @@
                                 <!-- Empty State -->
                                 <tr x-show="filteredContractsList().length === 0">
                                     <td colspan="10" class="p-12 text-center text-slate-400">
-                                        <div class="text-3xl mb-2">🔍</div>
-                                        <div class="font-bold text-sm">لم يتم العثور على أي عقود مطابقة لمعايير البحث</div>
-                                        <p class="text-xs text-slate-500 mt-1">يرجى تعديل مصطلح البحث أو اختيار تصنيف آخر من القائمة أعلاه.</p>
+                                        <div class="text-3xl mb-2">📜</div>
+                                        <div class="font-bold text-sm text-slate-700 dark:text-slate-300" 
+                                             x-text="branchContractsList.length === 0 ? 'لا توجد عقود أو إيجارات مقرات مسجلة في النظام' : 'لم يتم العثور على أي عقود مطابقة لمعايير البحث'"></div>
+                                        <p class="text-xs text-slate-500 mt-1" 
+                                           x-text="branchContractsList.length === 0 ? 'سجلات العقود والإيجارات فارغة حالياً، ويمكن إضافة عقود رسمية جديدة عند توفرها.' : 'يرجى تعديل مصطلح البحث أو اختيار تصنيف آخر من القائمة أعلاه.'"></p>
                                     </td>
                                 </tr>
                             </tbody>
