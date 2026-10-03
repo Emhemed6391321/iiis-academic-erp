@@ -175,6 +175,10 @@
             max-width: 88vw;
             z-index: 50;
             box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.25);
+            background-color: #ffffff;
+        }
+        .dark .sidebar-container {
+            background-color: #151f32;
         }
 
         /* Smooth Custom Drawer Scrollbar */

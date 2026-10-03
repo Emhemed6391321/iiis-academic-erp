@@ -149,7 +149,6 @@
            x-transition:leave-start="translate-x-0"
            x-transition:leave-end="translate-x-full"
            @keydown.window.escape="closeSidebar()"
-           @click.outside="closeSidebar()"
            class="fixed inset-y-0 right-0 z-50 w-80 max-w-[88vw] h-full bg-gradient-to-b from-[#14268d] via-[#1b3b8c] to-[#0f1b5e] text-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out border-l border-white/10">
         
         <!-- Sidebar Header -->
@@ -164,7 +163,7 @@
                 </div>
             </div>
             <!-- Close Button -->
-            <button @click="closeSidebar()" class="touch-target flex items-center justify-center text-white/70 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 transition-colors cursor-pointer" aria-label="إغلاق القائمة">
+            <button @click.stop="closeSidebar()" class="touch-target flex items-center justify-center text-white/70 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 transition-colors cursor-pointer" aria-label="إغلاق القائمة">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -260,7 +259,7 @@
             <!-- Right: Hamburger & Page Context -->
             <div class="flex items-center gap-2 sm:gap-4">
                 <!-- Hamburger Button (Unified: Desktop & Mobile) -->
-                <button @click="toggleSidebar()" 
+                <button @click.stop="toggleSidebar()" 
                         type="button"
                         :aria-expanded="sidebarOpen.toString()"
                         class="touch-target flex items-center justify-center p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none ring-1 ring-slate-200 dark:ring-slate-700 transition-all cursor-pointer"

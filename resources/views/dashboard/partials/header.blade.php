@@ -5,7 +5,7 @@
             
             <!-- Brand & Sidebar Toggle -->
             <div class="flex items-center space-x-3 space-x-reverse flex-shrink-0">
-                <button @click="toggleSidebar()" 
+                <button @click.stop="toggleSidebar()" 
                         type="button"
                         :aria-expanded="sidebarOpen.toString()"
                         aria-label="تبديل القائمة الجانبية"

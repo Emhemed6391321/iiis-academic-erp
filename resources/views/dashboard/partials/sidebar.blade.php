@@ -20,16 +20,15 @@
 <!-- 2. القائمة الجانبية العائمة المستقلة (Modern Floating Drawer Panel) -->
 <aside x-show="sidebarOpen"
        x-cloak
-       x-transition:enter="transition ease-out duration-300 transform"
+       x-transition:enter="transition-transform ease-out duration-300"
        x-transition:enter-start="translate-x-full"
        x-transition:enter-end="translate-x-0"
-       x-transition:leave="transition ease-in duration-200 transform"
+       x-transition:leave="transition-transform ease-in duration-200"
        x-transition:leave-start="translate-x-0"
        x-transition:leave-end="translate-x-full"
        @keydown.window.escape="closeSidebar()"
-       @click.outside="closeSidebar()"
-       class="sidebar-container fixed inset-y-0 right-0 z-50 w-80 max-w-[88vw] h-full flex flex-col shadow-2xl border-l select-none"
-       :class="darkMode ? 'bg-[#151f32] border-slate-800 text-slate-300' : 'bg-white border-slate-200/80 text-slate-600'"
+       class="sidebar-container fixed inset-y-0 right-0 z-50 w-80 max-w-[88vw] h-full flex flex-col shadow-2xl border-l select-none bg-white dark:bg-[#151f32]"
+       :class="darkMode ? 'border-slate-800 text-slate-300' : 'border-slate-200/80 text-slate-600'"
        aria-label="القائمة الجانبية للنظام">
     
     <!-- رأس القائمة العائمة (Drawer Header with Logo & Close Button) -->
@@ -53,7 +52,7 @@
         </div>
 
         <!-- زر الإغلاق السريع (X Close Button) -->
-        <button @click="closeSidebar()" 
+        <button @click.stop="closeSidebar()" 
                 type="button"
                 aria-label="إغلاق القائمة"
                 class="p-2 rounded-xl border transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2b78a5]/30"
