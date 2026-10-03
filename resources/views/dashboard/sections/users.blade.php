@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'users'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'users') loadUsers(); })">
+            <div x-show="currentSection === 'users'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'users') loadUsers(); })">
                 
                 <!-- الترويسة الرئيسية وبطاقات المؤشرات -->
                 <div class="p-6 md:p-8 rounded-[24px] border space-y-6 transition-all duration-300"
@@ -269,7 +269,6 @@
                     </div>
 
                 </div>
-            </div>
 
             <!-- ========================================================================= -->
             <!-- MODAL 1: إضافة / تعديل حساب مستخدم (Create / Edit User Modal)            -->
@@ -569,3 +568,4 @@
             <!-- ========================================================================= -->
             <!-- 11b. ACADEMIC STRUCTURE: STAGES, DEPARTMENTS & CLASSES (المراحل والشعب والأقسام) -->
             <!-- ========================================================================= -->
+            </div>{{-- end users section --}}
