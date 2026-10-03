@@ -26,7 +26,9 @@
             {{-- 1. الرئيسية والقيادة --}}
             @include('dashboard.sections.dashboard')
             @include('dashboard.sections.procedures')
-            @include('dashboard.sections.matrix')
+            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
+                @include('dashboard.sections.matrix')
+            @endif
 
             {{-- 2. شؤون الطلاب والتعليم --}}
             @include('dashboard.sections.students')
@@ -51,19 +53,23 @@
             {{-- 5. الجودة والاعتمادات والرقابة --}}
             @include('dashboard.sections.approvals')
             @include('dashboard.sections.data_quality')
-            @include('dashboard.sections.audit')
-            @include('dashboard.sections.error_monitoring')
+            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
+                @include('dashboard.sections.audit')
+                @include('dashboard.sections.error_monitoring')
 
-            {{-- 6. إدارة النظام والمستخدمين --}}
-            @include('dashboard.sections.users')
-            @include('dashboard.sections.admin_settings')
-            @include('dashboard.sections.org_structure')
-            @include('dashboard.sections.settings')
-            @include('dashboard.sections.themes')
+                {{-- 6. إدارة النظام والمستخدمين والحوكمة --}}
+                @include('dashboard.sections.users')
+                @include('dashboard.sections.admin_settings')
+                @include('dashboard.sections.org_structure')
+                @include('dashboard.sections.settings')
+                @include('dashboard.sections.themes')
+            @endif
 
             {{-- 7. التحديثات والدعم --}}
             @include('dashboard.sections.updates')
-            @include('dashboard.sections.bug_reports')
+            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
+                @include('dashboard.sections.bug_reports')
+            @endif
             @include('dashboard.sections.profile')
 
         </main>

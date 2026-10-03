@@ -102,6 +102,14 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
+        $user = $request->user() ?: auth()->user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لمدير الفرع بتعديل أو إضافة المناهج واللوائح الدراسية؛ الصلاحية متاحة للإدارة العامة المركزية فقط (اطلاع واستعراض فقط).'
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
             'code' => 'required|string|max:20|unique:courses,code',
@@ -201,6 +209,14 @@ class CourseController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $user = $request->user() ?: auth()->user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لمدير الفرع بتعديل المناهج واللوائح الدراسية؛ الصلاحية متاحة للإدارة العامة المركزية فقط (اطلاع واستعراض فقط).'
+            ], 403);
+        }
+
         $course = Course::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -286,8 +302,16 @@ class CourseController extends Controller
     /**
      * Delete or toggle course
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $user = $request->user() ?: auth()->user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'غير مصرح لمدير الفرع بحذف المناهج واللوائح الدراسية؛ الصلاحية متاحة للإدارة العامة المركزية فقط.'
+            ], 403);
+        }
+
         $course = Course::findOrFail($id);
 
         // Check if there are associated student grades

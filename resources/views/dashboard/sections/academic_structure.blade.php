@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'academic_structure'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'academic_structure') loadAcademicStructureData(); })">
+            <div x-show="currentSection === 'academic_structure'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'academic_structure') loadAcademicStructureData(); })">
                 
                 <!-- الترويسة الرئيسية وشريط التحكم والمحدد الزمني -->
                 <div class="p-6 md:p-8 rounded-[20px] border space-y-6 transition-all duration-300"
@@ -44,6 +44,7 @@
                                 <svg class="w-4 h-4" :class="academicStructureLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                             </button>
 
+                            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                             <!-- زر إضافة ديناميكي حسب التبويب -->
                             <button x-show="academicStructureTab === 'stages'" @click="openCreateStudyYearModal()"
                                     class="px-4 py-2.5 rounded-[12px] bg-gradient-to-r from-[#14268d] to-[#2b78a5] text-white text-xs font-bold hover:brightness-110 shadow-md shadow-[#2b78a5]/20 transition-all flex items-center gap-1.5">
@@ -56,6 +57,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                                 <span>إضافة قسم/شعبة علمية</span>
                             </button>
+                            @endif
 
                             <button x-show="academicStructureTab === 'classes'" @click="openCreateBranchClassModal()"
                                     class="px-4 py-2.5 rounded-[12px] bg-gradient-to-r from-[#14268d] to-[#2b78a5] text-white text-xs font-bold hover:brightness-110 shadow-md shadow-[#2b78a5]/20 transition-all flex items-center gap-1.5">
@@ -187,6 +189,7 @@
                                                 <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" x-text="sy.courses_count + ' مقرر'"></span>
                                             </td>
                                             <td class="p-3.5 text-center">
+                                                @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                                 <div class="flex items-center justify-center gap-1.5">
                                                     <button @click="openEditStudyYearModal(sy)" class="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition" title="تعديل المرحلة">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -195,6 +198,11 @@
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
                                                 </div>
+                                                @else
+                                                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-1 rounded-md">
+                                                    🔒 معتمدة مركزياً
+                                                </span>
+                                                @endif
                                             </td>
                                         </tr>
                                     </template>
@@ -239,6 +247,7 @@
                                 </div>
 
                                 <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                                    @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                     <button @click="toggleDepartmentStatus(dept)"
                                             class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold border transition flex items-center gap-1"
                                             :class="dept.is_active ? 'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-rose-50 hover:text-rose-600' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 hover:bg-emerald-100'">
@@ -253,6 +262,11 @@
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </div>
+                                    @else
+                                    <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1.5 rounded-xl w-full justify-center">
+                                        🔒 قسم معتمد مركزياً باللائحة
+                                    </span>
+                                    @endif
                                 </div>
                             </div>
                         </template>

@@ -27,7 +27,14 @@ class BranchOperationsController extends Controller
      */
     public function getOverview(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        $userBranchId = $user?->branch_id;
+
         $branchId = $request->query('branch_id');
+        if (!$isGlobal && $userBranchId) {
+            $branchId = $userBranchId;
+        }
 
         $requestsQuery = BranchRequest::query();
         $contractsQuery = BranchContract::query();
@@ -37,14 +44,26 @@ class BranchOperationsController extends Controller
             $contractsQuery->where('branch_id', $branchId);
         }
 
-        $totalBranches = Branch::count();
-        $activeBranches = Branch::where('is_active', true)->count();
-        $ownedBranches = Branch::whereIn('building_type', ['owned', 'state'])->count();
-        $rentedBranches = Branch::where('building_type', 'rented')->count();
-        $avgScore = round(Branch::avg('latest_score') ?? 0, 1);
-        $totalStaff = (int) (Branch::sum('total_staff') ?: (Branch::sum('academic_staff') + Branch::sum('admin_staff')));
-        $academicStaff = (int) Branch::sum('academic_staff');
-        $adminStaff = (int) Branch::sum('admin_staff');
+        if (!$isGlobal && $userBranchId) {
+            $targetBranch = Branch::find($userBranchId);
+            $totalBranches = 1;
+            $activeBranches = ($targetBranch && $targetBranch->is_active) ? 1 : 0;
+            $ownedBranches = ($targetBranch && in_array($targetBranch->building_type, ['owned', 'state'])) ? 1 : 0;
+            $rentedBranches = ($targetBranch && $targetBranch->building_type === 'rented') ? 1 : 0;
+            $avgScore = $targetBranch ? (float)$targetBranch->latest_score : 0;
+            $totalStaff = $targetBranch ? (int) ($targetBranch->total_staff ?: ($targetBranch->academic_staff + $targetBranch->admin_staff)) : 0;
+            $academicStaff = $targetBranch ? (int) $targetBranch->academic_staff : 0;
+            $adminStaff = $targetBranch ? (int) $targetBranch->admin_staff : 0;
+        } else {
+            $totalBranches = Branch::count();
+            $activeBranches = Branch::where('is_active', true)->count();
+            $ownedBranches = Branch::whereIn('building_type', ['owned', 'state'])->count();
+            $rentedBranches = Branch::where('building_type', 'rented')->count();
+            $avgScore = round(Branch::avg('latest_score') ?? 0, 1);
+            $totalStaff = (int) (Branch::sum('total_staff') ?: (Branch::sum('academic_staff') + Branch::sum('admin_staff')));
+            $academicStaff = (int) Branch::sum('academic_staff');
+            $adminStaff = (int) Branch::sum('admin_staff');
+        }
 
         $pendingRequests = (clone $requestsQuery)->whereIn('status', ['pending', 'under_review'])->count();
         $inProgressRequests = (clone $requestsQuery)->where('status', 'in_progress')->count();
@@ -80,9 +99,16 @@ class BranchOperationsController extends Controller
      */
     public function getBranches(Request $request): JsonResponse
     {
-        $branches = Branch::withCount(['students', 'requests', 'contracts'])
-            ->orderBy('id')
-            ->get();
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        $userBranchId = $user?->branch_id;
+
+        $query = Branch::withCount(['students', 'requests', 'contracts']);
+        if (!$isGlobal && $userBranchId) {
+            $query->where('id', $userBranchId);
+        }
+
+        $branches = $query->orderBy('id')->get();
 
         return response()->json([
             'status' => 'success',
@@ -95,7 +121,15 @@ class BranchOperationsController extends Controller
      */
     public function getRequests(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        $userBranchId = $user?->branch_id;
+
         $branchId = $request->query('branch_id');
+        if (!$isGlobal && $userBranchId) {
+            $branchId = $userBranchId;
+        }
+
         $status = $request->query('status');
         $category = $request->query('category');
 
@@ -124,6 +158,12 @@ class BranchOperationsController extends Controller
      */
     public function storeRequest(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        if (!$isGlobal && $user?->branch_id) {
+            $request->merge(['branch_id' => $user->branch_id]);
+        }
+
         $validated = $request->validate([
             'branch_id' => 'required|exists:branches,id',
             'category' => 'required|string|max:50',
@@ -208,7 +248,15 @@ class BranchOperationsController extends Controller
      */
     public function getContracts(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        $userBranchId = $user?->branch_id;
+
         $branchId = $request->query('branch_id');
+        if (!$isGlobal && $userBranchId) {
+            $branchId = $userBranchId;
+        }
+
         $query = BranchContract::with([
             'branch:id,name,code,city,building_type',
             'property:id,name,property_number,city,type,address,area_sqm,floors_count,halls_count,owner_name'
@@ -223,21 +271,31 @@ class BranchOperationsController extends Controller
             ->orderBy('id')
             ->get();
 
-        // Calculate dynamic real KPIs across all branches and contracts
-        $totalProperties = Property::count() ?: Branch::count();
-        $ownedProperties = Property::whereIn('type', ['owned', 'state'])->count() ?: Branch::whereIn('building_type', ['owned', 'state'])->count();
-        $rentedProperties = Property::where('type', 'rented')->count() ?: Branch::where('building_type', 'rented')->count();
+        // Calculate dynamic real KPIs scoped to branch if not global
+        $propsQuery = Property::query();
+        $branchQuery = Branch::query();
+        $contractsCountQuery = BranchContract::query();
 
-        $activeLeaseQuery = BranchContract::where(function($q) {
+        if ($branchId && $branchId !== 'all') {
+            $propsQuery->where('branch_id', $branchId);
+            $branchQuery->where('id', $branchId);
+            $contractsCountQuery->where('branch_id', $branchId);
+        }
+
+        $totalProperties = (clone $propsQuery)->count();
+        $ownedProperties = (clone $propsQuery)->whereIn('type', ['owned', 'state'])->count();
+        $rentedProperties = (clone $propsQuery)->where('type', 'rented')->count();
+
+        $activeLeaseQuery = (clone $contractsCountQuery)->where(function($q) {
             $q->where('contract_type', 'like', '%إيجار%')->orWhere('rent_amount', '>', 0);
         });
         $totalAnnualRent = (float)$activeLeaseQuery->sum('rent_amount');
-        $totalContractValue = (float)BranchContract::sum('total_value');
-        $totalPaidValue = (float)BranchContract::sum('paid_value');
+        $totalContractValue = (float)(clone $contractsCountQuery)->sum('total_value');
+        $totalPaidValue = (float)(clone $contractsCountQuery)->sum('paid_value');
         $totalRemaining = max(0, $totalContractValue - $totalPaidValue);
 
-        $activeCount = BranchContract::whereIn('status', ['ACTIVE', 'active', 'near_expiry'])->count();
-        $expiringCount = BranchContract::where('status', 'near_expiry')->count();
+        $activeCount = (clone $contractsCountQuery)->whereIn('status', ['ACTIVE', 'active', 'near_expiry'])->count();
+        $expiringCount = (clone $contractsCountQuery)->where('status', 'near_expiry')->count();
         $complianceRate = $totalContractValue > 0 ? round(($totalPaidValue / $totalContractValue) * 100, 1) : 100.0;
 
         $kpis = [
@@ -803,6 +861,11 @@ class BranchOperationsController extends Controller
      */
     public function storeBranchClass(Request $request, int $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && $user->branch_id && $id != $user->branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك إضافة فصول وقاعات لفرع آخر.'], 403);
+        }
+
         $branch = Branch::findOrFail($id);
 
         $input = $request->all();
@@ -858,6 +921,11 @@ class BranchOperationsController extends Controller
      */
     public function updateBranchClass(Request $request, int $id, int $classId): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && $user->branch_id && $id != $user->branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك تعديل فصول وقاعات فرع آخر.'], 403);
+        }
+
         $branch = Branch::findOrFail($id);
         $branchClass = BranchClass::where('branch_id', $branch->id)->findOrFail($classId);
 
@@ -909,6 +977,11 @@ class BranchOperationsController extends Controller
      */
     public function deleteBranchClass(Request $request, int $id, int $classId): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && $user->branch_id && $id != $user->branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك حذف فصول وقاعات فرع آخر.'], 403);
+        }
+
         $branch = Branch::findOrFail($id);
         $branchClass = BranchClass::where('branch_id', $branch->id)->findOrFail($classId);
 

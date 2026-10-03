@@ -20,7 +20,7 @@
                                     </span>
                                 </div>
                                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    السجل المالي والحصر الشامل للعقود الموثقة والإيجارات والأصول الوقفية لجميع مقرات المعهد الـ (<span class="font-bold text-slate-700 dark:text-slate-200" x-text="contractsKpis.total_properties || branchContractsList.length || 21">21</span>) في ليبيا
+                                    السجل المالي والحصر الشامل للعقود الموثقة والإيجارات والأصول الوقفية لجميع مقرات المعهد الـ (5) في ليبيا (<span class="font-bold text-slate-700 dark:text-slate-200" x-text="(contractsKpis.total_properties ?? 0)">0</span> عقداً ومقراً مسجلاً)
                                 </p>
                             </div>
                         </div>
@@ -52,11 +52,11 @@
                                 <span class="text-xs">🏢</span>
                             </div>
                             <div class="text-2xl font-black mt-1.5 text-slate-900 dark:text-white"
-                                 x-text="(contractsKpis.total_properties ?? branchContractsList.length ?? 0) + ' مقراً'">
+                                 x-text="(contractsKpis.total_properties ?? 0) + ' مقراً'">
                                 0 مقراً
                             </div>
                             <span class="text-[10px] text-slate-400 font-medium mt-1 block"
-                                  x-text="(contractsKpis.total_properties ?? 0) > 0 ? 'تغطي كافة مناطق ومدن ليبيا' : 'لا توجد مقرات مسجلة'"></span>
+                                  x-text="(contractsKpis.total_properties ?? 0) > 0 ? 'تغطي كافة مناطق ومدن ليبيا' : 'لا توجد مقرات أو عقود مسجلة'"></span>
                         </div>
 
                         <!-- Owned Waqf Properties -->

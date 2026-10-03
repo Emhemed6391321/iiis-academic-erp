@@ -34,12 +34,24 @@ class AcademicStructureController extends Controller
                 ?: AcademicYear::orderBy('id', 'desc')->first();
         }
 
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        $userBranchId = $user?->branch_id;
+
         $allAcademicYears = AcademicYear::orderBy('id', 'desc')->get();
-        $branches = Branch::orderBy('name', 'asc')->get();
+        $branchesQuery = Branch::orderBy('name', 'asc');
+        if (!$isGlobal && $userBranchId) {
+            $branchesQuery->where('id', $userBranchId);
+        }
+        $branches = $branchesQuery->get();
 
         // 1. المراحل والسنوات الدراسية مع إحصائيات الطلاب والمقررات
-        $studyYears = StudyYear::orderBy('level_order', 'asc')->get()->map(function ($sy) use ($academicYear) {
-            $studentsCount = Student::where('current_study_year_id', $sy->id)->count();
+        $studyYears = StudyYear::orderBy('level_order', 'asc')->get()->map(function ($sy) use ($academicYear, $isGlobal, $userBranchId) {
+            $studentsQuery = Student::where('current_study_year_id', $sy->id);
+            if (!$isGlobal && $userBranchId) {
+                $studentsQuery->where('branch_id', $userBranchId);
+            }
+            $studentsCount = $studentsQuery->count();
             $coursesCount = Course::where('study_year_id', $sy->id)
                 ->when($academicYear, function ($q) use ($academicYear) {
                     $q->where('academic_year_id', $academicYear->id);
@@ -58,8 +70,12 @@ class AcademicStructureController extends Controller
         });
 
         // 2. الأقسام والشُعب التخصصية مع إحصائيات المقررات والطلاب
-        $departments = Department::orderBy('id', 'asc')->get()->map(function ($dept) use ($academicYear) {
-            $studentsCount = Student::where('department_id', $dept->id)->count();
+        $departments = Department::orderBy('id', 'asc')->get()->map(function ($dept) use ($academicYear, $isGlobal, $userBranchId) {
+            $studentsQuery = Student::where('department_id', $dept->id);
+            if (!$isGlobal && $userBranchId) {
+                $studentsQuery->where('branch_id', $userBranchId);
+            }
+            $studentsCount = $studentsQuery->count();
             $coursesCount = Course::where('department_id', $dept->id)
                 ->when($academicYear, function ($q) use ($academicYear) {
                     $q->where('academic_year_id', $academicYear->id);
@@ -80,6 +96,9 @@ class AcademicStructureController extends Controller
 
         // 3. الفصول والشُعب الدراسية بالفروع مرتبطة بالعام الدراسي
         $classesQuery = BranchClass::with('branch');
+        if (!$isGlobal && $userBranchId) {
+            $classesQuery->where('branch_id', $userBranchId);
+        }
         if ($academicYear) {
             $yearCode = $academicYear->code;
             $classesQuery->where(function ($q) use ($yearCode) {
@@ -143,6 +162,11 @@ class AcademicStructureController extends Controller
 
     public function storeStudyYear(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: إدارة وتعديل المراحل والسنوات الدراسية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'name'        => 'required|string|max:50',
             'level_order' => 'required|integer|min:1|max:255|unique:study_years,level_order',
@@ -174,6 +198,11 @@ class AcademicStructureController extends Controller
 
     public function updateStudyYear(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: إدارة وتعديل المراحل والسنوات الدراسية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $studyYear = StudyYear::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -206,6 +235,11 @@ class AcademicStructureController extends Controller
 
     public function destroyStudyYear(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: إدارة وحذف المراحل والسنوات الدراسية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $studyYear = StudyYear::findOrFail($id);
 
         // حماية من الحذف إذا كان هناك طلاب مقيدين
@@ -243,6 +277,11 @@ class AcademicStructureController extends Controller
 
     public function storeDepartment(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: إدارة وتعديل الأقسام والشُعب العلمية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'code'        => 'required|string|max:20|unique:departments,code',
             'name'        => 'required|string|max:100',
@@ -276,6 +315,11 @@ class AcademicStructureController extends Controller
 
     public function updateDepartment(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: إدارة وتعديل الأقسام والشُعب العلمية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $dept = Department::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -311,6 +355,11 @@ class AcademicStructureController extends Controller
 
     public function toggleDepartmentStatus(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: تعديل حالة الأقسام والشُعب العلمية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $dept = Department::findOrFail($id);
         $dept->is_active = !$dept->is_active;
         $dept->save();
@@ -327,6 +376,11 @@ class AcademicStructureController extends Controller
 
     public function destroyDepartment(Request $request, $id): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        if (!$user || !$user->hasGlobalAccessScope()) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: حذف الأقسام والشُعب العلمية محصورة بالإدارة العامة المركزية فقط.'], 403);
+        }
+
         $dept = Department::findOrFail($id);
 
         $studentsCount = Student::where('department_id', $dept->id)->count();
@@ -362,6 +416,12 @@ class AcademicStructureController extends Controller
 
     public function storeBranchClass(Request $request): JsonResponse
     {
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        if (!$isGlobal && $user?->branch_id) {
+            $request->merge(['branch_id' => $user->branch_id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'branch_id'     => 'required|exists:branches,id',
             'name'          => 'required|string|max:100',
@@ -382,9 +442,10 @@ class AcademicStructureController extends Controller
             return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 422);
         }
 
+        $branchId = (!$isGlobal && $user?->branch_id) ? $user->branch_id : $request->branch_id;
         $capacity = (int) $request->max_capacity;
         $class = BranchClass::create([
-            'branch_id'        => $request->branch_id,
+            'branch_id'        => $branchId,
             'name'             => $request->name,
             'academic_year'    => $request->academic_year,
             'stage'            => $request->stage,
@@ -408,6 +469,16 @@ class AcademicStructureController extends Controller
     {
         $class = BranchClass::findOrFail($id);
 
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        if (!$isGlobal && $user?->branch_id && $class->branch_id != $user->branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك تعديل فصول وقاعات فروع أخرى.'], 403);
+        }
+
+        if (!$isGlobal && $user?->branch_id) {
+            $request->merge(['branch_id' => $user->branch_id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'branch_id'     => 'required|exists:branches,id',
             'name'          => 'required|string|max:100',
@@ -422,12 +493,13 @@ class AcademicStructureController extends Controller
             return response()->json(['status' => 'error', 'message' => $validator->errors()->first()], 422);
         }
 
+        $branchId = (!$isGlobal && $user?->branch_id) ? $user->branch_id : $request->branch_id;
         $maxCapacity = (int) $request->max_capacity;
         $current = $class->current_students;
         $available = max(0, $maxCapacity - $current);
 
         $class->update([
-            'branch_id'        => $request->branch_id,
+            'branch_id'        => $branchId,
             'name'             => $request->name,
             'academic_year'    => $request->academic_year,
             'stage'            => $request->stage,
@@ -449,6 +521,12 @@ class AcademicStructureController extends Controller
     public function destroyBranchClass(Request $request, $id): JsonResponse
     {
         $class = BranchClass::findOrFail($id);
+
+        $user = $request->user() ?: Auth::user();
+        $isGlobal = $user ? $user->hasGlobalAccessScope() : true;
+        if (!$isGlobal && $user?->branch_id && $class->branch_id != $user->branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك حذف فصول وقاعات فروع أخرى.'], 403);
+        }
 
         if ($class->current_students > 0) {
             return response()->json([

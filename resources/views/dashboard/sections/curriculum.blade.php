@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'curriculum'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'curriculum') loadCourses(); })">
+            <div x-show="currentSection === 'curriculum'" class="space-y-6" x-init="$watch('currentSection', val => { if (val === 'curriculum') loadCourses(); })">
                 
                 <!-- الترويسة الرئيسية وقسم التحكم -->
                 <div class="p-6 md:p-8 rounded-[20px] border space-y-6 transition-all duration-300"
@@ -27,11 +27,18 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                 <span>تحديث</span>
                             </button>
+                            @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                             <button @click="openAddCourseModal()" 
                                     class="px-4 py-2 rounded-[12px] text-xs font-black bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white shadow-md shadow-[#2b78a5]/20 transition-all flex items-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                                 <span>إضافة مقرر ولائحة جديدة</span>
                             </button>
+                            @else
+                            <div class="px-3.5 py-1.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center gap-1.5">
+                                <span>🔒</span>
+                                <span>صلاحية الاطلاع على المناهج واللوائح الدراسية</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -189,6 +196,7 @@
                                 </div>
 
                                 <!-- أزرار التحكم والإجراءات -->
+                                @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                                 <div class="pt-4 mt-4 border-t flex items-center justify-between gap-2" :class="darkMode ? 'border-slate-700/70' : 'border-[#e8ebf2]'">
                                     <button @click="openEditCourseModal(c)"
                                             class="flex-1 py-2 px-3 rounded-[10px] text-xs font-black bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white hover:brightness-110 transition shadow-sm flex items-center justify-center gap-1.5">
@@ -209,6 +217,19 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                     </button>
                                 </div>
+                                @else
+                                <div class="pt-3 mt-3 border-t flex items-center justify-between gap-2 text-xs font-bold" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                    <span class="flex items-center gap-1 text-slate-400 dark:text-slate-500 text-[11px]">
+                                        <span>🔒</span>
+                                        <span>اطلاع واستعراض فقط (اللائحة معتمدة)</span>
+                                    </span>
+                                    <template x-if="c.book && c.book.file_path">
+                                        <a :href="'/' + c.book.file_path" target="_blank" class="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-sky-300 font-bold text-[11px] flex items-center gap-1 hover:bg-blue-500/20">
+                                            <span>استعراض المنهج الرقمي</span>
+                                        </a>
+                                    </template>
+                                </div>
+                                @endif
 
                             </div>
                         </template>

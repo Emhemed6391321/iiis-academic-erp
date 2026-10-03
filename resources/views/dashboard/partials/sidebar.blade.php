@@ -264,6 +264,7 @@
                     <span x-show="!sidebarCollapsed" class="truncate">دليل الفروع والوكالات</span>
                 </button>
 
+                @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                 <button @click="openNewBranchModal()"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/25 bg-emerald-500/5"
                         :class="sidebarCollapsed ? 'justify-center px-0' : ''"
@@ -271,6 +272,7 @@
                     <svg class="w-5 h-5 flex-shrink-0 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     <span x-show="!sidebarCollapsed" class="truncate font-black">➕ إضافة مقر جديد</span>
                 </button>
+                @endif
 
                 <button @click="currentSection = 'branch_requests'"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
@@ -301,7 +303,8 @@
             </div>
         </div>
 
-        <!-- 5. الإدارة والحوكمة والنظام -->
+        <!-- 5. الإدارة والحوكمة والنظام (حصري للإدارة المركزية والعامة) -->
+        @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
         <div>
             <div x-show="!sidebarCollapsed" class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
                 <span>الإدارة والحوكمة والنظام</span>
@@ -381,6 +384,7 @@
                 </button>
             </div>
         </div>
+        @endif
 
         <!-- 6. التوثيق والدليل وسجل التحديثات -->
         <div>
@@ -422,7 +426,8 @@
                     <span x-show="!sidebarCollapsed" class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">v2.4</span>
                 </button>
 
-                <!-- بلاغات الأخطاء -->
+                <!-- بلاغات الأخطاء (حصري للإدارة المركزية والعامة) -->
+                @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                 <button @click="currentSection = 'bug-reports'"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all relative group"
                         :class="[
@@ -443,6 +448,7 @@
                         </span>
                     </template>
                 </button>
+                @endif
             </div>
         </div>
 
