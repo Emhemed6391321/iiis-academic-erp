@@ -33,17 +33,21 @@
 
                 sidebarCollapsed: false,
                 mobileSidebarOpen: false,
+                sidebarOpen: false,
                 toggleSidebar() {
-                    if (window.innerWidth < 1024) {
-                        this.mobileSidebarOpen = !this.mobileSidebarOpen;
-                    } else {
-                        this.sidebarCollapsed = !this.sidebarCollapsed;
-                    }
+                    this.sidebarOpen = !this.sidebarOpen;
+                    this.mobileSidebarOpen = this.sidebarOpen;
+                },
+                closeSidebar() {
+                    this.sidebarOpen = false;
+                    this.mobileSidebarOpen = false;
+                },
+                openSidebar() {
+                    this.sidebarOpen = true;
+                    this.mobileSidebarOpen = true;
                 },
                 closeMobileSidebar() {
-                    if (window.innerWidth < 1024) {
-                        this.mobileSidebarOpen = false;
-                    }
+                    this.closeSidebar();
                 },
                 currentSection: '{{ $initialSection ?? "dashboard" }}',
                 bugReportsNavBadge: 0,

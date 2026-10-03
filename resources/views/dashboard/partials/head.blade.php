@@ -127,7 +127,7 @@
         [x-cloak] { display: none !important; }
         .transition-sidebar { transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* ── CRITICAL LAYOUT GUARANTEE (Mobile & Desktop Responsive) ── */
+        /* ── UNIFIED FLOATING DRAWER ARCHITECTURE (Desktop & Mobile 100% Canvas Area) ── */
         html, body {
             height: 100%;
             max-height: 100vh;
@@ -145,63 +145,62 @@
         body > header {
             flex-shrink: 0;
             width: 100%;
-            z-index: 35;
+            z-index: 30;
         }
         .layout-wrapper {
             flex: 1 1 0%;
             min-height: 0;
             display: flex !important;
-            flex-direction: row !important;
+            flex-direction: column !important;
             overflow: hidden;
             width: 100%;
             position: relative;
         }
-
-        /* Desktop: Sidebar in-flow */
-        @media (min-width: 1024px) {
-            .sidebar-container {
-                position: relative !important;
-                transform: none !important;
-                height: 100% !important;
-                flex-shrink: 0 !important;
-                display: flex !important;
-            }
-            .layout-wrapper > main {
-                flex: 1 1 0% !important;
-                min-width: 0 !important;
-                height: 100% !important;
-                overflow-y: auto !important;
-            }
+        .layout-wrapper > main {
+            width: 100% !important;
+            flex: 1 1 100% !important;
+            min-width: 0 !important;
+            height: 100% !important;
+            overflow-y: auto !important;
         }
 
-        /* Mobile (< 1024px): Sidebar as off-canvas drawer */
-        @media (max-width: 1023px) {
-            .sidebar-container {
-                position: fixed !important;
-                top: 0 !important;
-                bottom: 0 !important;
-                right: 0 !important;
-                height: 100vh !important;
-                width: 18rem !important; /* 288px */
-                max-width: 85vw !important;
-                z-index: 50 !important;
-                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            }
-            .sidebar-container.translate-x-full {
-                transform: translateX(100%) !important;
-            }
-            .sidebar-container.translate-x-0 {
-                transform: translateX(0) !important;
-            }
-            .layout-wrapper > main {
-                width: 100% !important;
-                flex: 1 1 100% !important;
-                min-width: 0 !important;
-                height: 100% !important;
-                overflow-y: auto !important;
-            }
+        /* Unified Floating Drawer Panel */
+        .sidebar-container {
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            height: 100vh !important;
+            width: 20rem !important; /* 320px */
+            max-width: 88vw !important;
+            z-index: 50 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: -10px 0 35px -5px rgba(0, 0, 0, 0.3) !important;
         }
-        /* ─────────────────────────────────────────────────────── */
+        .sidebar-container.translate-x-full {
+            transform: translateX(100%) !important;
+        }
+        .sidebar-container.translate-x-0 {
+            transform: translateX(0) !important;
+        }
+
+        /* Smooth Custom Drawer Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.6);
+        }
+        /* ────────────────────────────────────────────────────────────────────────── */
 
 
         /* Leaflet Map Custom Styling */

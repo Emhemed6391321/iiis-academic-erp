@@ -97,7 +97,20 @@
 </head>
 <body class="h-full flex flex-col bg-slate-100 dark:bg-slate-950 font-sans"
       x-data="{
+          sidebarOpen: false,
           mobileNavOpen: false,
+          toggleSidebar() {
+              this.sidebarOpen = !this.sidebarOpen;
+              this.mobileNavOpen = this.sidebarOpen;
+          },
+          closeSidebar() {
+              this.sidebarOpen = false;
+              this.mobileNavOpen = false;
+          },
+          openSidebar() {
+              this.sidebarOpen = true;
+              this.mobileNavOpen = true;
+          },
           userMenuOpen: false,
           branchSelectOpen: false,
           activeTab: '{{ $activeTab ?? 'overview' }}',
@@ -111,22 +124,23 @@
       :class="{ 'dark': darkMode }">
 
     <!-- ============================================================ -->
-    <!-- 📱 1. MOBILE SLIDING DRAWER / SIDEBAR (OFF-CANVAS NAVIGATION) -->
+    <!-- 📱 1. FLOATING / OFF-CANVAS OVERLAY DRAWER (DESKTOP & MOBILE) -->
     <!-- ============================================================ -->
-    <!-- Backdrop Blur -->
-    <div x-show="mobileNavOpen"
+    <!-- Backdrop Blur Overlay -->
+    <div x-show="sidebarOpen"
          x-cloak
          x-transition:enter="transition-opacity ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
          x-transition:leave="transition-opacity ease-in duration-200"
+         x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         @click="mobileNavOpen = false"
-         class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 lg:hidden">
+         @click="closeSidebar()"
+         class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-40">
     </div>
 
-    <!-- Sliding Drawer from Right (RTL) -->
-    <aside x-show="mobileNavOpen || window.innerWidth >= 1024"
+    <!-- Sliding Drawer from Right (RTL) - Floating / Off-Canvas Unified -->
+    <aside x-show="sidebarOpen"
            x-cloak
            x-transition:enter="transition-transform ease-out duration-300"
            x-transition:enter-start="translate-x-full"
@@ -134,7 +148,9 @@
            x-transition:leave="transition-transform ease-in duration-200"
            x-transition:leave-start="translate-x-0"
            x-transition:leave-end="translate-x-full"
-           class="fixed inset-y-0 right-0 z-50 w-72 sm:w-80 lg:w-64 bg-gradient-to-b from-[#14268d] via-[#1b3b8c] to-[#0f1b5e] text-white flex flex-col shadow-2xl lg:shadow-none lg:static lg:translate-x-0 transition-transform duration-300 ease-in-out">
+           @keydown.window.escape="closeSidebar()"
+           @click.outside="closeSidebar()"
+           class="fixed inset-y-0 right-0 z-50 w-80 max-w-[88vw] h-full bg-gradient-to-b from-[#14268d] via-[#1b3b8c] to-[#0f1b5e] text-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out border-l border-white/10">
         
         <!-- Sidebar Header -->
         <div class="h-20 flex items-center justify-between px-5 border-b border-white/10">
@@ -147,18 +163,19 @@
                     <p class="text-[10px] text-sky-200 font-medium font-mono">IIIS ERP v3.5</p>
                 </div>
             </div>
-            <!-- Close Button for Mobile -->
-            <button @click="mobileNavOpen = false" class="lg:hidden touch-target flex items-center justify-center text-white/70 hover:text-white rounded-xl bg-white/10 hover:bg-white/20">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <!-- Close Button -->
+            <button @click="closeSidebar()" class="touch-target flex items-center justify-center text-white/70 hover:text-white rounded-xl bg-white/10 hover:bg-white/20 transition-colors cursor-pointer" aria-label="إغلاق القائمة">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
         <!-- Navigation Links (Scrollable with Momentum) -->
-        <nav class="flex-1 overflow-y-auto touch-scroll px-3 py-4 space-y-1.5">
+        <nav class="flex-1 overflow-y-auto touch-scroll px-3 py-4 space-y-1.5"
+             @click="if ($event.target.closest('button, a')) closeSidebar()">
             <div class="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-300/80">الرئيسية والعمليات</div>
 
             <a href="{{ route('dashboard') }}" 
-               @click="mobileNavOpen = false"
+               @click="closeSidebar()"
                class="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target {{ request()->routeIs('dashboard') ? 'bg-white/20 text-white shadow-inner' : 'text-slate-200 hover:bg-white/10 hover:text-white' }}">
                 <span class="text-lg">🏛️</span>
                 <span>لوحة القيادة المركزية</span>
@@ -166,7 +183,7 @@
 
             <div class="px-3 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-300/80">الشؤون الأكاديمية</div>
 
-            <button @click="activeTab = 'students'; mobileNavOpen = false" 
+            <button @click="activeTab = 'students'; closeSidebar()" 
                     class="w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target text-slate-200 hover:bg-white/10 hover:text-white"
                     :class="activeTab === 'students' ? 'bg-white/20 text-white font-black' : ''">
                 <div class="flex items-center gap-3">
@@ -176,7 +193,7 @@
                 <span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500 text-white font-mono">نشط</span>
             </button>
 
-            <button @click="activeTab = 'control_grades'; mobileNavOpen = false" 
+            <button @click="activeTab = 'control_grades'; closeSidebar()" 
                     class="w-full flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target text-slate-200 hover:bg-white/10 hover:text-white"
                     :class="activeTab === 'control_grades' ? 'bg-white/20 text-white font-black' : ''">
                 <div class="flex items-center gap-3">
@@ -186,7 +203,7 @@
                 <span class="px-2 py-0.5 rounded-full text-[10px] bg-sky-400/30 text-sky-200 font-mono">80 / 40</span>
             </button>
 
-            <button @click="activeTab = 'branches_map'; mobileNavOpen = false" 
+            <button @click="activeTab = 'branches_map'; closeSidebar()" 
                     class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target text-slate-200 hover:bg-white/10 hover:text-white"
                     :class="activeTab === 'branches_map' ? 'bg-white/20 text-white font-black' : ''">
                 <span class="text-lg">🗺️</span>
@@ -195,14 +212,14 @@
 
             <div class="px-3 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-300/80">النظام والإدارة</div>
 
-            <button @click="activeTab = 'forensic_audit'; mobileNavOpen = false" 
+            <button @click="activeTab = 'forensic_audit'; closeSidebar()" 
                     class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target text-slate-200 hover:bg-white/10 hover:text-white"
                     :class="activeTab === 'forensic_audit' ? 'bg-white/20 text-white font-black' : ''">
                 <span class="text-lg">🛡️</span>
                 <span>سجل التدقيق الجنائي</span>
             </button>
 
-            <button @click="activeTab = 'central_settings'; mobileNavOpen = false" 
+            <button @click="activeTab = 'central_settings'; closeSidebar()" 
                     class="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs transition-all touch-target text-slate-200 hover:bg-white/10 hover:text-white"
                     :class="activeTab === 'central_settings' ? 'bg-white/20 text-white font-black' : ''">
                 <span class="text-lg">⚙️</span>
@@ -235,18 +252,21 @@
     <!-- ============================================================ -->
     <!-- 💻 2. MAIN APPLICATION SHELL & TOUCH-FRIENDLY TOPBAR         -->
     <!-- ============================================================ -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full">
         
         <!-- Header / Topbar -->
-        <header class="h-16 sm:h-18 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 z-30 sticky top-0 shadow-sm">
+        <header class="h-16 sm:h-18 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 z-30 sticky top-0 shadow-sm w-full">
             
             <!-- Right: Hamburger & Page Context -->
             <div class="flex items-center gap-2 sm:gap-4">
-                <!-- Hamburger Button (Mobile Only) -->
-                <button @click="mobileNavOpen = true" 
-                        class="lg:hidden touch-target flex items-center justify-center p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none ring-1 ring-slate-200 dark:ring-slate-700"
-                        aria-label="فتح القائمة الرئيسية">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Hamburger Button (Unified: Desktop & Mobile) -->
+                <button @click="toggleSidebar()" 
+                        type="button"
+                        :aria-expanded="sidebarOpen.toString()"
+                        class="touch-target flex items-center justify-center p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none ring-1 ring-slate-200 dark:ring-slate-700 transition-all cursor-pointer"
+                        :class="sidebarOpen ? 'bg-blue-50 text-[#2b78a5] ring-[#2b78a5]/30 dark:bg-slate-800' : ''"
+                        aria-label="تبديل القائمة الجانبية">
+                    <svg class="w-6 h-6 transition-transform duration-200" :class="{ 'rotate-90': sidebarOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
@@ -315,7 +335,7 @@
         </header>
 
         <!-- Main Content Area with Momentum Scrolling -->
-        <main class="flex-1 overflow-y-auto touch-scroll p-3 sm:p-6 lg:p-8 space-y-6">
+        <main class="flex-1 w-full min-w-0 overflow-y-auto touch-scroll p-3 sm:p-6 lg:p-8 space-y-6">
             @yield('content')
         </main>
     </div>
