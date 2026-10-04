@@ -97,6 +97,7 @@
             <div class="space-y-1">
                 <!-- سجل الطلاب -->
                 <button @click="currentSection = 'students'"
+                        x-show="hasPermission('students.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'students' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -109,6 +110,7 @@
 
                 <!-- حضور وانصراف الطلاب -->
                 <button @click="currentSection = 'attendance'; loadAttendanceSheet()"
+                        x-show="hasPermission('attendance.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'attendance' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -121,7 +123,7 @@
 
                 <!-- زر ملف الطالب — يظهر عند تحديد طالب -->
                 <button @click="currentSection = 'student_file'"
-                        x-show="studentFile.student !== null"
+                        x-show="studentFile.student !== null && hasPermission('students.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all relative"
                         :class="[
                             currentSection === 'student_file' ? (darkMode ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30' : 'bg-amber-600 text-white shadow-md') : (darkMode ? 'hover:bg-amber-900/30 text-amber-300 border border-amber-700/40' : 'hover:bg-amber-50 text-amber-700 border border-amber-200'),
@@ -137,6 +139,7 @@
 
                 <!-- المناهج واللوائح الدراسية -->
                 <button @click="currentSection = 'curriculum'; loadCourses()"
+                        x-show="hasPermission('curriculum.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'curriculum' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -149,6 +152,7 @@
 
                 <!-- المراحل والشعب والأقسام -->
                 <button @click="currentSection = 'academic_structure'; loadAcademicStructureData()"
+                        x-show="hasPermission('curriculum.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'academic_structure' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -161,6 +165,7 @@
 
                 <!-- جودة البيانات ونواقص الطلاب -->
                 <button @click="currentSection = 'data_quality'; loadDataQualityAudit()"
+                        x-show="hasPermission('students.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'data_quality' ? (darkMode ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-lg shadow-teal-950/40' : 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -175,6 +180,7 @@
 
                 <!-- سير عمل وطلبات الطلاب -->
                 <button @click="currentSection = 'student_workflow'; loadWorkflowData()"
+                        x-show="hasPermission('students.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'student_workflow' ? (darkMode ? 'bg-gradient-to-r from-indigo-600 to-violet-700 text-white shadow-lg shadow-indigo-950/40' : 'bg-gradient-to-r from-indigo-600 to-violet-700 text-white shadow-md shadow-indigo-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -193,13 +199,14 @@
         </div>
 
         <!-- 3. الدراسة والامتحانات والكنترول -->
-        <div>
+        <div x-show="hasPermission('grades.view|reports.print_official')">
             <div x-show="!sidebarCollapsed" class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
                 <span>الدراسة والامتحانات والكنترول</span>
             </div>
             <div class="space-y-1">
                 <!-- قسم الدراسة والامتحانات -->
                 <button @click="openComingSoon('قسم الدراسة والامتحانات')"
+                        x-show="hasPermission('grades.view')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all group"
                         :class="[
                             darkMode ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
@@ -217,6 +224,7 @@
 
                 <!-- الشهادات والوثائق والتحقق -->
                 <button @click="openComingSoon('الشهادات والوثائق والتحقق')"
+                        x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700',
@@ -232,6 +240,7 @@
 
                 <!-- الطباعة الرسمية والتصدير -->
                 <button @click="openComingSoon('الطباعة الرسمية والتصدير')"
+                        x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700',
@@ -248,12 +257,13 @@
         </div>
 
         <!-- 4. إدارة الفروع والوكالات -->
-        <div>
+        <div x-show="hasPermission('branches.view')">
             <div x-show="!sidebarCollapsed" class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
                 <span>إدارة الفروع والوكالات</span>
             </div>
             <div class="space-y-1">
                 <button @click="currentSection = 'branches_directory'"
+                        x-show="hasPermission('branches.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'branches_directory' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -266,6 +276,7 @@
 
                 @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
                 <button @click="openNewBranchModal()"
+                        x-show="hasPermission('branches.manage')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/25 bg-emerald-500/5"
                         :class="sidebarCollapsed ? 'justify-center px-0' : ''"
                         title="إضافة مقر فرع جديد">
@@ -275,6 +286,7 @@
                 @endif
 
                 <button @click="currentSection = 'branch_requests'"
+                        x-show="hasPermission('branches.view')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'branch_requests' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -291,6 +303,7 @@
                 </button>
 
                 <button @click="currentSection = 'branch_contracts'"
+                        x-show="hasPermission('branches.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'branch_contracts' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -305,12 +318,13 @@
 
         <!-- 5. الإدارة والحوكمة والنظام (حصري للإدارة المركزية والعامة) -->
         @if(auth()->user() && auth()->user()->hasGlobalAccessScope())
-        <div>
+        <div x-show="hasPermission('users.view|MANAGE_ROLES|audit.view|admin_settings.view|windows.view')">
             <div x-show="!sidebarCollapsed" class="px-3 text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-2">
                 <span>الإدارة والحوكمة والنظام</span>
             </div>
             <div class="space-y-1">
                 <button @click="currentSection = 'users'"
+                        x-show="hasPermission('users.view|users.manage')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'users' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -322,6 +336,7 @@
                 </button>
 
                 <button @click="currentSection = 'matrix'"
+                        x-show="hasPermission('MANAGE_ROLES')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'matrix' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -333,6 +348,7 @@
                 </button>
 
                 <button @click="currentSection = 'audit'"
+                        x-show="hasPermission('audit.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'audit' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -356,6 +372,7 @@
 
                 <!-- الإعدادات الإدارية المركزية والحوكمة -->
                 <button @click="currentSection = 'admin_settings'; loadAdminSettingsMaster()"
+                        x-show="hasPermission('admin_settings.view|admin_settings.manage')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2.5 rounded-xl text-xs font-bold transition-all relative group"
                         :class="[
                             currentSection === 'admin_settings' ? (darkMode ? 'bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900 text-white shadow-lg shadow-amber-950/40' : 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md shadow-amber-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -373,6 +390,7 @@
 
                 <!-- الإعدادات والتقويم الدراسي -->
                 <button @click="currentSection = 'settings'; settingsTab = 'years'; loadSettingsData()"
+                        x-show="hasPermission('windows.view|windows.manage')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'settings' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),

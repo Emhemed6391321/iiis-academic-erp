@@ -64,17 +64,23 @@ class AcademicSystemSeeder extends Seeder
         $permissionsData = [
             // Branches
             ['code' => 'branches.view', 'module' => 'branches', 'display_name' => 'عرض الفروع والمقرات'],
-            ['code' => 'branches.manage', 'module' => 'branches', 'display_name' => 'إدارة وتحديث بيانات الفروع'],
-            // Windows
+            ['code' => 'branches.manage', 'module' => 'branches', 'display_name' => 'إدارة وتحديث بيانات الفروع والمقرات'],
+            // Windows & Academic Calendar
             ['code' => 'windows.view', 'module' => 'windows', 'display_name' => 'عرض النوافذ والتقويم الأكاديمي'],
-            ['code' => 'windows.manage', 'module' => 'windows', 'display_name' => 'ضبط النوافذ الزمنية المركزية'],
+            ['code' => 'windows.manage', 'module' => 'windows', 'display_name' => 'ضبط النوافذ الزمنية والأعوام الدراسية'],
             ['code' => 'windows.grant_exception', 'module' => 'windows', 'display_name' => 'منح استثناء زمني لفرع'],
             // Students
             ['code' => 'students.view', 'module' => 'students', 'display_name' => 'عرض ملفات وسجلات الطلاب'],
-            ['code' => 'students.create', 'module' => 'students', 'display_name' => 'تسجيل طالب جديد بالفرع'],
+            ['code' => 'students.create', 'module' => 'students', 'display_name' => 'تسجيل وتعديل بيانات الطلاب'],
             ['code' => 'students.submit_hq', 'module' => 'students', 'display_name' => 'رفع ملف الطالب للاعتماد المركزي'],
             ['code' => 'students.approve_hq', 'module' => 'students', 'display_name' => 'الاعتماد النهائي لملف الطالب وتوليد الرقم الأكاديمي'],
             ['code' => 'students.transfer', 'module' => 'students', 'display_name' => 'طلب واعتماد نقل طالب بين الفروع'],
+            ['code' => 'students.archive', 'module' => 'students', 'display_name' => 'أرشفة واسترجاع ملفات الطلاب'],
+            ['code' => 'students.delete', 'module' => 'students', 'display_name' => 'حذف سجلات الطلاب نهائياً'],
+            // Attendance
+            ['code' => 'attendance.view', 'module' => 'attendance', 'display_name' => 'عرض كشوف وإحصائيات الحضور والغياب'],
+            ['code' => 'attendance.record', 'module' => 'attendance', 'display_name' => 'رصد وتسجيل الحضور والانصراف والمسح الذكي'],
+            ['code' => 'attendance.reports', 'module' => 'attendance', 'display_name' => 'إصدار تقارير وإنذارات الحرمان من الغياب'],
             // Grades & Control
             ['code' => 'grades.view', 'module' => 'grades', 'display_name' => 'عرض كشوفات ومحاضر الدرجات'],
             ['code' => 'grades.enter_coursework', 'module' => 'grades', 'display_name' => 'رصد أعمال السنة والتطبيقات التحريرية'],
@@ -82,16 +88,25 @@ class AcademicSystemSeeder extends Seeder
             ['code' => 'grades.submit_batch', 'module' => 'grades', 'display_name' => 'رفع دفعة الكنترول للاعتماد المركزي'],
             ['code' => 'grades.approve_hq', 'module' => 'grades', 'display_name' => 'الاعتماد المركزي لدرجات الفرع وتوليد الختم المشفر'],
             ['code' => 'grades.lock_archive', 'module' => 'grades', 'display_name' => 'الإغلاق الأكاديمي النهائي والأرشفة الرقمية'],
+            // Curriculum & Academic Structure
+            ['code' => 'curriculum.view', 'module' => 'curriculum', 'display_name' => 'استعراض المناهج والمقررات والهيكل الأكاديمي'],
+            ['code' => 'curriculum.manage', 'module' => 'curriculum', 'display_name' => 'إدارة المناهج والخطط والمراحل والشعب الدراسية'],
             // Audit & Reports
-            ['code' => 'audit.view', 'module' => 'audit', 'display_name' => 'مراقبة سجل التدقيق الجنائي للدرجات'],
-            ['code' => 'reports.print_official', 'module' => 'reports', 'display_name' => 'طباعة الصحائف والشهادات الرسمية'],
-            // =========================================================
-            // Security Permissions (CRIT-1 — required for authorization layer)
-            // =========================================================
-            ['code' => 'MANAGE_ROLES', 'module' => 'security', 'display_name' => 'إدارة صلاحيات الأدوار'],
+            ['code' => 'audit.view', 'module' => 'audit', 'display_name' => 'مراقبة سجل التدقيق الجنائي للعمليات والدرجات'],
+            ['code' => 'reports.print_official', 'module' => 'reports', 'display_name' => 'طباعة الشهادات والمصدقات والمحررات الرسمية'],
+            // Security & IAM
+            ['code' => 'users.view', 'module' => 'security', 'display_name' => 'استعراض سجلات المستخدمين وحساباتهم'],
+            ['code' => 'users.manage', 'module' => 'security', 'display_name' => 'إدارة وإنشاء وتعديل حسابات المستخدمين'],
+            ['code' => 'MANAGE_ROLES', 'module' => 'security', 'display_name' => 'إدارة صلاحيات الأدوار ومصفوفة الصلاحيات'],
             ['code' => 'MANAGE_USER_PERMISSIONS', 'module' => 'security', 'display_name' => 'إدارة الصلاحيات الاستثنائية للمستخدمين'],
             ['code' => 'CHANGE_STUDENT_STATUS', 'module' => 'security', 'display_name' => 'تغيير حالة الطالب (فصل / تعليق / تخرج / نقل)'],
             ['code' => 'APPROVE_STUDENT_DATA', 'module' => 'security', 'display_name' => 'اعتماد وفك اعتماد بيانات الطالب'],
+            // Governance & Admin Settings
+            ['code' => 'admin_settings.view', 'module' => 'settings', 'display_name' => 'استعراض الإعدادات الإدارية والهيكل التنظيمي'],
+            ['code' => 'admin_settings.manage', 'module' => 'settings', 'display_name' => 'تعديل الإعدادات الإدارية والتوقيعات الرسمية'],
+            // Maintenance, Monitoring & Backups
+            ['code' => 'system.monitor', 'module' => 'system', 'display_name' => 'مراقبة أخطاء النظام والصحة التشغيلية'],
+            ['code' => 'backups.manage', 'module' => 'system', 'display_name' => 'إدارة وإنشاء واسترجاع النسخ الاحتياطية المشفرة'],
         ];
 
         $permissions = [];
@@ -107,9 +122,12 @@ class AcademicSystemSeeder extends Seeder
             $permissions['windows.view']->id,
             $permissions['windows.manage']->id,
             $permissions['students.view']->id,
+            $permissions['attendance.view']->id,
+            $permissions['attendance.reports']->id,
             $permissions['grades.view']->id,
             $permissions['grades.approve_hq']->id,
             $permissions['grades.lock_archive']->id,
+            $permissions['curriculum.view']->id,
             $permissions['audit.view']->id,
             $permissions['reports.print_official']->id,
         ]);
@@ -119,41 +137,66 @@ class AcademicSystemSeeder extends Seeder
             $permissions['students.view']->id,
             $permissions['students.approve_hq']->id,
             $permissions['students.transfer']->id,
+            $permissions['students.archive']->id,
+            $permissions['attendance.view']->id,
+            $permissions['attendance.reports']->id,
             $permissions['reports.print_official']->id,
-            // Security permissions for student affairs
             $permissions['CHANGE_STUDENT_STATUS']->id,
             $permissions['APPROVE_STUDENT_DATA']->id,
         ]);
 
-        // hq_it_office manages roles and user permissions
+        $roles['hq_curriculum_office']->permissions()->sync([
+            $permissions['branches.view']->id,
+            $permissions['curriculum.view']->id,
+            $permissions['curriculum.manage']->id,
+            $permissions['windows.view']->id,
+        ]);
+
         $roles['hq_it_office']->permissions()->sync([
+            $permissions['branches.view']->id,
+            $permissions['users.view']->id,
+            $permissions['users.manage']->id,
             $permissions['MANAGE_ROLES']->id,
             $permissions['MANAGE_USER_PERMISSIONS']->id,
+            $permissions['audit.view']->id,
+            $permissions['system.monitor']->id,
+            $permissions['backups.manage']->id,
+            $permissions['admin_settings.view']->id,
+            $permissions['admin_settings.manage']->id,
         ]);
 
         $roles['branch_manager']->permissions()->sync([
+            $permissions['branches.view']->id,
             $permissions['students.view']->id,
             $permissions['students.create']->id,
             $permissions['students.submit_hq']->id,
+            $permissions['attendance.view']->id,
+            $permissions['attendance.record']->id,
+            $permissions['attendance.reports']->id,
             $permissions['grades.view']->id,
             $permissions['grades.enter_coursework']->id,
             $permissions['grades.enter_final']->id,
             $permissions['grades.submit_batch']->id,
+            $permissions['curriculum.view']->id,
             $permissions['reports.print_official']->id,
         ]);
 
         $roles['branch_exams_officer']->permissions()->sync([
             $permissions['students.view']->id,
+            $permissions['attendance.view']->id,
             $permissions['grades.view']->id,
             $permissions['grades.enter_coursework']->id,
             $permissions['grades.enter_final']->id,
             $permissions['grades.submit_batch']->id,
+            $permissions['curriculum.view']->id,
         ]);
 
         $roles['branch_registrar']->permissions()->sync([
             $permissions['students.view']->id,
             $permissions['students.create']->id,
             $permissions['students.submit_hq']->id,
+            $permissions['attendance.view']->id,
+            $permissions['attendance.record']->id,
         ]);
 
         // 3. Branches

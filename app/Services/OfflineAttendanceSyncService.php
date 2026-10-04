@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessOfflineAuditSyncJob;
 use App\Models\OfflineSyncLog;
 use App\Models\Student;
 use App\Models\StudentAttendance;
+use App\Models\SystemAuditTrail;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -14,11 +16,11 @@ use Illuminate\Support\Str;
 class OfflineAttendanceSyncService
 {
     /**
-     * Process an offline attendance batch from a branch device.
+     * Process an offline attendance batch from a branch device with Idempotency & Deduplication.
      */
     public function processBatch(array $payload, User $user): array
     {
-        $batchId    = $payload['batch_id'] ?? (string) Str::uuid();
+        $batchId    = $payload['batch_id'] ?? request()->header('X-Idempotency-Key') ?? (string) Str::uuid();
         $deviceUuid = $payload['device_uuid'] ?? 'unknown_device';
         $records    = $payload['records'] ?? [];
 
@@ -40,7 +42,9 @@ class OfflineAttendanceSyncService
         DB::beginTransaction();
         try {
             foreach ($records as $index => $item) {
-                $syncNonce        = $item['sync_nonce'] ?? null;
+                // Support both sync_nonce and client_uuid
+                $clientUuid       = $item['client_uuid'] ?? $item['sync_nonce'] ?? null;
+                $syncNonce        = $clientUuid;
                 $studentId        = $item['student_id'] ?? null;
                 $recordDate       = isset($item['record_date']) ? Carbon::parse($item['record_date'])->format('Y-m-d') : Carbon::today()->format('Y-m-d');
                 $clientRecordedAt = isset($item['client_recorded_at']) ? Carbon::parse($item['client_recorded_at']) : Carbon::now();
@@ -48,9 +52,10 @@ class OfflineAttendanceSyncService
                 if (!$studentId) {
                     $results['failed']++;
                     $results['records_processed'][] = [
-                        'nonce'   => $syncNonce,
-                        'status'  => 'failed',
-                        'message' => 'معرف الطالب مفقود في السجل',
+                        'client_uuid' => $clientUuid,
+                        'nonce'       => $syncNonce,
+                        'status'      => 'failed',
+                        'message'     => 'معرف الطالب مفقود في السجل',
                     ];
                     continue;
                 }
@@ -63,20 +68,25 @@ class OfflineAttendanceSyncService
                 if (!$student) {
                     $results['failed']++;
                     $results['records_processed'][] = [
-                        'nonce'   => $syncNonce,
-                        'student_id' => $studentId,
-                        'status'  => 'failed',
-                        'message' => 'الطالب غير موجود أو لا ينتمي لهذا الفرع',
+                        'client_uuid' => $clientUuid,
+                        'nonce'       => $syncNonce,
+                        'student_id'  => $studentId,
+                        'status'      => 'failed',
+                        'message'     => 'الطالب غير موجود أو لا ينتمي لهذا الفرع',
                     ];
                     continue;
                 }
 
-                // 1. Check idempotency by sync_nonce
+                // 1. Check idempotency by sync_nonce / client_uuid
                 if ($syncNonce) {
-                    $existingByNonce = StudentAttendance::withoutGlobalScopes()->where('sync_nonce', $syncNonce)->first();
+                    $existingByNonce = StudentAttendance::withoutGlobalScopes()
+                        ->where('sync_nonce', $syncNonce)
+                        ->first();
+
                     if ($existingByNonce) {
                         $results['duplicates']++;
                         $results['records_processed'][] = [
+                            'client_uuid'   => $clientUuid,
                             'nonce'         => $syncNonce,
                             'attendance_id' => $existingByNonce->id,
                             'status'        => 'duplicate_ignored',
@@ -98,7 +108,6 @@ class OfflineAttendanceSyncService
 
                 if ($existingRecord) {
                     // Conflict or Merge Resolution:
-                    // If existing has check-in and offline brings check-out/departure:
                     $offlineCheckOut = $item['check_out_time'] ?? null;
                     $offlineCheckIn  = $item['check_in_time'] ?? null;
 
@@ -122,6 +131,7 @@ class OfflineAttendanceSyncService
 
                         $results['synced']++;
                         $results['records_processed'][] = [
+                            'client_uuid'   => $clientUuid,
                             'nonce'         => $syncNonce,
                             'attendance_id' => $existingRecord->id,
                             'status'        => 'merged_departure',
@@ -134,6 +144,7 @@ class OfflineAttendanceSyncService
                     if (!empty($existingRecord->modification_reason)) {
                         $results['conflicts']++;
                         $results['records_processed'][] = [
+                            'client_uuid'   => $clientUuid,
                             'nonce'         => $syncNonce,
                             'attendance_id' => $existingRecord->id,
                             'status'        => 'conflict_preserved_central',
@@ -159,6 +170,7 @@ class OfflineAttendanceSyncService
 
                     $results['synced']++;
                     $results['records_processed'][] = [
+                        'client_uuid'   => $clientUuid,
                         'nonce'         => $syncNonce,
                         'attendance_id' => $existingRecord->id,
                         'status'        => 'updated',
@@ -199,6 +211,7 @@ class OfflineAttendanceSyncService
 
                     $results['synced']++;
                     $results['records_processed'][] = [
+                        'client_uuid'   => $clientUuid,
                         'nonce'         => $syncNonce,
                         'attendance_id' => $attendance->id,
                         'status'        => 'created',
@@ -221,6 +234,31 @@ class OfflineAttendanceSyncService
                     'sync_status'        => ($results['failed'] > 0 && $results['synced'] === 0) ? 'FAILED' : 'COMPLETED',
                 ]
             );
+
+            // Audit Ledger with Hash Chaining: Stage record first then dispatch background sequential job
+            try {
+                $stagedTrail = SystemAuditTrail::stageOffline(
+                    eventType: 'OFFLINE_ATTENDANCE_BATCH_SYNCED',
+                    description: "مزامنة دفعة حضور غير متصلة برقم ({$batchId}) لعدد ({$results['synced']}) حركة.",
+                    payload: [
+                        'batch_id'    => $batchId,
+                        'device_uuid' => $deviceUuid,
+                        'branch_id'   => $branchId,
+                        'synced'      => $results['synced'],
+                        'duplicates'  => $results['duplicates'],
+                        'conflicts'   => $results['conflicts'],
+                    ],
+                    clientUuid: $batchId,
+                    clientRecordedAt: Carbon::now(),
+                    userId: $user->id,
+                    branchId: $branchId
+                );
+
+                // Run background job synchronously or queued to integrate into canonical ledger
+                ProcessOfflineAuditSyncJob::dispatchSync([$stagedTrail->id]);
+            } catch (\Throwable $auditErr) {
+                Log::warning('Staged audit trail creation note: ' . $auditErr->getMessage());
+            }
 
             DB::commit();
         } catch (\Throwable $e) {

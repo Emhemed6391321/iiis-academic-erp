@@ -1,5 +1,5 @@
             <div x-show="currentSection === 'attendance'" 
-                 x-init="$watch('currentSection', val => { if (val === 'attendance') loadAttendanceSheet(); })"
+                 x-init="$watch('currentSection', val => { if (val === 'attendance') { loadAttendanceSheet(); checkOfflineAttendanceQueue(); } })"
                  class="space-y-6">
                 
                 <!-- الترويسة الرئيسية للقسم -->
@@ -44,6 +44,14 @@
                                     :class="darkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'">
                                 <svg class="w-4 h-4 text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                 <span>طباعة الكشوفات المعتمدة 🖨️</span>
+                            </button>
+
+                            <!-- زر مزامنة سجلات الـ Offline المعلقة -->
+                            <button x-show="offlinePendingCount > 0" 
+                                    @click="syncOfflineAttendance()"
+                                    class="px-3.5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-orange-600 hover:brightness-110 text-white shadow-md shadow-amber-500/25 flex items-center gap-1.5 cursor-pointer transition-all animate-pulse">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                                <span>مزامنة (<span x-text="offlinePendingCount"></span>) حركة معلقة ⚡</span>
                             </button>
 
                             <button @click="loadAttendanceSheet()"

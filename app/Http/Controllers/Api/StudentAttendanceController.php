@@ -1437,5 +1437,14 @@ class StudentAttendanceController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * 13b. مسار المزامنة الصريح: POST /api/v1/attendance/sync
+     */
+    public function sync(Request $request, \App\Services\OfflineAttendanceSyncService $syncService): JsonResponse
+    {
+        return $this->batchSync($request, $syncService);
+    }
 }
+
 

@@ -15,6 +15,7 @@ class StudentTransfer extends Model
         'from_branch_id',
         'to_branch_id',
         'status',
+        'transfer_stage',
         'reason',
         'requested_by',
         'approved_by',
@@ -26,12 +27,16 @@ class StudentTransfer extends Model
         'receiving_branch_decision_notes',
         'receiving_branch_decided_by',
         'receiving_branch_decided_at',
+        'hq_final_approved_by',
+        'hq_final_approved_at',
+        'hq_decision_notes',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'central_affairs_approved_at' => 'datetime',
         'receiving_branch_decided_at' => 'datetime',
+        'hq_final_approved_at' => 'datetime',
     ];
 
     public function student(): BelongsTo
@@ -57,5 +62,10 @@ class StudentTransfer extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function hqApprover(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hq_final_approved_by');
     }
 }

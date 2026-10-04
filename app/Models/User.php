@@ -134,6 +134,7 @@ class User extends Authenticatable
      * 1. المدير العام يمتلك كافة الصلاحيات حكماً.
      * 2. الصلاحية الخاصة للمستخدم (إذا تم منحها أو حجبها استثنائياً).
      * 3. الصلاحية الموروثة من الدور الوظيفي.
+     * يدعم فحص عدة صلاحيات مفصولة برمز '|' (يكفي امتلاك إحداها).
      */
     public function hasPermission(string $permissionCode): bool
     {
@@ -141,8 +142,31 @@ class User extends Authenticatable
             return true;
         }
 
+        // دعم فحص عدة صلاحيات OR عبر رمز '|' أو ','
+        if (str_contains($permissionCode, '|') || str_contains($permissionCode, ',')) {
+            $codes = preg_split('/[|,]/', $permissionCode, -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($codes as $code) {
+                if ($this->hasSinglePermission(trim($code))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return $this->hasSinglePermission($permissionCode);
+    }
+
+    /**
+     * فحص صلاحية فردية واحدة.
+     */
+    protected function hasSinglePermission(string $code): bool
+    {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
         // 1. فحص الصلاحية الخاصة المباشرة للمستخدم (Direct Override)
-        $direct = $this->directPermissions->firstWhere('code', $permissionCode);
+        $direct = $this->directPermissions->firstWhere('code', $code);
         if ($direct !== null) {
             return (bool) $direct->pivot->is_granted;
         }
@@ -152,6 +176,33 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->role->permissions->contains('code', $permissionCode);
+        return $this->role->permissions->contains('code', $code);
+    }
+
+    /**
+     * الحصول على القائمة الكاملة لكافة أكواد الصلاحيات الممنوحة للمستخدم.
+     */
+    public function getAllPermissionsList(): array
+    {
+        if ($this->isSuperAdmin()) {
+            return Permission::pluck('code')->all();
+        }
+
+        $rolePermissions = $this->role ? $this->role->permissions->pluck('code')->all() : [];
+
+        // Direct granted permissions
+        $grantedDirect = $this->directPermissions()
+            ->wherePivot('is_granted', true)
+            ->pluck('code')
+            ->all();
+
+        // Direct revoked permissions
+        $revokedDirect = $this->directPermissions()
+            ->wherePivot('is_granted', false)
+            ->pluck('code')
+            ->all();
+
+        $all = array_unique(array_merge($rolePermissions, $grantedDirect));
+        return array_values(array_diff($all, $revokedDirect));
     }
 }

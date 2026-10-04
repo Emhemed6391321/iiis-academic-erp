@@ -75,8 +75,8 @@ class MetricsCacheService
             $verifiedDocuments   = (clone $verificationQuery)->count();
             $pendingRequests     = (clone $branchRequestQuery)->where('status', 'PENDING')->count();
 
-            // Branches statistics
-            $branchesQuery = Branch::where('is_active', true);
+            // Branches statistics (Active operational branches only)
+            $branchesQuery = Branch::where('is_active', true)->where('branch_status', 'ACTIVE');
             if ($branchId) {
                 $branchesQuery->where('id', $branchId);
             }
@@ -88,6 +88,8 @@ class MetricsCacheService
                     'gradeBatches as pending_batches_count' => fn($q) => $q->where('status', 'SUBMITTED_TO_HQ'),
                 ])
                 ->get();
+
+            $suspendedBranchesCount = Branch::where('branch_status', 'SUSPENDED')->count();
 
             // Active operational windows
             $windows = OperationalWindow::where('academic_year_id', $currentYear?->id)
@@ -128,6 +130,7 @@ class MetricsCacheService
                     'deprivation_alerts'     => $deprivationAlerts,
                     'verified_documents'     => $verifiedDocuments,
                     'pending_requests'       => $pendingRequests,
+                    'suspended_branches'     => $suspendedBranchesCount,
                 ],
                 'branches'              => $branches,
                 'operational_windows'   => $windows,

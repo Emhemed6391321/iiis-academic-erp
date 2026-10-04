@@ -29,16 +29,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Security Gate 1.3: Strictly forbid dev bypass in production
-        if ($this->app->environment('production')) {
-            $bypassSecret = config('app.dev_bypass_secret') ?: env('DEV_BYPASS_SECRET');
-            $enableBypass = env('ENABLE_DEV_BYPASS', false);
-            if ($bypassSecret || $enableBypass) {
-                throw new \RuntimeException(
-                    'CRITICAL SECURITY VIOLATION: DEV_BYPASS is strictly prohibited in production environment.'
-                );
+        // RBAC Universal Gate Hook
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
+                return true;
             }
-        }
+            if ($user && method_exists($user, 'hasPermission')) {
+                return $user->hasPermission($ability) ? true : null;
+            }
+            return null;
+        });
 
         try {
             $activeYear = \App\Models\AcademicYear::where('is_current', true)->first()

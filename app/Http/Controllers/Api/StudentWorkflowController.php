@@ -532,113 +532,40 @@ class StudentWorkflowController extends Controller
     }
 
     /**
-     * Handle Multi-step Handshake for Student Transfers.
+     * Handle Multi-step Handshake for Student Transfers (4-Stage State Machine).
      */
-    public function handleTransferStep(Request $request, int $id): JsonResponse
+    public function handleTransferStep(Request $request, int $id, \App\Services\StudentTransferWorkflow $workflow): JsonResponse
     {
-        $step = $request->input('step'); // CENTRAL_MEMO | RECEIVING_BRANCH
-        $notes = $request->input('notes', '');
+        $step = $request->input('step'); // CENTRAL_MEMO | RECEIVING_BRANCH | HQ_FINAL
+        $notes = $request->input('notes') ?? $request->input('decision_notes') ?? $request->input('statement', '');
         $status = $request->input('status', 'APPROVED'); // APPROVED | REJECTED
 
         $transfer = StudentTransfer::findOrFail($id);
         $user = Auth::user();
-        $now = Carbon::now();
 
-        // Four-Eyes Principle (1.8): Submitter cannot approve
-        if ($user && $transfer->requested_by && (int)$transfer->requested_by === (int)$user->id) {
+        try {
+            if ($step === 'CENTRAL_MEMO' || $step === \App\Services\StudentTransferWorkflow::STAGE_ACADEMIC_REVIEWED) {
+                $transfer = $workflow->reviewAcademicAffairs($transfer, $notes ?: 'تمت دراسة الطلب وإحالته للفرع المستقبل لضم الطالب.', $status === 'APPROVED', $user);
+            } elseif ($step === 'RECEIVING_BRANCH' || $step === \App\Services\StudentTransferWorkflow::STAGE_DESTINATION_ACCEPTED) {
+                $transfer = $workflow->acceptDestinationBranch($transfer, $notes ?: ($status === 'APPROVED' ? 'تمت الموافقة وتأكيد ضم الطالب بالفرع.' : 'اعتذار الفرع المستقبل لعدم توفر السعة الاستيعابية.'), $status === 'APPROVED', $user);
+            } elseif ($step === 'HQ_FINAL' || $step === \App\Services\StudentTransferWorkflow::STAGE_HQ_APPROVED) {
+                $transfer = $workflow->approveHQFinal($transfer, $notes ?: 'اعتماد سيادي نهائي لنقل تبعية الطالب إلى الفرع الجديد.', $user);
+            } else {
+                return response()->json(['status' => 'error', 'message' => 'مرحلة مصافحة غير معتمدة.'], 422);
+            }
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'انتهاك مبدأ الرقابة الثنائية (Four-Eyes Principle): لا يمكن لمنشئ طلب النقل أن يعتمده بنفسه.',
-            ], 403);
+                'status' => 'success',
+                'message' => 'تم حفظ إجراء المصافحة ونقل تبعية الطالب بنجاح.',
+                'transfer' => $transfer,
+            ]);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 403);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => 'تعذر إتمام الإجراء: ' . $e->getMessage()], 500);
         }
-
-        // Scope/Role verification
-        if ($step === 'CENTRAL_MEMO' && $user && !$user->hasGlobalAccessScope()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'غير مصرح: إحالة النقل المركزية محصورة في إدارة شؤون الطلاب العامة.',
-            ], 403);
-        }
-
-        if ($step === 'RECEIVING_BRANCH') {
-            if (empty($transfer->central_affairs_approved_at) && empty($transfer->central_affairs_approved_by)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'تسلسل الإجراءات غير مكتمل: لا يمكن للفرع المستقبل البت في طلب النقل قبل صدور إحالة وموافقة الإدارة المركزية (مذكرة شؤون الطلاب العامة).',
-                ], 422);
-            }
-
-            if ($user && !$user->hasGlobalAccessScope() && (int)$user->branch_id !== (int)$transfer->to_branch_id) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'غير مصرح: قرار قبول النقل محصور في إدارة الفرع المستقبل فقط.',
-                ], 403);
-            }
-        }
-
-        DB::transaction(function() use ($transfer, $step, $notes, $status, $user, $now, $request) {
-            if ($step === 'CENTRAL_MEMO') {
-                $transfer->update([
-                    'central_affairs_statement' => $notes ?: 'تمت دراسة الطلب وإحالته للفرع المستقبل لضم الطالب.',
-                    'central_affairs_approved_by' => $user?->id,
-                    'central_affairs_approved_at' => $now,
-                ]);
-            } elseif ($step === 'RECEIVING_BRANCH') {
-                if ($status === 'APPROVED') {
-                    $transfer->update([
-                        'receiving_branch_status' => 'APPROVED',
-                        'receiving_branch_decision_notes' => $notes ?: 'تمت الموافقة وتأكيد ضم الطالب بالفرع.',
-                        'receiving_branch_decided_by' => $user?->id,
-                        'receiving_branch_decided_at' => $now,
-                        'status' => 'APPROVED',
-                        'approved_by' => $user?->id,
-                        'approved_at' => $now,
-                    ]);
-
-                    // Transfer the student's branch (bypass scope for incoming student cross-branch)
-                    $student = Student::withoutGlobalScope(BranchScope::class)->lockForUpdate()->find($transfer->student_id);
-                    if ($student) {
-                        $oldBranch = $student->branch_id;
-                        $student->update(['branch_id' => $transfer->to_branch_id]);
-
-                        DB::table('student_status_history')->insert([
-                            'student_id' => $student->id,
-                            'old_status' => 'BRANCH_' . $oldBranch,
-                            'new_status' => 'BRANCH_' . $transfer->to_branch_id,
-                            'event_type' => 'TRANSFER',
-                            'reason' => 'نقل وضم الطالب إلى فرع جديد: ' . $transfer->reason,
-                            'changed_by' => $user?->id,
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ]);
-                    }
-                } else {
-                    $transfer->update([
-                        'receiving_branch_status' => 'REJECTED',
-                        'receiving_branch_decision_notes' => $notes ?: 'اعتذار الفرع المستقبل لعدم توفر السعة الاستيعابية.',
-                        'receiving_branch_decided_by' => $user?->id,
-                        'receiving_branch_decided_at' => $now,
-                        'status' => 'REJECTED',
-                    ]);
-                }
-            }
-
-            SystemAuditTrail::log(
-                eventType: 'STUDENT_TRANSFER_STEP_PROCESSED',
-                modelType: StudentTransfer::class,
-                modelId: $transfer->id,
-                description: "تمت معالجة مرحلة النقل ({$step}) للطالب رقم #{$transfer->student_id} بالحالة: {$status}.",
-                branchId: $user?->branch_id ?? $transfer->to_branch_id,
-                newValues: ['step' => $step, 'status' => $status, 'decided_by' => $user?->id],
-                severity: 'WARNING',
-                request: $request
-            );
-        });
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'تم حفظ إجراء المصافحة ونقل تبعية الطالب بالفرع بنجاح.',
-        ]);
     }
 
     /**
@@ -856,14 +783,8 @@ class StudentWorkflowController extends Controller
                 $docPath = $request->file('document')->store("requests/transfer/{$student->id}", 'public');
             }
 
-            $item = StudentTransfer::create([
-                'student_id' => $student->id,
-                'from_branch_id' => $student->branch_id,
-                'to_branch_id' => $request->to_branch_id,
-                'reason' => $request->reason,
-                'status' => 'PENDING',
-                'requested_by' => $user?->id,
-            ]);
+            $workflow = app(\App\Services\StudentTransferWorkflow::class);
+            $item = $workflow->initiateTransfer($student, (int)$request->to_branch_id, $request->reason, $user);
 
             return response()->json([
                 'status' => 'success',

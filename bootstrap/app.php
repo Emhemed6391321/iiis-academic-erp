@@ -36,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'enforce.mfa'           => \App\Http\Middleware\EnforceMfaMiddleware::class,
             'force.password_change' => \App\Http\Middleware\ForcePasswordChangeMiddleware::class,
             'security.headers'      => \App\Http\Middleware\SecurityHeadersMiddleware::class,
+            'permission'            => \App\Http\Middleware\CheckPermission::class,
         ]);
 
         // Trust proxies to prevent IP spoofing behind reverse proxies (Requirement 1.7)

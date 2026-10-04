@@ -105,6 +105,67 @@
                     }
                 },
 
+                // =========================================================================
+                // RBAC ENFORCEMENT & ACCESS CONTROL STATE
+                // =========================================================================
+                isSuperAdmin: {{ (Auth::check() && Auth::user()->isSuperAdmin()) ? 'true' : 'false' }},
+                userScope: '{{ (Auth::check() && Auth::user()->hasGlobalAccessScope()) ? "HQ" : "BRANCH" }}',
+                userBranchId: {{ Auth::user()?->branch_id ?? 'null' }},
+                userPermissions: @json(Auth::check() ? Auth::user()->getAllPermissionsList() : []),
+
+                hasPermission(permissionCode) {
+                    if (this.isSuperAdmin) return true;
+                    if (!permissionCode) return true;
+                    const codes = permissionCode.split(/[|,]/).map(c => c.trim()).filter(Boolean);
+                    if (codes.length === 0) return true;
+                    return codes.some(code => this.userPermissions.includes(code));
+                },
+
+                canAccessSection(section) {
+                    if (this.isSuperAdmin) return true;
+                    const sectionPermMap = {
+                        'dashboard': null,
+                        'procedures': null,
+                        'profile': null,
+                        'themes': null,
+                        'updates': null,
+                        'students': 'students.view',
+                        'student_file': 'students.view',
+                        'attendance': 'attendance.view',
+                        'curriculum': 'curriculum.view',
+                        'academic_structure': 'curriculum.view',
+                        'data_quality': 'students.view',
+                        'student_workflow': 'students.view',
+                        'study_and_exams': 'grades.view',
+                        'grading': 'grades.view',
+                        'transcripts': 'reports.print_official',
+                        'branches_directory': 'branches.view',
+                        'branch_requests': 'branches.view',
+                        'branch_contracts': 'branches.view',
+                        'users': 'users.view|users.manage',
+                        'matrix': 'MANAGE_ROLES',
+                        'audit': 'audit.view',
+                        'admin_settings': 'admin_settings.view|admin_settings.manage',
+                        'settings': 'windows.view|windows.manage',
+                        'bug-reports': 'system.monitor',
+                        'error_monitoring': 'system.monitor'
+                    };
+                    const required = sectionPermMap[section];
+                    return required ? this.hasPermission(required) : true;
+                },
+
+                navigateToSection(section) {
+                    if (!this.canAccessSection(section)) {
+                        if (typeof this.showToast === 'function') {
+                            this.showToast('عذراً: ليس لديك صلاحية كافية للوصول لهذا القسم.', 'error');
+                        } else {
+                            alert('عذراً: ليس لديك صلاحية كافية للوصول لهذا القسم.');
+                        }
+                        return;
+                    }
+                    this.currentSection = section;
+                },
+
                 async saveUserProfile() {
                     this.userProfile.saving = true;
                     this.userProfile.successMessage = '';
@@ -2010,24 +2071,77 @@
                     this.saveAttendanceSheet();
                 },
 
+                offlinePendingCount: 0,
+
+                async checkOfflineAttendanceQueue() {
+                    if (window.IIIS_OFFLINE) {
+                        try {
+                            this.offlinePendingCount = await window.IIIS_OFFLINE.getPendingCount();
+                        } catch (e) {
+                            console.warn('Could not read offline queue count:', e);
+                        }
+                    }
+                },
+
+                async syncOfflineAttendance() {
+                    if (!window.IIIS_OFFLINE) return;
+                    if (!navigator.onLine) {
+                        this.showToast('لا يمكن المزامنة حالياً لعدم وجود اتصال بالإنترنت.');
+                        return;
+                    }
+                    this.attendance.sheet.saving = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await window.IIIS_OFFLINE.syncQueue(token);
+                        this.showToast(res.message || 'تمت مزامنة الحركات المعلقة بنجاح!');
+                        await this.checkOfflineAttendanceQueue();
+                        this.loadAttendanceSheet();
+                    } catch (e) {
+                        this.showToast(e.message || 'فشلت المزامنة مع الخادم');
+                    } finally {
+                        this.attendance.sheet.saving = false;
+                    }
+                },
+
                 async saveAttendanceSheet() {
                     if (this.attendance.sheet.students.length === 0) return;
                     this.attendance.sheet.saving = true;
+                    
+                    const recordDate = this.attendance.filters.date || this.getTodayDateString();
+                    const recordsPayload = this.attendance.sheet.students.map(s => ({
+                        student_id: s.student_id,
+                        status: s.status,
+                        late_minutes: s.late_minutes || 0,
+                        departure_status: s.departure_status || 'NOT_DEPARTED',
+                        check_in_time: s.check_in_time || (s.status === 'PRESENT' || s.status === 'LATE' ? '08:00' : null),
+                        check_out_time: s.check_out_time || null,
+                        departure_reason: s.departure_reason || null,
+                        absence_reason: s.absence_reason || null,
+                        record_date: recordDate,
+                        client_uuid: (window.IIIS_OFFLINE ? window.IIIS_OFFLINE.generateUUID() : null),
+                    }));
+
+                    // If offline, directly queue in IndexedDB
+                    if (!navigator.onLine && window.IIIS_OFFLINE) {
+                        try {
+                            await window.IIIS_OFFLINE.queueBatch(recordsPayload, recordDate);
+                            await this.checkOfflineAttendanceQueue();
+                            this.showToast(`وضع عدم الاتصال: تم حفظ (${recordsPayload.length}) حركة محلياً في الذاكرة (IndexedDB). ستتم المزامنة تلقائياً عند عودة الشبكة.`);
+                        } catch (offlineErr) {
+                            console.error('Offline queuing failed:', offlineErr);
+                            this.showToast('تعذر حفظ البيانات في الذاكرة المحلية');
+                        } finally {
+                            this.attendance.sheet.saving = false;
+                        }
+                        return;
+                    }
+
                     try {
                         const payload = {
-                            date: this.attendance.filters.date || this.getTodayDateString(),
+                            date: recordDate,
                             academic_year_id: this.selectedAcademicYearId || null,
                             branch_id: this.attendance.filters.branch_id || null,
-                            records: this.attendance.sheet.students.map(s => ({
-                                student_id: s.student_id,
-                                status: s.status,
-                                late_minutes: s.late_minutes || 0,
-                                departure_status: s.departure_status || 'NOT_DEPARTED',
-                                check_in_time: s.check_in_time || (s.status === 'PRESENT' || s.status === 'LATE' ? '08:00' : null),
-                                check_out_time: s.check_out_time || null,
-                                departure_reason: s.departure_reason || null,
-                                absence_reason: s.absence_reason || null,
-                            }))
+                            records: recordsPayload
                         };
 
                         const res = await fetch('/api/v1/attendance/batch-save', {
@@ -2047,7 +2161,15 @@
                             this.showToast(data.message || 'تعذر حفظ سجل الحضور');
                         }
                     } catch (e) {
-                        console.error('Error saving attendance:', e);
+                        console.error('Error saving attendance, falling back to IndexedDB:', e);
+                        if (window.IIIS_OFFLINE) {
+                            try {
+                                await window.IIIS_OFFLINE.queueBatch(recordsPayload, recordDate);
+                                await this.checkOfflineAttendanceQueue();
+                                this.showToast(`تعذر الاتصال بالخادم: تم تأمين وحفظ (${recordsPayload.length}) حركة في مخزن المتصفح المحلي (IndexedDB).`);
+                                return;
+                            } catch (_) {}
+                        }
                         this.showToast('خطأ أثناء حفظ سجل الحضور');
                     } finally {
                         this.attendance.sheet.saving = false;

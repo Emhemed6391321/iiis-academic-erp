@@ -3,6 +3,13 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>البوابة الإلكترونية للمعهد التخصصي للدراسات الإسلامية (IIIS Enterprise ERP)</title>
     
+    <!-- PWA Web App Manifest & Mobile Integration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#14268d">
+    
+    <!-- Offline Attendance Engine (IndexedDB + PWA Sync) -->
+    <script src="/js/offline-attendance.js"></script>
+    
     <!-- Tailwind CSS with Dark Mode Support (Local + CDN Fallback) -->
     <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>

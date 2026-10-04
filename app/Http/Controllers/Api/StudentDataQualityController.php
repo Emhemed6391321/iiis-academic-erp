@@ -311,6 +311,11 @@ class StudentDataQualityController extends Controller
 
             foreach ($students as $idx => $s) {
                 $missingLabels = implode(' | ', array_column($s['missing_fields'], 'label'));
+                $rawPhone = (string)($s['phone'] ?? '');
+                $maskedPhone = (strlen($rawPhone) >= 9)
+                    ? substr($rawPhone, 0, 3) . '****' . substr($rawPhone, -3)
+                    : ($rawPhone ?: '—');
+
                 fputcsv($handle, [
                     $idx + 1,
                     $s['academic_number'],
@@ -319,7 +324,7 @@ class StudentDataQualityController extends Controller
                     $s['study_year_name'],
                     $s['department_name'],
                     $s['gender'],
-                    $s['phone'],
+                    $maskedPhone,
                     $s['missing_count'],
                     $missingLabels,
                 ]);

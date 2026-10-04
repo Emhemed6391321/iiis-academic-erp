@@ -391,7 +391,18 @@ class BusinessLogicPhaseTwoTest extends TestCase
         ]);
 
         $acceptResponse->assertOk();
+        // Stage 3 alone must NOT move the student (4-stage handshake)
+        $this->assertEquals('DESTINATION_BRANCH_ACCEPTED', $transfer->fresh()->transfer_stage);
+        $this->assertEquals($this->branch1->id, $student->fresh()->branch_id);
+
+        // Stage 4: HQ final sovereign approval executes the transfer
+        $finalResponse = $this->actingAs($this->hqAdmin)->postJson("/api/v1/student-workflow/transfer-request/{$transfer->id}/step", [
+            'step'  => 'HQ_FINAL',
+            'notes' => 'اعتماد نهائي من الإدارة المركزية',
+        ]);
+        $finalResponse->assertOk();
         $this->assertEquals('APPROVED', $transfer->fresh()->status);
+        $this->assertEquals('HQ_FINAL_APPROVED', $transfer->fresh()->transfer_stage);
         $this->assertEquals($this->branch2->id, $student->fresh()->branch_id);
     }
 }

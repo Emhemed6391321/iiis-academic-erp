@@ -12,6 +12,51 @@ use Illuminate\Validation\Rule;
 class UserProfileController extends Controller
 {
     /**
+     * Central Auth & User Context Payload for RBAC & SPA State (/api/v1/auth/me).
+     */
+    public function me(): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: يجب تسجيل الدخول.',
+            ], 401);
+        }
+
+        $user->load(['role.permissions', 'branch']);
+
+        return response()->json([
+            'success' => true,
+            'role'           => $user->role?->name,
+            'scope'          => $user->hasGlobalAccessScope() ? 'HQ' : 'BRANCH',
+            'branch_id'      => $user->branch_id,
+            'permissions'    => $user->getAllPermissionsList(),
+            'user' => [
+                'id'             => $user->id,
+                'name'           => $user->name,
+                'email'          => $user->email,
+                'phone'          => $user->phone ?? '',
+                'national_id'    => $user->national_id ?? '',
+                'is_super_admin' => $user->isSuperAdmin(),
+                'is_hq'          => $user->isHQ(),
+                'branch_id'      => $user->branch_id,
+                'branch_name'    => $user->branch?->name ?? 'الإدارة المركزية العامة',
+                'branch_code'    => $user->branch?->code ?? 'HQ',
+                'scope'          => $user->hasGlobalAccessScope() ? 'HQ' : 'BRANCH',
+                'role'           => $user->role ? [
+                    'id'           => $user->role->id,
+                    'name'         => $user->role->name,
+                    'display_name' => $user->role->display_name,
+                    'scope_type'   => $user->role->scope_type,
+                ] : null,
+                'permissions'    => $user->getAllPermissionsList(),
+            ],
+        ]);
+    }
+
+    /**
      * Get authenticated user profile details.
      */
     public function getProfile(): JsonResponse
