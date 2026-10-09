@@ -33,15 +33,25 @@
                             this.currentTourStep--;
                         }
                     },
+                    // Runs a no-argument method of the root app component by name ("loadCourses()").
+                    // Only that exact shape is accepted, so no arbitrary string is ever evaluated.
+                    runAction(action) {
+                        const match = /^([A-Za-z_$][\w$]*)\(\)$/.exec(String(action || '').trim());
+                        if (!match) return;
+                        const root = (window.Alpine && Alpine.$data) ? Alpine.$data(document.documentElement) : null;
+                        if (root && typeof root[match[1]] === 'function') {
+                            try { root[match[1]](); } catch (e) { console.warn('Action error:', e); }
+                        } else {
+                            console.warn('Unknown procedure action:', action);
+                        }
+                    },
                     executeStepAction(proc) {
                         const target = proc.targetSection;
                         const action = proc.targetAction;
                         this.closeTour();
                         this.currentSection = target;
                         if (action) {
-                            setTimeout(() => {
-                                try { eval(action); } catch(e) { console.warn('Action error:', e); }
-                            }, 150);
+                            setTimeout(() => this.runAction(action), 150);
                         }
                     },
                     systems: [
@@ -1060,7 +1070,7 @@
                                         </button>
 
                                         <!-- Quick Launch Execution Button -->
-                                        <button @click.stop="currentSection = proc.targetSection; if(proc.targetAction) eval(proc.targetAction);"
+                                        <button @click.stop="currentSection = proc.targetSection; if(proc.targetAction) runAction(proc.targetAction);"
                                                 class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20 hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap">
                                             <span x-text="proc.targetLabel"></span>
                                         </button>
