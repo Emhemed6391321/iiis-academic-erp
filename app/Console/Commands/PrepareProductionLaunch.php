@@ -10,11 +10,17 @@ use Illuminate\Support\Facades\Hash;
 
 class PrepareProductionLaunch extends Command
 {
-    protected $signature = 'app:prepare-production-launch {--force : تخطي التأكيد والمسح الفوري} {--keep-courses : الاحتفاظ بالمقررات الدراسية الرسمية والسنوات الدراسية}';
+    use \App\Console\Commands\Concerns\GuardsDestructiveRuns;
+
+    protected $signature = 'app:prepare-production-launch {--allow-production : السماح بالتنفيذ في بيئة الإنتاج (يتطلب تأكيداً تفاعلياً)} {--force : تخطي التأكيد والمسح الفوري} {--keep-courses : الاحتفاظ بالمقررات الدراسية الرسمية والسنوات الدراسية}';
     protected $description = 'تجهيز المنظومة للبدء الفعلي: مسح كافة الفروع والطلاب والدرجات والتقييمات مع الحفاظ على حساب المدير العام';
 
     public function handle(): int
     {
+        if (!$this->destructiveRunAllowed()) {
+            return 1;
+        }
+
         $this->warn('===============================================================');
         $this->warn('   تحذير: هذا الأمر سيقوم بتفريغ البيانات التشغيلية للبدء الفعلي   ');
         $this->warn('===============================================================');
@@ -25,6 +31,8 @@ class PrepareProductionLaunch extends Command
         }
 
         $this->info('جاري تجهيز النظام للتشغيل الفعلي...');
+
+        $generatedAdminPassword = null;
 
         // تعطيل قيود المفاتيح الأجنبية مؤقتاً لتنظيف آمن
         if (DB::getDriverName() === 'sqlite') {
@@ -99,12 +107,13 @@ class PrepareProductionLaunch extends Command
                 $admin->branch_id = null;
                 $admin->national_id = '119780000001';
                 $admin->is_active = true;
-                $admin->must_change_password = false;
+                $generatedAdminPassword = \Illuminate\Support\Str::password(20, true, true, true, false);
+                $admin->must_change_password = true;
                 $admin->two_factor_enabled = false;
-                $admin->password = '112200225124';
+                $admin->password = $generatedAdminPassword;
                 $admin->save();
 
-                $this->line('✓ تم الحفاظ على حساب المدير العام (admin@iiis.sch.ly) بكلمة المرور: 112200225124');
+                $this->line('✓ تم الحفاظ على حساب المدير العام (admin@iiis.sch.ly) وتوليد كلمة مرور مؤقتة جديدة.');
             }
 
             // 5. مسح سجلات تتبع الأخطاء والتنبيهات المؤقتة
@@ -118,7 +127,9 @@ class PrepareProductionLaunch extends Command
             $this->info('   >>> تم تفريغ النظام بنجاح تام! المنظومة جاهزة للعمل الفعلي <<<   ');
             $this->info('===============================================================');
             $this->info('الحساب الفعال: admin@iiis.sch.ly');
-            $this->info('كلمة المرور: 112200225124');
+            if ($generatedAdminPassword) {
+                $this->info("كلمة المرور المؤقتة (تظهر مرة واحدة فقط، وسيُطلب تغييرها عند أول دخول): {$generatedAdminPassword}");
+            }
             $this->info('كافة الجداول التشغيلية (الطلاب، الفروع، الدرجات، العقود) فارغة ونظيفة 100%.');
 
         } catch (\Throwable $e) {
