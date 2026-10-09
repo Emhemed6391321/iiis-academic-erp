@@ -172,8 +172,8 @@
                     this.userProfile.errorMessage = '';
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const res = await fetch('/api/v1/profile', {
-                            method: 'PUT',
+                        const res = await fetch('/api/v1/user/profile', {
+                            method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
@@ -207,8 +207,8 @@
                     this.userProfile.passwordErrorMessage = '';
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                        const res = await fetch('/api/v1/profile/password', {
-                            method: 'PUT',
+                        const res = await fetch('/api/v1/user/password', {
+                            method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
@@ -6030,7 +6030,7 @@ async loadBranchOperations() {
                         if (modal.notes) formData.append('notes', modal.notes);
                         if (modal.issueDate) formData.append('issue_date', modal.issueDate);
 
-                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/documents`, {
+                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/file/documents`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -6056,7 +6056,7 @@ async loadBranchOperations() {
                 async sfDeleteDoc(docId) {
                     if (!confirm('هل أنت متأكد من حذف هذا المستند؟')) return;
                     try {
-                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/documents/${docId}`, {
+                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/file/documents/${docId}`, {
                             method: 'DELETE',
                             headers: {
                                 'Accept': 'application/json',
@@ -6096,14 +6096,18 @@ async loadBranchOperations() {
                         return;
                     }
                     try {
-                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/behaviors`, {
+                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/file/behaviors`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                             },
-                            body: JSON.stringify(this.studentFile.behaviorForm)
+                            body: JSON.stringify({
+                                violation_type: this.studentFile.behaviorForm.type,
+                                warning_level: { LOW: 'LEVEL_1', MEDIUM: 'LEVEL_2', HIGH: 'LEVEL_3' }[this.studentFile.behaviorForm.level] || 'LEVEL_1',
+                                description: this.studentFile.behaviorForm.description
+                            })
                         });
                         const json = await res.json();
                         if (res.ok) {
@@ -6698,7 +6702,7 @@ async loadBranchOperations() {
                     modal.submitting = true;
                     try {
                         const res = await fetch(`/api/v1/system-errors/${modal.error.id}/status`, {
-                            method: 'PUT',
+                            method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Accept': 'application/json',
@@ -6806,7 +6810,7 @@ async loadBranchOperations() {
                 async saveYearDates() {
                     this.isSaving = true;
                     try {
-                        const res = await fetch('/api/v1/settings/year-dates', {
+                        const res = await fetch('/api/v1/settings/update-year-dates', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -7194,14 +7198,14 @@ async loadBranchOperations() {
                         return;
                     }
                     try {
-                        const res = await fetch('/api/v1/settings/calendar-events', {
+                        const res = await fetch('/api/v1/settings/calendar-event', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                academic_year_id: this.selectedAcademicYearId,
+                                year_id: this.selectedAcademicYearId,
                                 ...this.newEventForm
                             })
                         });
@@ -7220,7 +7224,7 @@ async loadBranchOperations() {
                 async deleteCalendarEvent(id) {
                     if (!confirm('هل أنت متأكد من حذف هذا الحدث من التقويم الدراسي؟')) return;
                     try {
-                        const res = await fetch(`/api/v1/settings/calendar-events/${id}`, {
+                        const res = await fetch(`/api/v1/settings/calendar-event/${id}`, {
                             method: 'DELETE',
                             headers: { 'Accept': 'application/json' }
                         });
@@ -7241,14 +7245,14 @@ async loadBranchOperations() {
                         return;
                     }
                     try {
-                        const res = await fetch('/api/v1/settings/calendar-schedules', {
+                        const res = await fetch('/api/v1/settings/schedule-event', {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                academic_year_id: this.selectedAcademicYearId,
+                                year_id: this.selectedAcademicYearId,
                                 ...this.newScheduleForm
                             })
                         });
@@ -7267,7 +7271,7 @@ async loadBranchOperations() {
                 async deleteCalendarSchedule(id) {
                     if (!confirm('هل أنت متأكد من حذف هذا الأسبوع من الخطة الزمنية؟')) return;
                     try {
-                        const res = await fetch(`/api/v1/settings/calendar-schedules/${id}`, {
+                        const res = await fetch(`/api/v1/settings/schedule-event/${id}`, {
                             method: 'DELETE',
                             headers: { 'Accept': 'application/json' }
                         });
