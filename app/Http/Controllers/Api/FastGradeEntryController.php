@@ -191,6 +191,12 @@ class FastGradeEntryController extends Controller
             'grades' => 'required|array',
             'grades.*.id' => 'nullable|exists:student_grades,id',
             'grades.*.student_id' => 'nullable|exists:students,id',
+            'grades.*.coursework' => 'nullable|numeric|min:0',
+            'grades.*.midterm' => 'nullable|numeric|min:0',
+            'grades.*.final_exam' => 'nullable|numeric|min:0',
+            'grades.*.coursework_grade' => 'nullable|numeric|min:0',
+            'grades.*.midterm_grade' => 'nullable|numeric|min:0',
+            'grades.*.final_exam_grade' => 'nullable|numeric|min:0',
             'reason' => 'nullable|string|max:255',
         ]);
 
@@ -268,7 +274,10 @@ class FastGradeEntryController extends Controller
 
             foreach ($request->grades as $item) {
                 if (!empty($item['id'])) {
-                    $grade = StudentGrade::lockForUpdate()->findOrFail($item['id']);
+                    // The row must belong to the batch that passed the branch/window checks above.
+                    $grade = StudentGrade::lockForUpdate()
+                        ->where('grade_batch_id', $batch->id)
+                        ->findOrFail($item['id']);
                 } elseif (!empty($item['student_id'])) {
                     $grade = StudentGrade::lockForUpdate()
                         ->where('grade_batch_id', $batch->id)

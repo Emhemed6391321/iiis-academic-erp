@@ -12,20 +12,31 @@ class SecurityHeadersMiddleware
     {
         $response = $next($request);
 
-        $response->headers->set('X-Frame-Options', 'DENY');
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-XSS-Protection', '1; mode=block');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        // CSP supporting Alpine.js, Tailwind CDN/fonts, Leaflet maps, and Chart.js
-        $csp = "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; " .
-               "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; " .
-               "style-src 'self' 'unsafe-inline' blob: data: https://cdn.tailwindcss.com https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " .
-               "img-src 'self' data: blob: https:; " .
-               "font-src 'self' data: blob: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " .
-               "connect-src 'self' data: blob: https: ws: wss:; " .
-               "frame-ancestors 'none';";
+        // Content-Security-Policy.
+        // script-src still needs 'unsafe-inline'/'unsafe-eval': the dashboard ships large inline scripts and
+        // Alpine.js' standard build compiles x-* expressions with new Function(). Removing both means moving to
+        // nonces + the @alpinejs/csp build. Everything else is closed down to what the pages actually load:
+        // Tailwind/Alpine/Leaflet/xlsx CDNs (fallbacks), Google Fonts, OSM map tiles and the QR image service.
+        $csp = "default-src 'self'; " .
+               "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; " .
+               "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://unpkg.com; " .
+               "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://api.qrserver.com https://unpkg.com; " .
+               "font-src 'self' data: https://fonts.gstatic.com; " .
+               "connect-src 'self'; " .
+               "frame-src 'self' blob: data:; " .
+               "worker-src 'self' blob:; " .
+               "manifest-src 'self'; " .
+               "media-src 'self' blob: data:; " .
+               "object-src 'none'; " .
+               "base-uri 'self'; " .
+               "form-action 'self'; " .
+               "frame-ancestors 'self';";
         $response->headers->set('Content-Security-Policy', $csp);
 
         if ($request->isSecure() || app()->environment('production')) {

@@ -29,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Production hard-gate: the shield bypass secret must never exist in production.
+        if ($this->app->environment('production') && !empty(config('app.dev_bypass_secret'))) {
+            throw new \RuntimeException('CRITICAL SECURITY VIOLATION: DEV_BYPASS is strictly prohibited in production environment.');
+        }
+
         // RBAC Universal Gate Hook
         \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
             if ($user && method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {

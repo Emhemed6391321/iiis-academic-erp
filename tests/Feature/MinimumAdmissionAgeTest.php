@@ -20,6 +20,8 @@ class MinimumAdmissionAgeTest extends TestCase
     {
         parent::setUp();
         $this->seed(\Database\Seeders\AcademicSystemSeeder::class);
+        // Seeded accounts require a password change, which the API now enforces.
+        \App\Models\User::query()->update(['must_change_password' => false]);
     }
 
     public function test_student_younger_than_15_years_is_rejected()

@@ -37,6 +37,17 @@ class BusinessLogicPhaseTwoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(); // roles need their seeded permissions
+        // Keep roles/permissions only; this suite builds its own fixtures.
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+        foreach (['student_grades', 'grade_batches', 'student_attendance', 'student_status_history', 'student_transfers', 'students', 'users', 'courses', 'operational_windows', 'academic_years', 'study_years', 'departments', 'branches'] as $table) {
+            if (\Illuminate\Support\Facades\Schema::hasTable($table)) {
+                \Illuminate\Support\Facades\DB::table($table)->delete();
+            }
+        }
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+        // The seeded registrar role cannot act on transfers; this suite exercises the receiving-branch step.
+        \App\Models\Role::where('name', 'branch_registrar')->first()->permissions()->syncWithoutDetaching(\App\Models\Permission::where('code', 'students.transfer')->pluck('id'));
         Storage::fake('vault');
         Storage::fake('public');
 

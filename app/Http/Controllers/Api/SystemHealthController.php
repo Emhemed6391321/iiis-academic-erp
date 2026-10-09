@@ -119,7 +119,7 @@ class SystemHealthController extends Controller
             'environment'         => app()->environment(),
             'debug_mode'          => config('app.debug'),
             'dev_bypass_blocked'  => app()->environment('production') ? (empty(env('DEV_BYPASS_SECRET'))) : true,
-            'mfa_policy'          => 'ENFORCED',
+            'mfa_policy'          => config('auth.mfa_enabled', false) ? 'ENFORCED' : 'DISABLED',
             'session_timeout_min' => 30,
         ];
 

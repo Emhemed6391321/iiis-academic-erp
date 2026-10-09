@@ -41,7 +41,7 @@ class SystemErrorMonitoringSecurityTest extends TestCase
         $res = $this->actingAs($branchManager)->getJson('/api/v1/system-errors');
         $res->assertStatus(403)
             ->assertJson([
-                'status' => 'error',
+                'success' => false,
             ]);
     }
 
