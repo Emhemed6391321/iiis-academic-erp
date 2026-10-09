@@ -151,14 +151,8 @@
     <header class="w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 py-3 px-4 sm:px-8 shadow-xs sticky top-0 z-30">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             
-            <!-- Institution Brand (Logo + Official Titles) -->
+            <!-- Institution Brand (Official Titles) -->
             <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1.5 border border-slate-200/90 shadow-xs flex items-center justify-center flex-shrink-0">
-                    <img src="{{ $logoUrl }}" 
-                         alt="شعار المعهد" 
-                         class="w-full h-full object-contain"
-                         onerror="this.onerror=null; this.src='/images/logo.png';">
-                </div>
                 <div>
                     <div class="text-xs sm:text-sm font-black text-slate-900 leading-tight flex items-center gap-2">
                         <span>{{ $instituteName }}</span>
@@ -197,18 +191,7 @@
                 <div class="absolute top-0 right-0 left-0 h-1.5 bg-gradient-to-r from-[#2b78a5] via-[#14268d] to-[#d97706]"></div>
 
                 <!-- Institute Logo & Emblem Header -->
-                <div class="text-center mb-8 pt-2">
-                    
-                    <!-- Circular Glowing Logo Container -->
-                    <div class="relative inline-block mb-3.5">
-                        <div class="absolute -inset-1.5 rounded-2xl bg-gradient-to-tr from-[#2b78a5] to-[#f59e0b] opacity-25 blur-sm"></div>
-                        <div class="relative w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-white dark:bg-slate-800 p-2.5 border-2 border-slate-100 dark:border-slate-700 shadow-md flex items-center justify-center mx-auto">
-                            <img src="{{ $logoUrl }}" 
-                                 alt="شعار المعهد" 
-                                 class="w-full h-full object-contain"
-                                 onerror="this.onerror=null; this.src='/images/logo.png';">
-                        </div>
-                    </div>
+                <div class="text-center mb-6 pt-2">
 
                     <!-- Titles Directly from Central Governance Settings -->
                     <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1.5">
