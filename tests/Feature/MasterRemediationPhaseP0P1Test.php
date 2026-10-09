@@ -34,6 +34,7 @@ class MasterRemediationPhaseP0P1Test extends TestCase
         $branch2 = Branch::firstOrCreate(['id' => 2], ['name' => 'فرع بنغازي', 'code' => 'BEN', 'is_active' => true]);
 
         $role = Role::firstOrCreate(['name' => 'branch_employee'], ['display_name' => 'موظف فرع', 'is_global' => false]);
+        $role->permissions()->syncWithoutDetaching(\App\Models\Permission::where('code', 'grades.enter_coursework')->pluck('id'));
         $user = User::factory()->create([
             'branch_id' => $branch1->id,
             'role_id' => $role->id,
@@ -113,7 +114,7 @@ class MasterRemediationPhaseP0P1Test extends TestCase
             ]);
 
         $response->assertStatus(403);
-        $this->assertStringContainsString('إجراء محظور', $response->json('message'));
+        $this->assertStringContainsString('غير مصرح', $response->json('message'));
     }
 
     public function test_import_batch_rejects_duplicate_national_id_inside_same_file(): void
@@ -121,6 +122,8 @@ class MasterRemediationPhaseP0P1Test extends TestCase
         $branch = Branch::first();
         $user = User::factory()->create([
             'branch_id' => $branch ? $branch->id : 1,
+            'role_id' => Role::where('name', 'branch_registrar')->value('id'),
+            'must_change_password' => false,
         ]);
 
         $dupNationalId = '119999888877';

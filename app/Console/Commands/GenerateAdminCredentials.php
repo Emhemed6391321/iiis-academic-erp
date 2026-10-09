@@ -26,14 +26,14 @@ class GenerateAdminCredentials extends Command
                     ['name' => 'super_admin'],
                     ['display_name' => 'المدير العام', 'scope_type' => 'GLOBAL_SCOPE']
                 );
-                $initialPass = $specifiedPassword ?: '112200225124';
+                $initialPass = $specifiedPassword ?: Str::password(20, true, true, true, false);
                 $user = User::create([
                     'name' => 'المدير العام للمعهد التخصصي',
                     'email' => $email,
                     'national_id' => '119780000001',
                     'role_id' => $role->id,
                     'is_active' => true,
-                    'must_change_password' => false,
+                    'must_change_password' => $specifiedPassword ? false : true,
                     'two_factor_enabled' => false,
                     'two_factor_secret' => null,
                     'two_factor_confirmed_at' => null,

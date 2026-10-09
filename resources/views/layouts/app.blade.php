@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- TailwindCSS & Alpine.js -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -46,7 +46,7 @@
             }
         }
     </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="/js/alpine.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
 
     <!-- Custom CSS for Mobile Touch & RTL Sticky Components -->
     <style>

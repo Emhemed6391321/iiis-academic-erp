@@ -19,6 +19,8 @@ class BranchDataIsolationTest extends TestCase
     {
         parent::setUp();
         $this->seed(\Database\Seeders\AcademicSystemSeeder::class);
+        // Seeded accounts require a password change, which the API now enforces.
+        \App\Models\User::query()->update(['must_change_password' => false]);
     }
 
     public function test_branch_user_only_sees_students_from_own_branch()

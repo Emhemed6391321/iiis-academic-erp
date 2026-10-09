@@ -24,6 +24,8 @@ class GradeControlAndForensicAuditTest extends TestCase
     {
         parent::setUp();
         $this->seed(\Database\Seeders\AcademicSystemSeeder::class);
+        // Seeded accounts require a password change, which the API now enforces.
+        \App\Models\User::query()->update(['must_change_password' => false]);
     }
 
     public function test_grade_entry_logs_audit_trail_and_enforces_immutability()

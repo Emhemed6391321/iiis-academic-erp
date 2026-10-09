@@ -61,13 +61,64 @@ class AbsenceCalculationEngineService
         $attendanceStats = StudentAttendance::where('student_id', $student->id)
             ->when($currentYear, fn($q) => $q->where('academic_year_id', $currentYear->id))
             ->selectRaw('
-                SUM(CASE WHEN status IN ("ABSENT", "ABSENT_UNEXCUSED", "absent") THEN 1 ELSE 0 END) as unexcused_count,
-                SUM(CASE WHEN status IN ("EXCUSED", "ABSENT_EXCUSED", "excused") THEN 1 ELSE 0 END) as excused_count
+                SUM(CASE WHEN status IN (\'ABSENT\', \'ABSENT_UNEXCUSED\', \'absent\') THEN 1 ELSE 0 END) as unexcused_count,
+                SUM(CASE WHEN status IN (\'EXCUSED\', \'ABSENT_EXCUSED\', \'excused\') THEN 1 ELSE 0 END) as excused_count
             ')
             ->first();
 
-        $unexcusedDays = (int) ($attendanceStats->unexcused_count ?? 0);
-        $excusedDays = (int) ($attendanceStats->excused_count ?? 0);
+        return $this->buildMetrics(
+            $totalSemesterDays,
+            (int) ($attendanceStats->unexcused_count ?? 0),
+            (int) ($attendanceStats->excused_count ?? 0)
+        );
+    }
+
+    /**
+     * Same result as evaluateStudentAbsence() for many students using a fixed number of
+     * queries (instead of ~3 per student). Keyed by student id.
+     *
+     * @param  iterable<Student>  $students
+     * @return array<int, array>
+     */
+    public function evaluateStudents(iterable $students, ?int $academicYearId = null): array
+    {
+        $currentYear = $academicYearId
+            ? AcademicYear::find($academicYearId)
+            : AcademicYear::where('is_current', true)->first();
+
+        $students = collect($students);
+        if ($students->isEmpty()) {
+            return [];
+        }
+
+        $counts = StudentAttendance::whereIn('student_id', $students->pluck('id')->all())
+            ->when($currentYear, fn($q) => $q->where('academic_year_id', $currentYear->id))
+            ->selectRaw('
+                student_id,
+                SUM(CASE WHEN status IN (\'ABSENT\', \'ABSENT_UNEXCUSED\', \'absent\') THEN 1 ELSE 0 END) as unexcused_count,
+                SUM(CASE WHEN status IN (\'EXCUSED\', \'ABSENT_EXCUSED\', \'excused\') THEN 1 ELSE 0 END) as excused_count
+            ')
+            ->groupBy('student_id')
+            ->get()
+            ->keyBy('student_id');
+
+        $daysByBranch = [];
+        $result = [];
+        foreach ($students as $student) {
+            $daysByBranch[$student->branch_id] ??= $this->getSemesterInstructionalDays($student->branch_id, $currentYear?->id);
+            $row = $counts->get($student->id);
+            $result[$student->id] = $this->buildMetrics(
+                $daysByBranch[$student->branch_id],
+                (int) ($row->unexcused_count ?? 0),
+                (int) ($row->excused_count ?? 0)
+            );
+        }
+
+        return $result;
+    }
+
+    private function buildMetrics(int $totalSemesterDays, int $unexcusedDays, int $excusedDays): array
+    {
         $totalAbsenceDays = $unexcusedDays; // الحرمان يُحسب على الغياب غير المبرر
 
         $absencePercentage = $totalSemesterDays > 0 

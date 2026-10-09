@@ -37,7 +37,8 @@ class SecureVaultDownloadController extends Controller
         $encodedPath = $request->query('path');
         $vaultPath = base64_decode($encodedPath);
 
-        if (!$vaultPath || !str_starts_with($vaultPath, 'secure_vault/')) {
+        if (!$vaultPath || !str_starts_with($vaultPath, 'secure_vault/')
+            || str_contains($vaultPath, '..') || str_contains($vaultPath, '\\') || str_contains($vaultPath, "\0")) {
             return response()->json(['success' => false, 'message' => 'مسار الملف غير مصرح به.'], 400);
         }
 

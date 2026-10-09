@@ -15,11 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            \App\Http\Middleware\CompressResponse::class,
             \App\Http\Middleware\SecurityHeadersMiddleware::class,
             \App\Http\Middleware\SessionIdleTimeoutMiddleware::class,
         ]);
 
         $middleware->api(prepend: [
+            \App\Http\Middleware\RejectCrossSiteApiWrites::class,
             \Illuminate\Cookie\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
@@ -27,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(append: [
+            \App\Http\Middleware\CompressResponse::class,
+            \App\Http\Middleware\SessionIdleTimeoutMiddleware::class,
             \App\Http\Middleware\SecurityHeadersMiddleware::class,
         ]);
 
@@ -40,7 +44,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Trust proxies to prevent IP spoofing behind reverse proxies (Requirement 1.7)
-        $middleware->trustProxies(at: '*');
+        $proxies = env('TRUSTED_PROXIES');
+        if (!empty($proxies)) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)));
+        }
     })
 
     ->withExceptions(function (Exceptions $exceptions): void {

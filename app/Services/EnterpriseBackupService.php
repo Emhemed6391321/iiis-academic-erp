@@ -179,13 +179,23 @@ class EnterpriseBackupService
 
         $tablesCount = 0;
 
-        if ($dbConnection === 'sqlite' && $dbPath !== ':memory:' && File::exists($dbPath)) {
+        $driver = (string) config("database.connections.{$dbConnection}.driver", $dbConnection);
+
+        if ($driver === 'sqlite' && $dbPath !== ':memory:' && File::exists($dbPath)) {
             $destFile = "{$destDbDir}/database_{$timestamp}.sqlite";
-            File::copy($dbPath, $destFile);
+
+            // VACUUM INTO writes a transactionally consistent snapshot (including WAL content),
+            // unlike copying the file while requests are still writing to it.
+            try {
+                $pdo = DB::connection($dbConnection)->getPdo();
+                $pdo->exec('VACUUM INTO ' . $pdo->quote($destFile));
+            } catch (Throwable $e) {
+                Log::warning('Backup: VACUUM INTO unavailable, falling back to file copy: ' . $e->getMessage());
+                File::copy($dbPath, $destFile);
+            }
             $sha256 = hash_file('sha256', $destFile);
 
-            $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            $tablesCount = count($tables);
+            $tablesCount = count(Schema::getTableListing());
 
             return [
                 'driver'       => 'sqlite',
@@ -194,27 +204,76 @@ class EnterpriseBackupService
                 'size_bytes'   => File::size($destFile),
                 'tables_count' => $tablesCount,
             ];
-        } else {
-            // In-memory sqlite or MySQL/PostgreSQL
-            $destFile = "{$destDbDir}/database_{$timestamp}.sql";
-            $dataSql = "-- IIIS Database Export: " . Carbon::now()->toDateTimeString() . "\n";
+        }
 
-            try {
-                $tables = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-                $tablesCount = count($tables);
-            } catch (\Throwable $e) {
-                $tablesCount = 10;
+        if (in_array($driver, ['mysql', 'mariadb', 'pgsql'], true)) {
+            $destFile = "{$destDbDir}/database_{$timestamp}.sql";
+            self::runDatabaseTool($driver, $dbConnection, 'dump', $destFile);
+
+            if (!File::exists($destFile) || File::size($destFile) < 100) {
+                throw new Exception('أداة تفريغ قاعدة البيانات لم تُنتج ملفاً صالحاً؛ أُلغي النسخ الاحتياطي لتفادي نسخة فارغة.');
             }
 
-            File::put($destFile, $dataSql);
-
             return [
-                'driver'       => $dbConnection,
+                'driver'       => $driver,
                 'file_name'    => basename($destFile),
                 'sha256'       => hash_file('sha256', $destFile),
                 'size_bytes'   => File::size($destFile),
-                'tables_count' => $tablesCount,
+                'tables_count' => count(Schema::getTableListing()),
             ];
+        }
+
+        // In-memory sqlite (tests only): there is nothing durable to export.
+        $destFile = "{$destDbDir}/database_{$timestamp}.sql";
+        File::put($destFile, "-- IIIS Database Export: " . Carbon::now()->toDateTimeString() . "\n");
+
+        return [
+            'driver'       => $dbConnection,
+            'file_name'    => basename($destFile),
+            'sha256'       => hash_file('sha256', $destFile),
+            'size_bytes'   => File::size($destFile),
+            'tables_count' => count(Schema::getTableListing()),
+        ];
+    }
+
+    /**
+     * Run mysqldump/mysql or pg_dump/psql for the given connection.
+     * $mode 'dump' writes $file; 'restore' reads it. Passwords go through the environment, never argv.
+     */
+    protected static function runDatabaseTool(string $driver, string $connection, string $mode, string $file): void
+    {
+        $cfg = config("database.connections.{$connection}");
+        $isPg = $driver === 'pgsql';
+        $binDir = rtrim((string) ($cfg['dump']['dump_binary_path'] ?? ''), '/\\');
+        $bin = fn (string $name) => ($binDir !== '' ? $binDir . DIRECTORY_SEPARATOR : '') . $name;
+
+        if ($isPg) {
+            $env = ['PGPASSWORD' => (string) ($cfg['password'] ?? '')];
+            $common = ['-h', (string) $cfg['host'], '-p', (string) ($cfg['port'] ?? 5432), '-U', (string) $cfg['username']];
+            $command = $mode === 'dump'
+                ? array_merge([$bin('pg_dump')], $common, ['--no-owner', '--clean', '--if-exists', '-f', $file, (string) $cfg['database']])
+                : array_merge([$bin('psql')], $common, ['-v', 'ON_ERROR_STOP=1', '-f', $file, (string) $cfg['database']]);
+        } else {
+            $env = ['MYSQL_PWD' => (string) ($cfg['password'] ?? '')];
+            $common = ['-h', (string) $cfg['host'], '-P', (string) ($cfg['port'] ?? 3306), '-u', (string) $cfg['username']];
+            $command = $mode === 'dump'
+                ? array_merge([$bin('mysqldump')], $common, ['--single-transaction', '--routines', '--no-tablespaces', '--result-file=' . $file, (string) $cfg['database']])
+                : array_merge([$bin('mysql')], $common, [(string) $cfg['database']]);
+        }
+
+        $process = new \Symfony\Component\Process\Process($command, null, $env, null, 600);
+        if ($mode === 'restore' && !$isPg) {
+            $process->setInput(fopen($file, 'r'));
+        }
+
+        try {
+            $process->run();
+        } catch (Throwable $e) {
+            throw new Exception("تعذر تشغيل أداة قاعدة البيانات ({$command[0]}): تأكد من تثبيتها أو ضبط مسارها في database.connections.{$connection}.dump.dump_binary_path");
+        }
+
+        if (!$process->isSuccessful()) {
+            throw new Exception('فشلت أداة قاعدة البيانات: ' . trim(substr($process->getErrorOutput(), 0, 500)));
         }
     }
 
@@ -386,23 +445,33 @@ class EnterpriseBackupService
             }
             $manifest = json_decode(File::get($manifestFile), true);
 
-            // Restore Database if SQLite
+            // Restore the database
             $dbConnection = config('database.default');
             $dbPath = config("database.connections.{$dbConnection}.database");
+            $driver = (string) config("database.connections.{$dbConnection}.driver", $dbConnection);
+            $snapshotName = $manifest['database']['file_name'] ?? null;
+            $snapshotFile = $snapshotName ? "{$tempExtractDir}/database/" . $snapshotName : null;
 
             $restoredDb = false;
-            if ($dbConnection === 'sqlite' && !empty($manifest['database']['file_name'])) {
+            if ($driver === 'sqlite') {
                 if ($dbPath === ':memory:' || empty($dbPath)) {
                     $restoredDb = true;
-                } else {
-                    $snapshotFile = "{$tempExtractDir}/database/" . $manifest['database']['file_name'];
-                    if (File::exists($snapshotFile)) {
-                        File::copy($snapshotFile, $dbPath);
-                        $restoredDb = true;
+                } elseif ($snapshotFile && File::exists($snapshotFile)) {
+                    // Keep the database we are about to overwrite so a bad restore can be undone.
+                    if (File::exists($dbPath)) {
+                        File::copy($dbPath, $dbPath . '.pre-restore-' . date('Ymd_His'));
                     }
+                    File::copy($snapshotFile, $dbPath);
+                    $restoredDb = true;
                 }
-            } else {
+            } elseif (in_array($driver, ['mysql', 'mariadb', 'pgsql'], true)) {
+                if (!$snapshotFile || !File::exists($snapshotFile) || !str_ends_with($snapshotFile, '.sql')) {
+                    throw new Exception('ملف تفريغ قاعدة البيانات غير موجود داخل النسخة الاحتياطية.');
+                }
+                self::runDatabaseTool($driver, $dbConnection, 'restore', $snapshotFile);
                 $restoredDb = true;
+            } else {
+                throw new Exception("استعادة قاعدة البيانات غير مدعومة للمشغّل [{$driver}].");
             }
 
             // Restore Public Storage

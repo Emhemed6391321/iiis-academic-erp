@@ -8,11 +8,17 @@ use App\Models\User;
 
 class ResetBranchesData extends Command
 {
-    protected $signature = 'app:reset-branches {--force : تخطي التأكيد ومسح البيانات فوراً}';
+    use \App\Console\Commands\Concerns\GuardsDestructiveRuns;
+
+    protected $signature = 'app:reset-branches {--force : تخطي التأكيد ومسح البيانات فوراً} {--allow-production : السماح بالتنفيذ في بيئة الإنتاج (يتطلب تأكيداً تفاعلياً)}';
     protected $description = 'مسح الفروع والتقييمات الميدانية والبيانات المرتبطة بها لإعادة إدخال الفروع الرسمية الحقيقية';
 
     public function handle(): int
     {
+        if (!$this->destructiveRunAllowed()) {
+            return 1;
+        }
+
         if (!$this->option('force') && !$this->confirm('هل أنت متأكد من رغبتك في مسح كافة بيانات الفروع والتقييمات التجريبية؟')) {
             $this->comment('تم إلغاء العملية.');
             return 0;

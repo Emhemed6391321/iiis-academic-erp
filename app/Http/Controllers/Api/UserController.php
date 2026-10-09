@@ -19,6 +19,30 @@ use Carbon\Carbon;
 class UserController extends Controller
 {
     /**
+     * Privilege-escalation guard: only a super admin may touch super admin accounts,
+     * and only global-scope actors may hand out a global-scope role.
+     */
+    private function denyEscalation(?User $actor, ?User $target = null, ?int $roleId = null): ?JsonResponse
+    {
+        if (!$actor || $actor->isSuperAdmin()) {
+            return null;
+        }
+
+        $role = $roleId ? Role::find($roleId) : null;
+        $assignsPrivilegedRole = $role && ($role->name === 'super_admin'
+            || ($role->scope_type === 'GLOBAL_SCOPE' && !$actor->hasGlobalAccessScope()));
+
+        if (($target && $target->isSuperAdmin()) || $assignsPrivilegedRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: لا يمكنك إدارة حسابات المدير العام أو منح أدوار ذات صلاحيات أعلى من نطاقك.',
+            ], 403);
+        }
+
+        return null;
+    }
+
+    /**
      * استعراض قائمة المستخدمين مع التصفية والبحث والإحصائيات وعزل الفروع
      */
     public function index(Request $request): JsonResponse
@@ -111,6 +135,10 @@ class UserController extends Controller
             'is_active'          => 'boolean',
         ]);
 
+        if ($denied = $this->denyEscalation($currentUser, null, (int) $validated['role_id'])) {
+            return $denied;
+        }
+
         // إلزام مستخدم الفرع بإنشاء المستخدم ضمن فرعه فقط
         if ($currentUser && !$currentUser->hasGlobalAccessScope()) {
             $validated['branch_id'] = $currentUser->branch_id;
@@ -187,6 +215,10 @@ class UserController extends Controller
             'password'           => ['nullable', 'string', 'min:8'],
         ]);
 
+        if ($denied = $this->denyEscalation($currentUser, $user, (int) $validated['role_id'])) {
+            return $denied;
+        }
+
         if ($currentUser && !$currentUser->hasGlobalAccessScope()) {
             $validated['branch_id'] = $currentUser->branch_id;
         }
@@ -246,6 +278,10 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
 
+        if ($denied = $this->denyEscalation($currentUser, $user)) {
+            return $denied;
+        }
+
         // 1. لا يمكن للمستخدم إيقاف حسابه الشخصي
         if ($currentUser && $currentUser->id === $user->id) {
             return response()->json([
@@ -302,6 +338,10 @@ class UserController extends Controller
     {
         $currentUser = Auth::user();
 
+        if ($denied = $this->denyEscalation($currentUser, $user)) {
+            return $denied;
+        }
+
         if ($currentUser && !$currentUser->hasGlobalAccessScope() && $user->branch_id != $currentUser->branch_id) {
             return response()->json([
                 'success' => false,
@@ -314,12 +354,24 @@ class UserController extends Controller
             'password_confirmation' => 'required|string',
         ], [
             'password.required'  => 'يرجى إدخال كلمة المرور الجديدة.',
-            'password.min'       => 'يجب ألا تقل كلمة المرور عن 6 خانات.',
+            'password.min'       => 'يجب ألا تقل كلمة المرور عن 8 خانات.',
             'password.confirmed' => 'تأكيد كلمة المرور غير متطابق.',
         ]);
 
+        $resettingSelf = $currentUser && $currentUser->id === $user->id;
+
         $user->password = Hash::make($request->password);
+        if (!$resettingSelf) {
+            // The admin now knows this password: the owner must choose their own at next login,
+            // and any session opened with the old password is ended.
+            $user->must_change_password = true;
+            $user->setRememberToken(\Illuminate\Support\Str::random(60));
+        }
         $user->save();
+
+        if (!$resettingSelf && config('session.driver') === 'database' && \Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+            \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+        }
 
         $this->logAudit(
             'USER_PASSWORD_RESET',

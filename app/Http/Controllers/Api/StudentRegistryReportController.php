@@ -27,9 +27,22 @@ use App\Models\SystemAuditTrail;
 class StudentRegistryReportController extends Controller
 {
     /**
-     * سجل الطلاب العام المركزي - تصفية متقدمة، تقسيم صفحات 50/صفحة، إحصائيات شاملة
+     * Space-joined concatenation that works on SQLite/PostgreSQL (||) and MySQL/MariaDB (CONCAT_WS).
      */
-    public function index(Request $request): JsonResponse
+    private static function concatSql(array $columns): string
+    {
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
+            return "CONCAT_WS(' ', " . implode(', ', $columns) . ')';
+        }
+
+        return implode(" || ' ' || ", $columns);
+    }
+
+    /**
+     * Filtered registry query shared by the paginated list and the CSV export.
+     * Returns the query and the number of archived rows matching the other filters.
+     */
+    private function buildRegistryQuery(Request $request): array
     {
         $query = Student::withoutGlobalScopes()
             ->with([
@@ -59,8 +72,8 @@ class StudentRegistryReportController extends Controller
                   ->orWhere('father_name', 'like', "%{$s}%")
                   ->orWhere('grandfather_name', 'like', "%{$s}%")
                   ->orWhere('family_name', 'like', "%{$s}%")
-                  ->orWhere(DB::raw("first_name || ' ' || father_name || ' ' || grandfather_name || ' ' || family_name"), 'like', "%{$s}%")
-                  ->orWhere(DB::raw("first_name || ' ' || family_name"), 'like', "%{$s}%")
+                  ->orWhereRaw(self::concatSql(['first_name', 'father_name', 'grandfather_name', 'family_name']) . ' like ?', ["%{$s}%"])
+                  ->orWhereRaw(self::concatSql(['first_name', 'family_name']) . ' like ?', ["%{$s}%"])
                   ->orWhere('national_id', 'like', "%{$s}%")
                   ->orWhere('academic_number', 'like', "%{$s}%")
                   ->orWhere('ministry_student_id', 'like', "%{$s}%")
@@ -117,6 +130,17 @@ class StudentRegistryReportController extends Controller
             $query->where('is_archived', false);
         }
 
+        return [$query, $archivedCount];
+    }
+
+    /**
+     * سجل الطلاب العام المركزي - تصفية متقدمة، تقسيم صفحات 50/صفحة، إحصائيات شاملة
+     */
+    public function index(Request $request): JsonResponse
+    {
+        [$query, $archivedCount] = $this->buildRegistryQuery($request);
+        $user = Auth::user();
+
         // حساب الإحصائيات التجميعية للاستعلام الحالي
         $totalCount = (clone $query)->count();
         $maleCount = (clone $query)->where('gender', 'MALE')->count();
@@ -145,7 +169,7 @@ class StudentRegistryReportController extends Controller
         }
 
         // 11. الترقيم والتجزئة (50 سجل في الصفحة كمعيار أساسي)
-        $perPage = (int)$request->get('per_page', 50);
+        $perPage = min(200, max(1, (int) $request->get('per_page', 50)));
         if ($perPage <= 0) {
             $perPage = 50;
         }
@@ -661,22 +685,26 @@ class StudentRegistryReportController extends Controller
      */
     public function exportRegistry(Request $request)
     {
-        $response = $this->index($request);
-        $data = $response->getData(true);
-
-        $students = $data['data'] ?? [];
+        // An export covers every matching student, streamed in chunks (not just the first page).
+        [$query] = $this->buildRegistryQuery($request);
+        $totalRows = (clone $query)->count();
         $columns = $request->get('columns', 'academic_number,full_name,national_id,branch,stage,section,study_type,academic_status,birth_date,phone');
-        $colList = explode(',', $columns);
+        // The UI sends a JSON array, API clients may send a comma list.
+        $decoded = is_string($columns) ? json_decode($columns, true) : $columns;
+        $colList = is_array($decoded) ? array_map('strval', $decoded) : explode(',', (string) $columns);
+        $allowedColumns = ['academic_number', 'full_name', 'national_id', 'gender', 'birth_date', 'birth_place', 'nationality', 'branch', 'stage', 'section', 'study_type', 'academic_status', 'academic_year', 'phone', 'guardian_phone', 'address'];
+        $colList = array_values(array_intersect(array_map('trim', $colList), $allowedColumns)) ?: ['academic_number', 'full_name', 'national_id', 'branch', 'stage', 'section'];
+        $columns = implode(',', $colList);
 
         $user = Auth::user();
         SystemAuditTrail::log(
             eventType: 'STUDENT_REGISTRY_EXPORTED',
             modelType: Student::class,
-            description: "تصدير سجل قيد الطلاب إلى ملف CSV (" . count($students) . " سجل).",
+            description: "تصدير سجل قيد الطلاب إلى ملف CSV (" . $totalRows . " سجل).",
             branchId: $user?->branch_id,
             newValues: [
                 'columns' => $columns,
-                'count' => count($students),
+                'count' => $totalRows,
                 'filters' => $request->only(['branch_id', 'stage_id', 'department_id', 'status', 'study_type']),
             ],
             severity: 'WARNING',
@@ -689,7 +717,7 @@ class StudentRegistryReportController extends Controller
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function () use ($students, $colList) {
+        $callback = function () use ($query, $colList) {
             $handle = fopen('php://output', 'w');
             // Write UTF-8 BOM for Excel Arabic support
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
@@ -720,14 +748,28 @@ class StudentRegistryReportController extends Controller
             }
             fputcsv($handle, $csvHeaders);
 
-            foreach ($students as $st) {
+            // Neutralise spreadsheet formula injection (=, +, -, @, tab, CR at the start of a cell).
+            $safeCell = static fn ($v) => is_string($v) && $v !== '' && strpbrk($v[0], "=+-@	") !== false ? "'" . $v : $v;
+
+            $query->chunkById(500, function ($chunk) use ($handle, $colList, $safeCell) {
+            foreach ($chunk as $model) {
+                // Build the row from raw attributes: toArray() runs Carbon for every date/age accessor
+                // (~1ms per student) and none of that is exported.
+                $st = $model->getAttributes();
+                $st['full_name'] = $model->full_name;
+                $st['status_label'] = $model->status_label;
+                $st['birth_date'] = substr((string) ($st['birth_date'] ?? ''), 0, 10);
+                $st['branch'] = ['name' => $model->branch?->name];
+                $st['current_study_year'] = ['name' => $model->currentStudyYear?->name];
+                $st['department'] = ['name' => $model->department?->name];
+                $st['enrolled_academic_year'] = ['name' => $model->enrolledAcademicYear?->name];
                 $row = [];
                 foreach ($colList as $col) {
                     $row[] = match($col) {
                         'academic_number' => $st['academic_number'] ?? '',
                         'full_name'       => $st['full_name'] ?? trim(($st['first_name'] ?? '') . ' ' . ($st['father_name'] ?? '') . ' ' . ($st['family_name'] ?? '')),
                         'national_id'     => $st['national_id'] ?? '',
-                        'gender'          => ($st['gender'] ?? '') === 'MALE' ? 'ذكر' : 'أنثى',
+                        'gender'          => match ($st['gender'] ?? '') { 'MALE' => 'ذكر', 'FEMALE' => 'أنثى', default => '' },
                         'birth_date'      => $st['birth_date'] ?? '',
                         'birth_place'     => $st['birth_place'] ?? '',
                         'nationality'     => $st['nationality'] ?? 'ليبي',
@@ -743,8 +785,9 @@ class StudentRegistryReportController extends Controller
                         default           => $st[$col] ?? '',
                     };
                 }
-                fputcsv($handle, $row);
+                fputcsv($handle, array_map($safeCell, $row));
             }
+            });
             fclose($handle);
         };
 
