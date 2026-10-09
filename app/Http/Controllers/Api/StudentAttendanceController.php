@@ -73,6 +73,14 @@ class StudentAttendanceController extends Controller
             $studentsQuery->where('department_id', $departmentId);
         }
 
+        // A roster for every branch at once is unbounded; ask for a branch (or stage/section) filter.
+        if (!$branchId && !$studyYearId && !$departmentId && (clone $studentsQuery)->count() > 3000) {
+            return response()->json([
+                'success' => false,
+                'message' => 'عدد الطلاب كبير جداً لعرضه في كشف واحد. يرجى تحديد الفرع أو المرحلة أو الشعبة.',
+            ], 422);
+        }
+
         $students = $studentsQuery->orderBy('full_name')->get();
 
         // جلب سجلات الحضور المسجلة مسبقًا لهذا التاريخ
@@ -642,9 +650,9 @@ class StudentAttendanceController extends Controller
         $query = StudentAttendance::query()
             ->select(
                 'student_id',
-                DB::raw('SUM(CASE WHEN status IN ("ABSENT", "ABSENT_UNEXCUSED") THEN 1 ELSE 0 END) as unexcused_days'),
-                DB::raw('SUM(CASE WHEN status IN ("EXCUSED", "ABSENT_EXCUSED") THEN 1 ELSE 0 END) as excused_days'),
-                DB::raw('SUM(CASE WHEN status = "LATE" THEN 1 ELSE 0 END) as late_days'),
+                DB::raw('SUM(CASE WHEN status IN (\'ABSENT\', \'ABSENT_UNEXCUSED\') THEN 1 ELSE 0 END) as unexcused_days'),
+                DB::raw('SUM(CASE WHEN status IN (\'EXCUSED\', \'ABSENT_EXCUSED\') THEN 1 ELSE 0 END) as excused_days'),
+                DB::raw('SUM(CASE WHEN status = \'LATE\' THEN 1 ELSE 0 END) as late_days'),
                 DB::raw('COUNT(*) as total_recorded_days')
             )
             ->groupBy('student_id')
@@ -657,14 +665,24 @@ class StudentAttendanceController extends Controller
             $query->where('academic_year_id', $academicYearId);
         }
 
-        $aggregated = $query->orderByDesc('unexcused_days')->get();
+        $limit = min(2000, max(1, (int) $request->get('limit', 1000)));
+        $totalMatching = DB::query()->fromSub(clone $query, 'at_risk')->count();
+        $aggregated = $query->orderByDesc('unexcused_days')->limit($limit)->get();
+
+        // Bulk-load everything the loop needs: a fixed number of queries regardless of result size.
+        $studentIds = $aggregated->pluck('student_id')->all();
+        $studentsById = Student::with(['branch', 'currentStudyYear', 'department'])
+            ->whereIn('id', $studentIds)->get()->keyBy('id');
+        $metricsById = $absenceEngine->evaluateStudents($studentsById->values(), $academicYearId ? (int) $academicYearId : null);
+        $latestNotices = AttendanceWarningNotice::whereIn('student_id', $studentIds)
+            ->orderByDesc('created_at')->orderByDesc('id')->get()->unique('student_id')->keyBy('student_id');
 
         $studentsList = [];
         foreach ($aggregated as $row) {
-            $student = Student::with(['branch', 'currentStudyYear', 'department'])->find($row->student_id);
+            $student = $studentsById->get($row->student_id);
             if (!$student) continue;
 
-            $metrics = $absenceEngine->evaluateStudentAbsence($student, $academicYearId);
+            $metrics = $metricsById[$student->id];
             $totalAbsence = (int)$row->unexcused_days + (int)$row->excused_days;
             $unexcused = (int)$row->unexcused_days;
 
@@ -684,7 +702,7 @@ class StudentAttendanceController extends Controller
             };
 
             // آخر إنذار تم إصداره بالفعل
-            $latestNotice = AttendanceWarningNotice::where('student_id', $student->id)->latest()->first();
+            $latestNotice = $latestNotices->get($student->id);
 
             $studentsList[] = [
                 'student_id'         => $student->id,
@@ -717,7 +735,9 @@ class StudentAttendanceController extends Controller
         return response()->json([
             'success' => true,
             'threshold' => $minDays,
-            'total_at_risk' => count($studentsList),
+            'total_at_risk' => $totalMatching,
+            'returned' => count($studentsList),
+            'truncated' => $totalMatching > count($studentsList),
             'students' => $studentsList,
             'data' => $studentsList,
         ]);
@@ -886,6 +906,9 @@ class StudentAttendanceController extends Controller
         if ($reportType === 'DAILY_SHEET') {
             $reportTitle = 'كشف الحضور والغياب اليومي للطلاب';
             $sheetRes = $this->getDailySheet($request);
+            if ($sheetRes->getStatusCode() !== 200) {
+                return $sheetRes;
+            }
             $sheetData = $sheetRes->getData(true);
             $rows = $sheetData['students'] ?? [];
             $summary = $sheetData['summary'] ?? [];
@@ -919,7 +942,7 @@ class StudentAttendanceController extends Controller
             $summary = ['total_count' => count($rows)];
         } else { // CHRONIC_ABSENCE or PERIOD_ABSENCE
             $reportTitle = 'كشف الطلاب الأكثر غياباً والمعرضين لإنذارات الحرمان';
-            $atRiskRes = $this->getAtRiskStudents($request);
+            $atRiskRes = $this->getAtRiskStudents($request, app(AbsenceCalculationEngineService::class));
             $atRiskData = $atRiskRes->getData(true);
             $rows = $atRiskData['students'] ?? [];
             $summary = ['total_at_risk' => count($rows)];

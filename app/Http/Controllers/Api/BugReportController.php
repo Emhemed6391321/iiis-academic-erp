@@ -39,7 +39,7 @@ class BugReportController extends Controller
             });
         }
 
-        $reports = $query->paginate($request->per_page ?? 25);
+        $reports = $query->paginate(min(100, max(1, (int) ($request->per_page ?? 25))));
 
         $stats = [
             'pending'     => BugReport::where('status', 'pending')->count(),

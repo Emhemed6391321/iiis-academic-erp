@@ -371,6 +371,8 @@ class StudentController extends Controller
     public function importBatch(Request $request): JsonResponse
     {
         try {
+            $request->validate(['file' => 'nullable|file|mimes:xlsx,xls,csv,txt|max:5120']);
+
             $user = Auth::user();
             $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
             $yearId = $currentYear ? $currentYear->id : 1;
@@ -509,6 +511,13 @@ class StudentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'لم يتم العثور على أي صفوف بيانات صالحة للمعالجة.',
+            ], 422);
+        }
+
+        if (count($rows) > 1000) {
+            return response()->json([
+                'success' => false,
+                'message' => 'تجاوز الملف الحد الأقصى المسموح (1000 صف في الدفعة الواحدة). يرجى تقسيمه.',
             ], 422);
         }
 
