@@ -4607,22 +4607,35 @@ async loadBranchOperations() {
                 // ================================================================
 
                 async openStudentFile(studentId) {
+                    if (typeof studentId === 'object' && studentId !== null) {
+                        studentId = studentId.id || studentId.student_id;
+                    }
+                    if (!studentId) {
+                        this.showToast('تعذر تحديد معرف الطالب للعرض.', 'error');
+                        return;
+                    }
+
                     this.studentFile.loading = true;
-                    this.studentFile.student = null;
                     this.currentSection = 'student_file';
                     this.studentFile.activeTab = 'personal';
 
+                    // التعبئة الفورية المسبقة لبيانات الطالب من السجل العام لمنع ظهور شاشة فارغة
+                    const existingStudent = (this.studentsList || []).find(s => s.id == studentId);
+                    if (existingStudent) {
+                        this.studentFile.student = { ...existingStudent };
+                    }
+
                     try {
-                        const [fileRes, timelineRes, notesRes] = await Promise.all([
-                            fetch(`/api/v1/students/${studentId}/file`, { headers: { 'Accept': 'application/json' } }),
-                            fetch(`/api/v1/students/${studentId}/file/timeline`, { headers: { 'Accept': 'application/json' } }),
-                            fetch(`/api/v1/students/${studentId}/file/notes`, { headers: { 'Accept': 'application/json' } }),
-                        ]);
+                        const fileRes = await fetch(`/api/v1/students/${studentId}/file`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        if (!fileRes.ok) {
+                            const errData = await fileRes.json().catch(() => ({}));
+                            throw new Error(errData.message || `خطأ في استجابة الخادم (${fileRes.status})`);
+                        }
 
                         const fileData = await fileRes.json();
-                        const timelineData = await timelineRes.json();
-                        const notesData = await notesRes.json();
-
                         if (fileData.success) {
                             this.studentFile.student = fileData.student;
                             this.studentFile.docsByType = fileData.documents_by_type || {};
@@ -4630,16 +4643,30 @@ async loadBranchOperations() {
                             this.studentFile.metaBranches = fileData.meta?.branches || [];
                             this.studentFile.metaDepartments = fileData.meta?.departments || (this.academicStructureData?.departments || []);
                             this.studentFile.metaStudyYears = fileData.meta?.study_years || (this.academicStructureData?.study_years || []);
-                            // تحديث عداد التبويبات
                             this.studentFile.tabs = this.buildStudentFileTabs(fileData.stats);
+                        } else {
+                            throw new Error(fileData.message || 'تعذر تحميل بيانات ملف الطالب');
                         }
 
-                        if (timelineData.success) this.studentFile.timeline = timelineData.timeline;
-                        if (notesData.success)    this.studentFile.notes    = notesData.notes;
+                        // تحميل السجلات التكميلية (السجل الموحد والملاحظات) بشكل مرن عبر Promise.allSettled
+                        Promise.allSettled([
+                            fetch(`/api/v1/students/${studentId}/file/timeline`, { headers: { 'Accept': 'application/json' } }).then(r => r.json()),
+                            fetch(`/api/v1/students/${studentId}/file/notes`, { headers: { 'Accept': 'application/json' } }).then(r => r.json())
+                        ]).then(([tlResult, notesResult]) => {
+                            if (tlResult.status === 'fulfilled' && tlResult.value?.success) {
+                                this.studentFile.timeline = tlResult.value.timeline;
+                            }
+                            if (notesResult.status === 'fulfilled' && notesResult.value?.success) {
+                                this.studentFile.notes = notesResult.value.notes;
+                            }
+                            if (fileData?.stats) {
+                                this.studentFile.tabs = this.buildStudentFileTabs(fileData.stats);
+                            }
+                        }).catch(e => console.warn('Student file extra data warning:', e));
 
                     } catch (e) {
                         console.error('Student file error:', e);
-                        this.showToast('خطأ في تحميل ملف الطالب.');
+                        this.showToast(e.message || 'خطأ في تحميل ملف الطالب.');
                     } finally {
                         this.studentFile.loading = false;
                     }

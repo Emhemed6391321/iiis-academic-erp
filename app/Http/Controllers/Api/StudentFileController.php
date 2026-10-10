@@ -90,7 +90,7 @@ class StudentFileController extends Controller
             // بيانات مساعدة للـ dropdowns
             'meta' => [
                 'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name']),
-                'branches'       => Branch::where('is_active', true)->get(['id', 'name', 'gender']),
+                'branches'       => Branch::where('is_active', true)->get(['id', 'name', 'gender_type as gender']),
                 'departments'    => Department::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'study_years'    => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
             ],
