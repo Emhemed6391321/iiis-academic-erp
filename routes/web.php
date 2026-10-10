@@ -47,6 +47,7 @@ Route::middleware(['auth', 'enforce.mfa', 'force.password_change'])->group(funct
             'initialSettingsTab'  => $request->query('tab', 'calendar'),
             'allAcademicYears'    => $allAcademicYears,
             'currentAcademicYear' => $currentAcademicYear,
+            'instituteProfile'    => \App\Services\AdminSettingsService::getInstituteProfile(),
         ]);
     })->name('dashboard');
 

@@ -836,22 +836,7 @@
                     activeTab: 'profile',
                     isLoading: false,
                     isSaving: false,
-                    profile: {
-                        state_name: 'دولة ليبيا',
-                        supervising_body: 'الهيئة العامة للأوقاف والشؤون الإسلامية',
-                        supervising_department: 'إدارة التعليم الأصيل',
-                        institute_name: 'المعهد المتوسط للدراسات الإسلامية',
-                        branch_label: 'الفرع الرئيسي',
-                        phone: '+218 21 444 5555',
-                        email: 'info@islamic-institute.edu.ly',
-                        address: 'طرابلس - ليبيا',
-                        website: 'https://islamic-institute.edu.ly',
-                        pobox: 'ص.ب 80800',
-                        logo_url: '/images/logo.png',
-                        stamp_url: '',
-                        header_title: 'المعهد المتوسط للدراسات الإسلامية',
-                        footer_text: 'المعهد المتوسط للدراسات الإسلامية - إدارة التعليم الأصيل'
-                    },
+                    profile: @json($instituteProfile ?? \App\Services\AdminSettingsService::getInstituteProfile()),
                     logoPreviewUrl: null,
                     stampPreviewUrl: null,
                     logoFile: null,
@@ -1601,20 +1586,6 @@
                     this.branchImportModal.successMessage = '';
                 },
 
-                async initApp() {
-                    if (typeof this.initAppearance === 'function') {
-                        this.initAppearance();
-                    }
-                    if (typeof this.initOfflineAttendanceEngine === 'function') {
-                        this.initOfflineAttendanceEngine();
-                    }
-                    if (typeof this.loadAdminSettingsMaster === 'function') {
-                        await this.loadAdminSettingsMaster();
-                    }
-                    if (this.currentSection === 'dashboard' && typeof this.loadDashboard === 'function') {
-                        await this.loadDashboard(false);
-                    }
-                },
 
                 openCreateStudentModal() {
                     this.createStudentModal.open = true;
@@ -3030,24 +3001,12 @@ async initApp() {
                         setTimeout(() => { this.openNewBranchModal(); }, 300);
                     }
 
-                    // Load centralized administrative settings, institute profile, logo, and official signatories
-                    await this.loadAdminSettingsMaster();
-                    this.loadSettingsData(this.selectedAcademicYearId);
-
-                    await this.loadDashboard();
-                    await this.loadBranchOperations();
-                    await this.loadGradeSheet();
-                    await this.loadStudents();
-                    await this.loadTranscript(1);
-                    await this.loadMatrix();
-                    await this.loadUsers();
-                    await this.loadAuditLogs();
-                    await this.loadPendingBatches();
-                    await this.loadCourses();
-                    this.loadAcademicStructureData();
-
-                    // Load specific section data if requested
-                    if (this.currentSection === 'curriculum' || this.currentSection === 'edit_course') {
+                    // Load active section data dynamically & on demand for maximum performance
+                    if (this.currentSection === 'dashboard') {
+                        await this.loadDashboard(false);
+                    } else if (this.currentSection === 'students') {
+                        await this.loadRegistry(1);
+                    } else if (this.currentSection === 'curriculum' || this.currentSection === 'edit_course') {
                         this.currentSection = 'curriculum';
                         await this.loadCourses();
                         if (qCourseId) {
@@ -3068,11 +3027,19 @@ async initApp() {
                     } else if (this.currentSection === 'attendance') {
                         if (typeof this.loadAttendanceSheet === 'function') await this.loadAttendanceSheet();
                         if (typeof this.loadAttendanceStats === 'function') await this.loadAttendanceStats();
-                    } else if (this.currentSection === 'users') {
-                        await this.loadUsers();
+                    } else if (this.currentSection === 'academic_structure') {
+                        if (typeof this.loadAcademicStructureData === 'function') await this.loadAcademicStructureData();
                     } else if (this.currentSection === 'branches_directory') {
                         await this.loadBranchOperations();
                         setTimeout(() => this.initBranchesMap(), 250);
+                    } else if (this.currentSection === 'admin_settings') {
+                        await this.loadAdminSettingsMaster();
+                    } else if (this.currentSection === 'users') {
+                        await this.loadUsers();
+                    } else if (this.currentSection === 'matrix') {
+                        await this.loadMatrix();
+                    } else if (this.currentSection === 'audit') {
+                        await this.loadAuditLogs();
                     }
                 },
 
@@ -3971,15 +3938,7 @@ async loadBranchOperations() {
                 },
 
                 async loadStudents() {
-                    try {
-                        const res = await fetch('/api/v1/students', { headers: { 'Accept': 'application/json' } });
-                        const data = await res.json();
-                        if (data.success) {
-                            this.studentsList = Array.isArray(data.data) ? data.data : (data.data && data.data.data ? data.data.data : []);
-                        }
-                    } catch (e) {
-                        console.error('Error loading students:', e);
-                    }
+                    return this.loadRegistry(1);
                 },
 
                 async loadMatrix() {

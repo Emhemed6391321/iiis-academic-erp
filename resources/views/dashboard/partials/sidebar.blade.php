@@ -76,7 +76,7 @@
                 <span>الرئيسية والقيادة</span>
             </div>
             <div class="space-y-1">
-                <button @click="currentSection = 'dashboard'"
+                <button @click="currentSection = 'dashboard'; if (!kpis || Object.keys(kpis).length === 0) loadDashboard();"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             currentSection === 'dashboard' ? (darkMode ? 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-lg shadow-blue-950/40' : 'bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white shadow-md shadow-blue-900/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700'),
@@ -96,7 +96,7 @@
             </div>
             <div class="space-y-1">
                 <!-- سجل الطلاب -->
-                <button @click="currentSection = 'students'"
+                <button @click="currentSection = 'students'; if (!studentRegistry.loaded) loadRegistry(1);"
                         x-show="hasPermission('students.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
@@ -262,7 +262,7 @@
                 <span>إدارة الفروع والوكالات</span>
             </div>
             <div class="space-y-1">
-                <button @click="currentSection = 'branches_directory'"
+                <button @click="currentSection = 'branches_directory'; if (branchesList.length === 0) { loadBranchOperations(); setTimeout(() => initBranchesMap(), 250); }"
                         x-show="hasPermission('branches.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
@@ -323,7 +323,7 @@
                 <span>الإدارة والحوكمة والنظام</span>
             </div>
             <div class="space-y-1">
-                <button @click="currentSection = 'users'"
+                <button @click="currentSection = 'users'; if (usersList.length === 0) loadUsers();"
                         x-show="hasPermission('users.view|users.manage')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
@@ -335,7 +335,7 @@
                     <span x-show="!sidebarCollapsed" class="truncate">إدارة المستخدمين</span>
                 </button>
 
-                <button @click="currentSection = 'matrix'"
+                <button @click="currentSection = 'matrix'; if (Object.keys(matrixData).length === 0) loadMatrix();"
                         x-show="hasPermission('MANAGE_ROLES')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
@@ -347,7 +347,7 @@
                     <span x-show="!sidebarCollapsed" class="truncate">مصفوفة الصلاحيات</span>
                 </button>
 
-                <button @click="currentSection = 'audit'"
+                <button @click="currentSection = 'audit'; if (!gradeLogsList || gradeLogsList.length === 0) loadAuditLogs();"
                         x-show="hasPermission('audit.view')"
                         class="w-full flex items-center space-x-3 space-x-reverse px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
