@@ -549,7 +549,7 @@
                                                 </template>
 
                                                 <!-- حذف نهائي (المدير العام فقط) -->
-                                                <template x-if="isSuperAdminUser">
+                                                <template x-if="isSuperAdmin">
                                                     <button @click="openDeleteStudentModal(st)"
                                                             title="حذف الطالب نهائياً من المنظومة (صلاحية المدير العام)"
                                                             class="px-2 py-1 rounded-[8px] bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 text-[10px] font-bold flex items-center gap-0.5 transition-all shadow-xs cursor-pointer">

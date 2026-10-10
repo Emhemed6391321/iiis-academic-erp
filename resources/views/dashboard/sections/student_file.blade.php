@@ -202,7 +202,7 @@
                                         </div>
 
                                         <!-- حذف نهائي (المدير العام فقط) -->
-                                        <div x-show="isSuperAdminUser">
+                                        <div x-show="isSuperAdmin">
                                             <button @click="openDeleteStudentModal(studentFile.student)"
                                                     class="w-full px-2.5 py-2 rounded-[10px] text-xs font-bold bg-red-600 hover:bg-red-700 text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-red-900/20 cursor-pointer">
                                                 <span>🗑️ حذف الطالب نهائياً</span>
