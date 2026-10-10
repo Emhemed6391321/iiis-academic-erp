@@ -14,9 +14,8 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 });
 
-// Logout — requires active session
-Route::post('/logout', [LoginController::class, 'logout'])
-    ->middleware('auth')
+// Logout — supports both POST (secure forms) and GET (direct link / browser URL)
+Route::match(['get', 'post'], '/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 // ============================================================
