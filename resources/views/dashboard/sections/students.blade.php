@@ -356,7 +356,7 @@
                             </thead>
                             <tbody class="divide-y" :class="darkMode ? 'divide-slate-800' : 'divide-[#e8ebf2]'">
                                 
-                                <template x-if="studentsList.length === 0 && !studentRegistry.loading">
+                                <template x-if="studentsList.length === 0 && !studentRegistry.loading && studentRegistry.loaded">
                                     <tr>
                                         <td colspan="16" class="py-12 text-center text-slate-400">
                                             <div class="flex flex-col items-center gap-2">

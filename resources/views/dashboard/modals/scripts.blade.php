@@ -916,6 +916,7 @@
                     },
                     activePreset: 'all',
                     loading: false,
+                    loaded: false, // true after the first load finished; keeps the "no records" message from flashing before it
                     columns: {
                         seq: true,
                         academic_number: true,
@@ -1855,6 +1856,7 @@
                         this.showToast('تعذر تحميل سجل الطلاب');
                     } finally {
                         this.studentRegistry.loading = false;
+                        this.studentRegistry.loaded = true;
                     }
                 },
 
