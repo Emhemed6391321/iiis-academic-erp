@@ -7257,6 +7257,10 @@ async loadBranchOperations() {
                         const res = await fetch('/api/v1/admin/settings/all', {
                             headers: { 'Accept': 'application/json' }
                         });
+                        if (!res.ok) {
+                            console.warn('Admin settings API returned status:', res.status);
+                            return;
+                        }
                         const data = await res.json();
                         if (data.status === 'success') {
                             this.adminSettings.profile = data.profile || this.adminSettings.profile;
@@ -7270,7 +7274,9 @@ async loadBranchOperations() {
                         }
                     } catch (e) {
                         console.error('Error loading admin settings:', e);
-                        this.showToast('تعذر تحميل الإعدادات الإدارية المركزية');
+                        if (this.currentSection === 'admin_settings') {
+                            this.showToast('تعذر تحميل الإعدادات الإدارية المركزية');
+                        }
                     } finally {
                         this.adminSettings.isLoading = false;
                     }

@@ -23,57 +23,74 @@ class AdminSettingsController extends Controller
      */
     public function getMasterSettings()
     {
-        $profile = AdminSettingsService::getInstituteProfile();
-        $allSettings = AdminSettingsService::getAllSettingsMap();
-        
-        $orgUnits = OrganizationalUnit::with(['parent', 'children', 'jobPositions'])
-            ->orderBy('sort_order')
-            ->get();
+        try {
+            $profile = AdminSettingsService::getInstituteProfile();
+            $allSettings = AdminSettingsService::getAllSettingsMap();
+            
+            $orgUnits = OrganizationalUnit::with(['parent', 'children', 'jobPositions'])
+                ->orderBy('sort_order')
+                ->get();
 
-        $positions = JobPosition::with(['organizationalUnit', 'currentPlacement.user'])
-            ->orderBy('level_order')
-            ->get();
+            $positions = JobPosition::with(['organizationalUnit', 'currentPlacement.user'])
+                ->orderBy('level_order')
+                ->get();
 
-        $placements = EmployeePlacement::with(['user', 'jobPosition', 'organizationalUnit', 'branch'])
-            ->orderByDesc('id')
-            ->get();
+            $placements = EmployeePlacement::with(['user', 'jobPosition', 'organizationalUnit', 'branch'])
+                ->orderByDesc('id')
+                ->get();
 
-        $signatories = OfficialDocumentSignatory::with(['jobPosition', 'user'])
-            ->orderBy('document_code')
-            ->get();
+            $signatories = OfficialDocumentSignatory::with(['jobPosition', 'user'])
+                ->orderBy('document_code')
+                ->get();
 
-        $users = User::select('id', 'name', 'email', 'role_id')->get();
-        $branches = Branch::select('id', 'name', 'code', 'city')->get();
+            $users = User::select('id', 'name', 'email', 'role_id')->get();
+            $branches = Branch::select('id', 'name', 'code', 'city')->get();
 
-        $auditLogs = SystemAuditTrail::with('user')
-            ->where(function ($query) {
-                $query->where('event_type', 'like', '%setting%')
-                    ->orWhere('event_type', 'like', '%org_unit%')
-                    ->orWhere('event_type', 'like', '%job_position%')
-                    ->orWhere('event_type', 'like', '%placement%')
-                    ->orWhere('event_type', 'like', '%signator%')
-                    ->orWhereJsonContains('payload->model_type', 'AdministrativeSetting')
-                    ->orWhereJsonContains('payload->model_type', 'OrganizationalUnit')
-                    ->orWhereJsonContains('payload->model_type', 'JobPosition')
-                    ->orWhereJsonContains('payload->model_type', 'EmployeePlacement')
-                    ->orWhereJsonContains('payload->model_type', 'OfficialDocumentSignatory');
-            })
-            ->orderByDesc('id')
-            ->limit(50)
-            ->get();
+            try {
+                $auditLogs = SystemAuditTrail::with('user')
+                    ->where(function ($query) {
+                        $query->where('event_type', 'like', '%setting%')
+                            ->orWhere('event_type', 'like', '%org_unit%')
+                            ->orWhere('event_type', 'like', '%job_position%')
+                            ->orWhere('event_type', 'like', '%placement%')
+                            ->orWhere('event_type', 'like', '%signator%');
+                    })
+                    ->orderByDesc('id')
+                    ->limit(50)
+                    ->get();
+            } catch (\Throwable $auditEx) {
+                \Illuminate\Support\Facades\Log::warning('Audit logs query in getMasterSettings failed: ' . $auditEx->getMessage());
+                $auditLogs = collect();
+            }
 
-        return response()->json([
-            'status'      => 'success',
-            'profile'     => $profile,
-            'settings'    => $allSettings,
-            'org_units'   => $orgUnits,
-            'positions'   => $positions,
-            'placements'  => $placements,
-            'signatories' => $signatories,
-            'users'       => $users,
-            'branches'    => $branches,
-            'audit_logs'  => $auditLogs,
-        ]);
+            return response()->json([
+                'status'      => 'success',
+                'profile'     => $profile,
+                'settings'    => $allSettings,
+                'org_units'   => $orgUnits,
+                'positions'   => $positions,
+                'placements'  => $placements,
+                'signatories' => $signatories,
+                'users'       => $users,
+                'branches'    => $branches,
+                'audit_logs'  => $auditLogs,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('getMasterSettings failed: ' . $e->getMessage());
+            return response()->json([
+                'status'      => 'error',
+                'message'     => 'تعذر تحميل بيانات الإعدادات الإدارية: ' . $e->getMessage(),
+                'profile'     => AdminSettingsService::getInstituteProfile(),
+                'settings'    => [],
+                'org_units'   => [],
+                'positions'   => [],
+                'placements'  => [],
+                'signatories' => [],
+                'users'       => [],
+                'branches'    => [],
+                'audit_logs'  => [],
+            ], 500);
+        }
     }
 
     /**

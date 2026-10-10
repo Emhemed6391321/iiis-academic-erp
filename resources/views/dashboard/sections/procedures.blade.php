@@ -1,6 +1,466 @@
-            <div x-show="currentSection === 'procedures'" 
-                 class="space-y-6"
-                 x-data="{
+<div x-show="currentSection === 'procedures'" 
+     class="space-y-6"
+     x-data="sopDirectory()">
+
+                <!-- Header Banner -->
+                <div class="p-6 md:p-8 rounded-[24px] border relative overflow-hidden transition-all duration-300"
+                     :class="darkMode ? 'bg-gradient-to-br from-slate-900 via-teal-950/20 to-slate-900 border-slate-800 shadow-[0_16px_36px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 border-[#e8ebf2] shadow-[0_16px_36px_rgba(15,23,42,0.05)]'">
+                    
+                    <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b"
+                         :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                        <div class="flex items-center space-x-4 space-x-reverse">
+                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 via-emerald-600 to-[#14268d] flex items-center justify-center text-white shadow-lg shadow-teal-900/30 flex-shrink-0">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                        دليل الإجراءات التشغيلية الموحد (SOP Directory)
+                                    </h2>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-400 border border-teal-500/30">
+                                        v2.5 Interactive Edition
+                                    </span>
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                                        <span>🚀</span>
+                                        <span>يدعم الرحلة الافتراضية والتلميحات الذكية</span>
+                                    </span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                                    المرجع الإداري والتشغيلي الموحد لكافة خدمات «مَنْهَل» — استكشف خطوات كل إجراء بصرياً أو انطلق في جولة تفاعلية خطوة بخطوة مع التلميحات الذكية وضوابط الأمان.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Counters -->
+                        <div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3"
+                                 :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
+                                <div class="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center font-black text-sm">
+                                    9
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] text-slate-400 font-bold">أنظمة مركزية</div>
+                                    <div class="text-xs font-black">حوكمة متكاملة</div>
+                                </div>
+                            </div>
+
+                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3"
+                                 :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
+                                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-sm"
+                                     x-text="procedures.length">
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[10px] text-slate-400 font-bold">إجراءات موثقة</div>
+                                    <div class="text-xs font-black">مع محاكاة تفاعلية</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter Controls -->
+                    <div class="pt-6 space-y-4">
+                        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                            <!-- Search Bar -->
+                            <div class="relative w-full md:w-96">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </span>
+                                <input type="text" 
+                                       x-model="sopSearch"
+                                       placeholder="ابحث برمز الإجراء، العنوان، المسؤول، أو النظام..."
+                                       class="w-full pr-10 pl-4 py-2.5 rounded-xl border text-xs font-medium transition-all outline-none"
+                                       :class="darkMode ? 'bg-slate-800/90 border-slate-700 text-slate-200 placeholder-slate-500 focus:border-teal-500' : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-teal-600 shadow-sm'">
+                                <button x-show="sopSearch" 
+                                        @click="sopSearch = ''" 
+                                        class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 hover:text-slate-600">
+                                    ✕
+                                </button>
+                            </div>
+
+                            <!-- Expand / Results Count -->
+                            <div class="flex items-center gap-2 self-end md:self-auto text-xs">
+                                <span class="text-slate-400">عدد الإجراءات المعروضة:</span>
+                                <span class="font-bold text-teal-600 dark:text-teal-400 font-mono" x-text="filteredProcedures.length"></span>
+                            </div>
+                        </div>
+
+                        <!-- System Selection Filter Tabs -->
+                        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                            <template x-for="sys in systems" :key="sys.id">
+                                <button @click="activeSopSystem = sys.id"
+                                        class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 border flex-shrink-0"
+                                        :class="activeSopSystem === sys.id 
+                                            ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white border-teal-600 shadow-md shadow-teal-900/20' 
+                                            : (darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50')">
+                                    <span x-text="sys.icon"></span>
+                                    <span x-text="sys.name"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Procedures Cards Accordion Grid -->
+                <div class="space-y-4">
+                    <template x-for="proc in filteredProcedures" :key="proc.code">
+                        <div class="rounded-2xl border transition-all duration-200 overflow-hidden"
+                             :class="expandedSop === proc.code 
+                                 ? (darkMode ? 'bg-slate-900 border-teal-500/50 shadow-xl shadow-teal-950/20' : 'bg-white border-teal-500/60 shadow-lg shadow-teal-900/5')
+                                 : (darkMode ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-[#e8ebf2] hover:border-slate-300 shadow-sm')">
+                            
+                            <!-- Card Header (Click to toggle accordion) -->
+                            <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
+                                 @click="expandedSop = (expandedSop === proc.code ? '' : proc.code)">
+                                
+                                <div class="flex items-start gap-4">
+                                    <!-- SOP Code Badge -->
+                                    <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center font-mono font-black text-xs flex-shrink-0 shadow-sm"
+                                         :class="darkMode ? 'bg-teal-950/60 text-teal-400 border border-teal-800/50' : 'bg-teal-50 text-teal-700 border border-teal-200'">
+                                        <span class="text-[9px] text-slate-400">كود</span>
+                                        <span x-text="proc.code.replace('SOP-', '')"></span>
+                                    </div>
+
+                                    <div>
+                                        <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                                            <span class="text-[11px] font-bold text-slate-400" x-text="proc.systemName"></span>
+                                            <span class="text-slate-300 dark:text-slate-700">•</span>
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                                                  :class="proc.badgeColor === 'emerald' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
+                                                          proc.badgeColor === 'rose' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20' :
+                                                          proc.badgeColor === 'amber' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20' :
+                                                          proc.badgeColor === 'purple' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20' :
+                                                          proc.badgeColor === 'sky' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20' :
+                                                          'bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/20'"
+                                                  x-text="proc.badge">
+                                            </span>
+                                            <!-- Interactive Tour Badge -->
+                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 flex items-center gap-1">
+                                                <span>🚀</span>
+                                                <span>رحلة تفاعلية</span>
+                                            </span>
+                                        </div>
+
+                                        <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white"
+                                            x-text="proc.title">
+                                        </h3>
+
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1"
+                                           x-text="proc.objective">
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 self-end md:self-auto flex-shrink-0">
+                                    <div class="text-right hidden sm:block">
+                                        <div class="text-[10px] text-slate-400 font-bold">المسؤولية الإدارية:</div>
+                                        <div class="text-xs font-bold text-slate-700 dark:text-slate-300" x-text="proc.role"></div>
+                                    </div>
+
+                                    <div class="w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200"
+                                         :class="expandedSop === proc.code ? 'rotate-180 bg-teal-500 text-white' : (darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Expanded SOP Details -->
+                            <div x-show="expandedSop === proc.code" 
+                                 x-collapse
+                                 class="p-6 border-t space-y-6"
+                                 :class="darkMode ? 'border-slate-800 bg-slate-900/40' : 'border-slate-100 bg-slate-50/40'">
+
+                                <!-- Goal & Navigation Actions Bar -->
+                                <div class="p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                                     :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-white border-slate-200 shadow-sm'">
+                                    <div class="space-y-1">
+                                        <div class="text-[11px] font-black text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
+                                            <span>🎯 الهدف من الإجراء:</span>
+                                        </div>
+                                        <p class="text-xs font-medium text-slate-700 dark:text-slate-300" x-text="proc.objective"></p>
+                                    </div>
+
+                                    <div class="flex items-center gap-2.5 flex-wrap self-end sm:self-auto flex-shrink-0">
+                                        <!-- Interactive Tour Launch Button -->
+                                        <button @click.stop="startTour(proc)"
+                                                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-900/20 hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap">
+                                            <span>🚀</span>
+                                            <span>بدء الرحلة الافتراضية (Walkthrough)</span>
+                                        </button>
+
+                                        <!-- Quick Launch Execution Button -->
+                                        <button @click.stop="currentSection = proc.targetSection; if(proc.targetAction) runAction(proc.targetAction);"
+                                                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20 hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap">
+                                            <span x-text="proc.targetLabel"></span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Visual Workflow Pipeline (Infographic Bar) -->
+                                <div class="p-4 rounded-xl border space-y-2.5"
+                                     :class="darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-white border-slate-200/70 shadow-sm'">
+                                    <div class="text-[11px] font-black text-slate-400 flex items-center gap-1.5">
+                                        <span>🗺️ مخطط مسار وسير العمل البصري (Workflow Stages Pipeline):</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                                        <template x-for="(stage, sIdx) in (proc.visualFlow || [])" :key="sIdx">
+                                            <div class="p-2.5 rounded-xl border flex items-center gap-2.5 transition-all"
+                                                 :class="darkMode ? 'bg-slate-800/60 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'">
+                                                <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center text-sm flex-shrink-0"
+                                                     x-text="stage.icon">
+                                                </div>
+                                                <div class="overflow-hidden">
+                                                    <div class="text-[9px] text-slate-400 font-bold font-mono" x-text="'مرحلة 0' + (sIdx + 1)"></div>
+                                                    <div class="text-xs font-black truncate" x-text="stage.name"></div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Pro-Tip Hint & Security Warning Callouts -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Smart Operator Hint -->
+                                    <div x-show="proc.hint" 
+                                         class="p-3.5 rounded-xl border flex items-start gap-3"
+                                         :class="darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50/80 border-amber-200 text-amber-900'">
+                                        <span class="text-lg flex-shrink-0">💡</span>
+                                        <div>
+                                            <div class="text-[11px] font-black mb-0.5">تلميح تشغيلي ذكي (Pro-Tip):</div>
+                                            <p class="text-xs leading-relaxed" x-text="proc.hint"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Security & Governance Warning -->
+                                    <div x-show="proc.warning" 
+                                         class="p-3.5 rounded-xl border flex items-start gap-3"
+                                         :class="darkMode ? 'bg-rose-950/20 border-rose-800/40 text-rose-300' : 'bg-rose-50/80 border-rose-200 text-rose-900'">
+                                        <span class="text-lg flex-shrink-0">⚠️</span>
+                                        <div>
+                                            <div class="text-[11px] font-black mb-0.5">ضابط أمني ولائحي حاسم:</div>
+                                            <p class="text-xs leading-relaxed" x-text="proc.warning"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    <!-- Step-by-Step Flow (2 cols) -->
+                                    <div class="lg:col-span-2 space-y-4">
+                                        <div class="text-xs font-black text-slate-900 dark:text-white flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full bg-teal-500"></span>
+                                                <span>خطوات التنفيذ المتسلسلة (Standard Workflow):</span>
+                                            </div>
+                                            <span class="text-[10px] text-slate-400 font-mono" x-text="proc.steps.length + ' خطوات'"></span>
+                                        </div>
+
+                                        <div class="space-y-2.5 pr-2">
+                                            <template x-for="(step, idx) in proc.steps" :key="idx">
+                                                <div class="flex items-start gap-3 p-3 rounded-xl border text-xs group hover:border-teal-500/40 transition-all"
+                                                     :class="darkMode ? 'bg-slate-800/40 border-slate-800 text-slate-300' : 'bg-white border-slate-100 text-slate-700 shadow-sm'">
+                                                    <span class="w-6 h-6 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center text-xs flex-shrink-0 font-mono group-hover:bg-teal-500 group-hover:text-white transition-all"
+                                                          x-text="idx + 1">
+                                                    </span>
+                                                    <span class="leading-relaxed font-medium" x-text="step"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <!-- Prerequisites, Outputs & Governance (1 col) -->
+                                    <div class="space-y-4">
+                                        <!-- Prerequisites -->
+                                        <div class="p-4 rounded-xl border space-y-2.5"
+                                             :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-white border-slate-200/80 shadow-sm'">
+                                            <div class="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                                                <span>📌 المتطلبات السابقة والمدخلات:</span>
+                                            </div>
+                                            <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                                                <template x-for="(req, i) in proc.prerequisites" :key="i">
+                                                    <li class="flex items-start gap-2">
+                                                        <span class="text-amber-500 font-bold">•</span>
+                                                        <span x-text="req"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+
+                                        <!-- Outputs -->
+                                        <div class="p-4 rounded-xl border space-y-2.5"
+                                             :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-white border-slate-200/80 shadow-sm'">
+                                            <div class="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                                                <span>📄 المخرجات والوثائق الناتجة:</span>
+                                            </div>
+                                            <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                                                <template x-for="(out, i) in proc.outputs" :key="i">
+                                                    <li class="flex items-start gap-2">
+                                                        <span class="text-emerald-500 font-bold">✓</span>
+                                                        <span x-text="out"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+
+                                        <!-- Governance & Audit -->
+                                        <div class="p-4 rounded-xl border space-y-2 text-xs"
+                                             :class="darkMode ? 'bg-slate-800/20 border-slate-800/80 text-slate-400' : 'bg-slate-100/70 border-slate-200 text-slate-600'">
+                                            <div class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                                <span>🛡️ ضوابط الأمان والتدقيق:</span>
+                                            </div>
+                                            <p class="text-[11px] leading-relaxed" x-text="proc.governance"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Empty Search State -->
+                    <div x-show="filteredProcedures.length === 0" 
+                         class="p-12 text-center rounded-2xl border text-slate-400"
+                         :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
+                        <div class="text-4xl mb-3">🔍</div>
+                        <div class="text-sm font-bold text-slate-700 dark:text-slate-300">لم يتم العثور على أي إجراء يطابق بحثك</div>
+                        <p class="text-xs text-slate-400 mt-1">جرّب استخدام كلمات مفتاحية أخرى أو اختر 'كافة الأنظمة'.</p>
+                    </div>
+                </div>
+
+                <!-- ========================================================================= -->
+                <!-- 🚀 مودال الرحلة الافتراضية التفاعلية مع المستخدم (VIRTUAL GUIDED TOUR MODAL) -->
+                <!-- ========================================================================= -->
+                <div x-show="activeTourModal" 
+                     x-cloak
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+                     @keydown.escape.window="closeTour()"
+                     @keydown.arrow-left.window="prevTourStep()"
+                     @keydown.arrow-right.window="nextTourStep()">
+                    
+                    <!-- Backdrop -->
+                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+                         @click="closeTour()"></div>
+
+                    <!-- Modal Body -->
+                    <div class="relative w-full max-w-2xl rounded-3xl border overflow-hidden shadow-2xl transition-all z-10"
+                         :class="darkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'">
+                        
+                        <template x-if="activeTourProcedure">
+                            <div>
+                                <!-- Tour Header -->
+                                <div class="p-6 border-b flex items-start justify-between gap-4"
+                                     :class="darkMode ? 'border-slate-800 bg-slate-800/50' : 'border-slate-100 bg-slate-50/80'">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-xl shadow-lg shadow-amber-900/30 flex-shrink-0">
+                                            🚀
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500"
+                                                      x-text="activeTourProcedure.code"></span>
+                                                <span class="text-xs font-bold text-slate-400"
+                                                      x-text="activeTourProcedure.systemName"></span>
+                                            </div>
+                                            <h3 class="text-base font-black mt-1" x-text="activeTourProcedure.title"></h3>
+                                        </div>
+                                    </div>
+
+                                    <button @click="closeTour()" 
+                                            class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all flex-shrink-0">
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <!-- Progress Bar & Step Counter -->
+                                <div class="px-6 pt-4 pb-2">
+                                    <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-2">
+                                        <span>
+                                            الخطوة <span class="text-amber-500 font-mono font-black" x-text="currentTourStep + 1"></span> من <span class="font-mono" x-text="activeTourProcedure.steps.length"></span>
+                                        </span>
+                                        <span class="font-mono text-teal-500" 
+                                              x-text="Math.round(((currentTourStep + 1) / activeTourProcedure.steps.length) * 100) + '% مكتمل'"></span>
+                                    </div>
+                                    <div class="w-full h-2 rounded-full overflow-hidden"
+                                         :class="darkMode ? 'bg-slate-800' : 'bg-slate-100'">
+                                        <div class="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-teal-500 transition-all duration-300 rounded-full"
+                                             :style="'width: ' + (((currentTourStep + 1) / activeTourProcedure.steps.length) * 100) + '%'"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Step Content Stage -->
+                                <div class="p-6 space-y-5">
+                                    <!-- Current Step Card -->
+                                    <div class="p-5 rounded-2xl border flex items-start gap-4 transition-all"
+                                         :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-teal-50/40 border-teal-100 shadow-sm'">
+                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-mono font-black text-lg flex items-center justify-center flex-shrink-0 shadow-md">
+                                            <span x-text="currentTourStep + 1"></span>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <div class="text-[11px] font-black text-teal-600 dark:text-teal-400">إجراء الخطوة الحالية:</div>
+                                            <p class="text-sm font-bold leading-relaxed text-slate-800 dark:text-slate-100"
+                                               x-text="activeTourProcedure.steps[currentTourStep]"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Interactive Pro-Tip Hint for the Step -->
+                                    <div class="p-4 rounded-2xl border flex items-start gap-3"
+                                         :class="darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-200' : 'bg-amber-50 border-amber-200/80 text-amber-900'">
+                                        <span class="text-2xl flex-shrink-0">💡</span>
+                                        <div class="space-y-1">
+                                            <div class="text-xs font-black text-amber-600 dark:text-amber-400">تلميح تشغيلي لهذه الخطوة (Pro-Tip):</div>
+                                            <p class="text-xs leading-relaxed" 
+                                               x-text="activeTourProcedure.hint || 'تأكد من مطابقة المدخلات مع الوثائق الرسمية لتفادي أخطاء التدقيق لاحقاً.'"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Security & Audit Safeguard Note -->
+                                    <div class="p-4 rounded-2xl border flex items-start gap-3"
+                                         :class="darkMode ? 'bg-slate-800/40 border-slate-800 text-slate-300' : 'bg-slate-100/70 border-slate-200 text-slate-700'">
+                                        <span class="text-xl flex-shrink-0">🛡️</span>
+                                        <div class="space-y-0.5">
+                                            <div class="text-[11px] font-black text-slate-400">ضابط الحوكمة والأمان في المنظومة:</div>
+                                            <p class="text-xs leading-relaxed" 
+                                               x-text="activeTourProcedure.governance"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tour Footer Controls -->
+                                <div class="p-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4"
+                                     :class="darkMode ? 'border-slate-800 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'">
+                                    
+                                    <!-- Execute Action in System Directly -->
+                                    <button @click="executeStepAction(activeTourProcedure)"
+                                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 text-teal-600 dark:text-teal-400 border border-teal-500/30 transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
+                                        <span>الانتقال للتطبيق العملي بالمنظومة ↗</span>
+                                    </button>
+
+                                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                                        <!-- Previous Step Button -->
+                                        <button @click="prevTourStep()"
+                                                :disabled="currentTourStep === 0"
+                                                class="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                :class="darkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'">
+                                            <span>⬅️ السابق</span>
+                                        </button>
+
+                                        <!-- Next Step / Finish Button -->
+                                        <button @click="nextTourStep()"
+                                                class="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-teal-600 text-white shadow-md shadow-amber-900/20 hover:scale-105 transition-all flex items-center gap-2">
+                                            <span x-text="currentTourStep < activeTourProcedure.steps.length - 1 ? 'الخطوة التالية ➡️' : '✅ إتمام الجولة التفاعلية'"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+            </div>
+
+<script>
+    function sopDirectory() {
+        return {
                     activeSopSystem: 'all',
                     sopSearch: '',
                     expandedSop: 'SOP-STU-01',
@@ -23,7 +483,9 @@
                             this.currentTourStep++;
                         } else {
                             this.closeTour();
-                            if (typeof showToast === 'function') {
+                            if (window._academicApp && typeof window._academicApp.showToast === 'function') {
+                                window._academicApp.showToast('أحسنت! أتممت بنجاح جولة المحاكاة التفاعلية للإجراء.', 'success');
+                            } else if (typeof showToast === 'function') {
                                 showToast('أحسنت! أتممت بنجاح جولة المحاكاة التفاعلية للإجراء.', 'success');
                             }
                         }
@@ -33,12 +495,12 @@
                             this.currentTourStep--;
                         }
                     },
-                    // Runs a no-argument method of the root app component by name ("loadCourses()").
+                    // Runs a no-argument method of the root app component by name ('loadCourses()').
                     // Only that exact shape is accepted, so no arbitrary string is ever evaluated.
                     runAction(action) {
                         const match = /^([A-Za-z_$][\w$]*)\(\)$/.exec(String(action || '').trim());
                         if (!match) return;
-                        const root = (window.Alpine && Alpine.$data) ? Alpine.$data(document.documentElement) : null;
+                        const root = window._academicApp || ((window.Alpine && Alpine.$data) ? Alpine.$data(document.documentElement) : null);
                         if (root && typeof root[match[1]] === 'function') {
                             try { root[match[1]](); } catch (e) { console.warn('Action error:', e); }
                         } else {
@@ -49,7 +511,7 @@
                         const target = proc.targetSection;
                         const action = proc.targetAction;
                         this.closeTour();
-                        this.currentSection = target;
+                        if (window._academicApp) { window._academicApp.currentSection = target; }
                         if (action) {
                             setTimeout(() => this.runAction(action), 150);
                         }
@@ -880,460 +1342,6 @@
                             return matchSystem && matchSearch;
                         });
                     }
-                 }">
-
-                <!-- Header Banner -->
-                <div class="p-6 md:p-8 rounded-[24px] border relative overflow-hidden transition-all duration-300"
-                     :class="darkMode ? 'bg-gradient-to-br from-slate-900 via-teal-950/20 to-slate-900 border-slate-800 shadow-[0_16px_36px_rgba(0,0,0,0.3)]' : 'bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 border-[#e8ebf2] shadow-[0_16px_36px_rgba(15,23,42,0.05)]'">
-                    
-                    <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b"
-                         :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
-                        <div class="flex items-center space-x-4 space-x-reverse">
-                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 via-emerald-600 to-[#14268d] flex items-center justify-center text-white shadow-lg shadow-teal-900/30 flex-shrink-0">
-                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                        دليل الإجراءات التشغيلية الموحد (SOP Directory)
-                                    </h2>
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono bg-teal-500/20 text-teal-400 border border-teal-500/30">
-                                        v2.5 Interactive Edition
-                                    </span>
-                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center gap-1">
-                                        <span>🚀</span>
-                                        <span>يدعم الرحلة الافتراضية والتلميحات الذكية</span>
-                                    </span>
-                                </div>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                                    المرجع الإداري والتشغيلي الموحد لكافة خدمات «مَنْهَل» — استكشف خطوات كل إجراء بصرياً أو انطلق في جولة تفاعلية خطوة بخطوة مع التلميحات الذكية وضوابط الأمان.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Statistics Counters -->
-                        <div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0">
-                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3"
-                                 :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
-                                <div class="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center font-black text-sm">
-                                    9
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-[10px] text-slate-400 font-bold">أنظمة مركزية</div>
-                                    <div class="text-xs font-black">حوكمة متكاملة</div>
-                                </div>
-                            </div>
-
-                            <div class="px-4 py-2.5 rounded-2xl border flex items-center gap-3"
-                                 :class="darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
-                                <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-sm"
-                                     x-text="procedures.length">
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-[10px] text-slate-400 font-bold">إجراءات موثقة</div>
-                                    <div class="text-xs font-black">مع محاكاة تفاعلية</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Search and Filter Controls -->
-                    <div class="pt-6 space-y-4">
-                        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-                            <!-- Search Bar -->
-                            <div class="relative w-full md:w-96">
-                                <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                </span>
-                                <input type="text" 
-                                       x-model="sopSearch"
-                                       placeholder="ابحث برمز الإجراء، العنوان، المسؤول، أو النظام..."
-                                       class="w-full pr-10 pl-4 py-2.5 rounded-xl border text-xs font-medium transition-all outline-none"
-                                       :class="darkMode ? 'bg-slate-800/90 border-slate-700 text-slate-200 placeholder-slate-500 focus:border-teal-500' : 'bg-white border-slate-200 text-slate-800 placeholder-slate-400 focus:border-teal-600 shadow-sm'">
-                                <button x-show="sopSearch" 
-                                        @click="sopSearch = ''" 
-                                        class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 hover:text-slate-600">
-                                    ✕
-                                </button>
-                            </div>
-
-                            <!-- Expand / Results Count -->
-                            <div class="flex items-center gap-2 self-end md:self-auto text-xs">
-                                <span class="text-slate-400">عدد الإجراءات المعروضة:</span>
-                                <span class="font-bold text-teal-600 dark:text-teal-400 font-mono" x-text="filteredProcedures.length"></span>
-                            </div>
-                        </div>
-
-                        <!-- System Selection Filter Tabs -->
-                        <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-                            <template x-for="sys in systems" :key="sys.id">
-                                <button @click="activeSopSystem = sys.id"
-                                        class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 border flex-shrink-0"
-                                        :class="activeSopSystem === sys.id 
-                                            ? 'bg-gradient-to-r from-teal-600 to-emerald-700 text-white border-teal-600 shadow-md shadow-teal-900/20' 
-                                            : (darkMode ? 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50')">
-                                    <span x-text="sys.icon"></span>
-                                    <span x-text="sys.name"></span>
-                                </button>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Procedures Cards Accordion Grid -->
-                <div class="space-y-4">
-                    <template x-for="proc in filteredProcedures" :key="proc.code">
-                        <div class="rounded-2xl border transition-all duration-200 overflow-hidden"
-                             :class="expandedSop === proc.code 
-                                 ? (darkMode ? 'bg-slate-900 border-teal-500/50 shadow-xl shadow-teal-950/20' : 'bg-white border-teal-500/60 shadow-lg shadow-teal-900/5')
-                                 : (darkMode ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-[#e8ebf2] hover:border-slate-300 shadow-sm')">
-                            
-                            <!-- Card Header (Click to toggle accordion) -->
-                            <div class="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none"
-                                 @click="expandedSop = (expandedSop === proc.code ? '' : proc.code)">
-                                
-                                <div class="flex items-start gap-4">
-                                    <!-- SOP Code Badge -->
-                                    <div class="w-12 h-12 rounded-xl flex flex-col items-center justify-center font-mono font-black text-xs flex-shrink-0 shadow-sm"
-                                         :class="darkMode ? 'bg-teal-950/60 text-teal-400 border border-teal-800/50' : 'bg-teal-50 text-teal-700 border border-teal-200'">
-                                        <span class="text-[9px] text-slate-400">كود</span>
-                                        <span x-text="proc.code.replace('SOP-', '')"></span>
-                                    </div>
-
-                                    <div>
-                                        <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                                            <span class="text-[11px] font-bold text-slate-400" x-text="proc.systemName"></span>
-                                            <span class="text-slate-300 dark:text-slate-700">•</span>
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black"
-                                                  :class="proc.badgeColor === 'emerald' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' :
-                                                          proc.badgeColor === 'rose' ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20' :
-                                                          proc.badgeColor === 'amber' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20' :
-                                                          proc.badgeColor === 'purple' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20' :
-                                                          proc.badgeColor === 'sky' ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20' :
-                                                          'bg-teal-500/15 text-teal-600 dark:text-teal-400 border border-teal-500/20'"
-                                                  x-text="proc.badge">
-                                            </span>
-                                            <!-- Interactive Tour Badge -->
-                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 flex items-center gap-1">
-                                                <span>🚀</span>
-                                                <span>رحلة تفاعلية</span>
-                                            </span>
-                                        </div>
-
-                                        <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white"
-                                            x-text="proc.title">
-                                        </h3>
-
-                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1"
-                                           x-text="proc.objective">
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-3 self-end md:self-auto flex-shrink-0">
-                                    <div class="text-right hidden sm:block">
-                                        <div class="text-[10px] text-slate-400 font-bold">المسؤولية الإدارية:</div>
-                                        <div class="text-xs font-bold text-slate-700 dark:text-slate-300" x-text="proc.role"></div>
-                                    </div>
-
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-200"
-                                         :class="expandedSop === proc.code ? 'rotate-180 bg-teal-500 text-white' : (darkMode ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600')">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Expanded SOP Details -->
-                            <div x-show="expandedSop === proc.code" 
-                                 x-collapse
-                                 class="p-6 border-t space-y-6"
-                                 :class="darkMode ? 'border-slate-800 bg-slate-900/40' : 'border-slate-100 bg-slate-50/40'">
-
-                                <!-- Goal & Navigation Actions Bar -->
-                                <div class="p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                                     :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-white border-slate-200 shadow-sm'">
-                                    <div class="space-y-1">
-                                        <div class="text-[11px] font-black text-teal-600 dark:text-teal-400 flex items-center gap-1.5">
-                                            <span>🎯 الهدف من الإجراء:</span>
-                                        </div>
-                                        <p class="text-xs font-medium text-slate-700 dark:text-slate-300" x-text="proc.objective"></p>
-                                    </div>
-
-                                    <div class="flex items-center gap-2.5 flex-wrap self-end sm:self-auto flex-shrink-0">
-                                        <!-- Interactive Tour Launch Button -->
-                                        <button @click.stop="startTour(proc)"
-                                                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-900/20 hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap">
-                                            <span>🚀</span>
-                                            <span>بدء الرحلة الافتراضية (Walkthrough)</span>
-                                        </button>
-
-                                        <!-- Quick Launch Execution Button -->
-                                        <button @click.stop="currentSection = proc.targetSection; if(proc.targetAction) runAction(proc.targetAction);"
-                                                class="px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-teal-600 to-emerald-700 text-white shadow-md shadow-teal-900/20 hover:scale-105 transition-all flex items-center gap-2 whitespace-nowrap">
-                                            <span x-text="proc.targetLabel"></span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Visual Workflow Pipeline (Infographic Bar) -->
-                                <div class="p-4 rounded-xl border space-y-2.5"
-                                     :class="darkMode ? 'bg-slate-800/30 border-slate-800' : 'bg-white border-slate-200/70 shadow-sm'">
-                                    <div class="text-[11px] font-black text-slate-400 flex items-center gap-1.5">
-                                        <span>🗺️ مخطط مسار وسير العمل البصري (Workflow Stages Pipeline):</span>
-                                    </div>
-                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                                        <template x-for="(stage, sIdx) in (proc.visualFlow || [])" :key="sIdx">
-                                            <div class="p-2.5 rounded-xl border flex items-center gap-2.5 transition-all"
-                                                 :class="darkMode ? 'bg-slate-800/60 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'">
-                                                <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center text-sm flex-shrink-0"
-                                                     x-text="stage.icon">
-                                                </div>
-                                                <div class="overflow-hidden">
-                                                    <div class="text-[9px] text-slate-400 font-bold font-mono" x-text="'مرحلة 0' + (sIdx + 1)"></div>
-                                                    <div class="text-xs font-black truncate" x-text="stage.name"></div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
-
-                                <!-- Pro-Tip Hint & Security Warning Callouts -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <!-- Smart Operator Hint -->
-                                    <div x-show="proc.hint" 
-                                         class="p-3.5 rounded-xl border flex items-start gap-3"
-                                         :class="darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-300' : 'bg-amber-50/80 border-amber-200 text-amber-900'">
-                                        <span class="text-lg flex-shrink-0">💡</span>
-                                        <div>
-                                            <div class="text-[11px] font-black mb-0.5">تلميح تشغيلي ذكي (Pro-Tip):</div>
-                                            <p class="text-xs leading-relaxed" x-text="proc.hint"></p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Security & Governance Warning -->
-                                    <div x-show="proc.warning" 
-                                         class="p-3.5 rounded-xl border flex items-start gap-3"
-                                         :class="darkMode ? 'bg-rose-950/20 border-rose-800/40 text-rose-300' : 'bg-rose-50/80 border-rose-200 text-rose-900'">
-                                        <span class="text-lg flex-shrink-0">⚠️</span>
-                                        <div>
-                                            <div class="text-[11px] font-black mb-0.5">ضابط أمني ولائحي حاسم:</div>
-                                            <p class="text-xs leading-relaxed" x-text="proc.warning"></p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    <!-- Step-by-Step Flow (2 cols) -->
-                                    <div class="lg:col-span-2 space-y-4">
-                                        <div class="text-xs font-black text-slate-900 dark:text-white flex items-center justify-between">
-                                            <div class="flex items-center gap-2">
-                                                <span class="w-2 h-2 rounded-full bg-teal-500"></span>
-                                                <span>خطوات التنفيذ المتسلسلة (Standard Workflow):</span>
-                                            </div>
-                                            <span class="text-[10px] text-slate-400 font-mono" x-text="proc.steps.length + ' خطوات'"></span>
-                                        </div>
-
-                                        <div class="space-y-2.5 pr-2">
-                                            <template x-for="(step, idx) in proc.steps" :key="idx">
-                                                <div class="flex items-start gap-3 p-3 rounded-xl border text-xs group hover:border-teal-500/40 transition-all"
-                                                     :class="darkMode ? 'bg-slate-800/40 border-slate-800 text-slate-300' : 'bg-white border-slate-100 text-slate-700 shadow-sm'">
-                                                    <span class="w-6 h-6 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold flex items-center justify-center text-xs flex-shrink-0 font-mono group-hover:bg-teal-500 group-hover:text-white transition-all"
-                                                          x-text="idx + 1">
-                                                    </span>
-                                                    <span class="leading-relaxed font-medium" x-text="step"></span>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-
-                                    <!-- Prerequisites, Outputs & Governance (1 col) -->
-                                    <div class="space-y-4">
-                                        <!-- Prerequisites -->
-                                        <div class="p-4 rounded-xl border space-y-2.5"
-                                             :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-white border-slate-200/80 shadow-sm'">
-                                            <div class="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                                                <span>📌 المتطلبات السابقة والمدخلات:</span>
-                                            </div>
-                                            <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                                                <template x-for="(req, i) in proc.prerequisites" :key="i">
-                                                    <li class="flex items-start gap-2">
-                                                        <span class="text-amber-500 font-bold">•</span>
-                                                        <span x-text="req"></span>
-                                                    </li>
-                                                </template>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Outputs -->
-                                        <div class="p-4 rounded-xl border space-y-2.5"
-                                             :class="darkMode ? 'bg-slate-800/40 border-slate-800' : 'bg-white border-slate-200/80 shadow-sm'">
-                                            <div class="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                                                <span>📄 المخرجات والوثائق الناتجة:</span>
-                                            </div>
-                                            <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                                                <template x-for="(out, i) in proc.outputs" :key="i">
-                                                    <li class="flex items-start gap-2">
-                                                        <span class="text-emerald-500 font-bold">✓</span>
-                                                        <span x-text="out"></span>
-                                                    </li>
-                                                </template>
-                                            </ul>
-                                        </div>
-
-                                        <!-- Governance & Audit -->
-                                        <div class="p-4 rounded-xl border space-y-2 text-xs"
-                                             :class="darkMode ? 'bg-slate-800/20 border-slate-800/80 text-slate-400' : 'bg-slate-100/70 border-slate-200 text-slate-600'">
-                                            <div class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                                <span>🛡️ ضوابط الأمان والتدقيق:</span>
-                                            </div>
-                                            <p class="text-[11px] leading-relaxed" x-text="proc.governance"></p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Empty Search State -->
-                    <div x-show="filteredProcedures.length === 0" 
-                         class="p-12 text-center rounded-2xl border text-slate-400"
-                         :class="darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'">
-                        <div class="text-4xl mb-3">🔍</div>
-                        <div class="text-sm font-bold text-slate-700 dark:text-slate-300">لم يتم العثور على أي إجراء يطابق بحثك</div>
-                        <p class="text-xs text-slate-400 mt-1">جرّب استخدام كلمات مفتاحية أخرى أو اختر 'كافة الأنظمة'.</p>
-                    </div>
-                </div>
-
-                <!-- ========================================================================= -->
-                <!-- 🚀 مودال الرحلة الافتراضية التفاعلية مع المستخدم (VIRTUAL GUIDED TOUR MODAL) -->
-                <!-- ========================================================================= -->
-                <div x-show="activeTourModal" 
-                     x-cloak
-                     class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-                     @keydown.escape.window="closeTour()"
-                     @keydown.arrow-left.window="prevTourStep()"
-                     @keydown.arrow-right.window="nextTourStep()">
-                    
-                    <!-- Backdrop -->
-                    <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
-                         @click="closeTour()"></div>
-
-                    <!-- Modal Body -->
-                    <div class="relative w-full max-w-2xl rounded-3xl border overflow-hidden shadow-2xl transition-all z-10"
-                         :class="darkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'">
-                        
-                        <template x-if="activeTourProcedure">
-                            <div>
-                                <!-- Tour Header -->
-                                <div class="p-6 border-b flex items-start justify-between gap-4"
-                                     :class="darkMode ? 'border-slate-800 bg-slate-800/50' : 'border-slate-100 bg-slate-50/80'">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 flex items-center justify-center text-white text-xl shadow-lg shadow-amber-900/30 flex-shrink-0">
-                                            🚀
-                                        </div>
-                                        <div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500"
-                                                      x-text="activeTourProcedure.code"></span>
-                                                <span class="text-xs font-bold text-slate-400"
-                                                      x-text="activeTourProcedure.systemName"></span>
-                                            </div>
-                                            <h3 class="text-base font-black mt-1" x-text="activeTourProcedure.title"></h3>
-                                        </div>
-                                    </div>
-
-                                    <button @click="closeTour()" 
-                                            class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all flex-shrink-0">
-                                        ✕
-                                    </button>
-                                </div>
-
-                                <!-- Progress Bar & Step Counter -->
-                                <div class="px-6 pt-4 pb-2">
-                                    <div class="flex items-center justify-between text-xs font-bold text-slate-400 mb-2">
-                                        <span>
-                                            الخطوة <span class="text-amber-500 font-mono font-black" x-text="currentTourStep + 1"></span> من <span class="font-mono" x-text="activeTourProcedure.steps.length"></span>
-                                        </span>
-                                        <span class="font-mono text-teal-500" 
-                                              x-text="Math.round(((currentTourStep + 1) / activeTourProcedure.steps.length) * 100) + '% مكتمل'"></span>
-                                    </div>
-                                    <div class="w-full h-2 rounded-full overflow-hidden"
-                                         :class="darkMode ? 'bg-slate-800' : 'bg-slate-100'">
-                                        <div class="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-teal-500 transition-all duration-300 rounded-full"
-                                             :style="'width: ' + (((currentTourStep + 1) / activeTourProcedure.steps.length) * 100) + '%'"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Step Content Stage -->
-                                <div class="p-6 space-y-5">
-                                    <!-- Current Step Card -->
-                                    <div class="p-5 rounded-2xl border flex items-start gap-4 transition-all"
-                                         :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-teal-50/40 border-teal-100 shadow-sm'">
-                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white font-mono font-black text-lg flex items-center justify-center flex-shrink-0 shadow-md">
-                                            <span x-text="currentTourStep + 1"></span>
-                                        </div>
-                                        <div class="space-y-1">
-                                            <div class="text-[11px] font-black text-teal-600 dark:text-teal-400">إجراء الخطوة الحالية:</div>
-                                            <p class="text-sm font-bold leading-relaxed text-slate-800 dark:text-slate-100"
-                                               x-text="activeTourProcedure.steps[currentTourStep]"></p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Interactive Pro-Tip Hint for the Step -->
-                                    <div class="p-4 rounded-2xl border flex items-start gap-3"
-                                         :class="darkMode ? 'bg-amber-950/20 border-amber-800/40 text-amber-200' : 'bg-amber-50 border-amber-200/80 text-amber-900'">
-                                        <span class="text-2xl flex-shrink-0">💡</span>
-                                        <div class="space-y-1">
-                                            <div class="text-xs font-black text-amber-600 dark:text-amber-400">تلميح تشغيلي لهذه الخطوة (Pro-Tip):</div>
-                                            <p class="text-xs leading-relaxed" 
-                                               x-text="activeTourProcedure.hint || 'تأكد من مطابقة المدخلات مع الوثائق الرسمية لتفادي أخطاء التدقيق لاحقاً.'"></p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Security & Audit Safeguard Note -->
-                                    <div class="p-4 rounded-2xl border flex items-start gap-3"
-                                         :class="darkMode ? 'bg-slate-800/40 border-slate-800 text-slate-300' : 'bg-slate-100/70 border-slate-200 text-slate-700'">
-                                        <span class="text-xl flex-shrink-0">🛡️</span>
-                                        <div class="space-y-0.5">
-                                            <div class="text-[11px] font-black text-slate-400">ضابط الحوكمة والأمان في المنظومة:</div>
-                                            <p class="text-xs leading-relaxed" 
-                                               x-text="activeTourProcedure.governance"></p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Tour Footer Controls -->
-                                <div class="p-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4"
-                                     :class="darkMode ? 'border-slate-800 bg-slate-800/30' : 'border-slate-100 bg-slate-50/50'">
-                                    
-                                    <!-- Execute Action in System Directly -->
-                                    <button @click="executeStepAction(activeTourProcedure)"
-                                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-500/15 hover:bg-teal-500/25 text-teal-600 dark:text-teal-400 border border-teal-500/30 transition-all flex items-center gap-2 w-full sm:w-auto justify-center">
-                                        <span>الانتقال للتطبيق العملي بالمنظومة ↗</span>
-                                    </button>
-
-                                    <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                        <!-- Previous Step Button -->
-                                        <button @click="prevTourStep()"
-                                                :disabled="currentTourStep === 0"
-                                                class="px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-                                                :class="darkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'">
-                                            <span>⬅️ السابق</span>
-                                        </button>
-
-                                        <!-- Next Step / Finish Button -->
-                                        <button @click="nextTourStep()"
-                                                class="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 via-orange-500 to-teal-600 text-white shadow-md shadow-amber-900/20 hover:scale-105 transition-all flex items-center gap-2">
-                                            <span x-text="currentTourStep < activeTourProcedure.steps.length - 1 ? 'الخطوة التالية ➡️' : '✅ إتمام الجولة التفاعلية'"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-            </div>
+                 };
+    }
+</script>
