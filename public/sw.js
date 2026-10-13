@@ -3,7 +3,7 @@
  * منظومة المعهد التخصصي للدراسات الإسلامية - عامل الخدمة للعمل دون اتصال
  */
 
-const CACHE_NAME = 'iiis-academic-v1.3';
+const CACHE_NAME = 'iiis-academic-v1.4';
 const STATIC_ASSETS = [
     '/',
     '/favicon.ico',
@@ -40,13 +40,14 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
 
-    // Bypass Service Worker completely for auth, logout, and non-GET requests
+    // Bypass Service Worker completely for auth, logout, non-GET requests, and general API endpoints
     if (
         request.method !== 'GET' ||
         url.pathname.includes('/login') ||
         url.pathname.includes('/logout') ||
         url.pathname.includes('/mfa') ||
-        url.pathname.includes('/password')
+        url.pathname.includes('/password') ||
+        (url.pathname.startsWith('/api/') && !url.pathname.includes('/api/v1/attendance/sheet'))
     ) {
         return;
     }
@@ -125,6 +126,6 @@ self.addEventListener('fetch', (event) => {
 
     // Default fetch
     event.respondWith(
-        fetch(request).catch(() => caches.match(request))
+        fetch(request).catch(() => caches.match(request).then((res) => res || new Response('', { status: 408 })))
     );
 });

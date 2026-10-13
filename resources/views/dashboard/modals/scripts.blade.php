@@ -1639,21 +1639,52 @@
                 async submitCreateStudent() {
                     this.createStudentModal.submitting = true;
                     this.createStudentModal.errorMessage = '';
+
+                    const f = this.createStudentModal.form;
+
+                    // 1. Validation for Personal Info tab
+                    if (!f.first_name || !f.father_name || !f.grandfather_name || !f.family_name || !f.mother_name || !f.national_id) {
+                        this.createStudentModal.activeTab = 'personal';
+                        this.createStudentModal.errorMessage = 'يرجى استكمال الحقول الإلزامية في البيانات الشخصية (الاسم الرباعي، اسم الأم، والرقم الوطني).';
+                        this.createStudentModal.submitting = false;
+                        this.showToast('يرجى استكمال البيانات الشخصية الإلزامية أولاً');
+                        return;
+                    }
+
+                    if (f.national_id && String(f.national_id).trim().length !== 12) {
+                        this.createStudentModal.activeTab = 'personal';
+                        this.createStudentModal.errorMessage = 'الرقم الوطني يجب أن يتكون من 12 رقماً تماماً.';
+                        this.createStudentModal.submitting = false;
+                        this.showToast('الرقم الوطني يجب أن يتكون من 12 رقماً');
+                        return;
+                    }
+
+                    // 2. Validation for Academic / Contact tab
+                    if (!f.phone || !f.guardian_phone || !f.department_id || !f.current_study_year_id) {
+                        this.createStudentModal.activeTab = 'academic';
+                        this.createStudentModal.errorMessage = 'يرجى تحديد الشُعبة الدراسية، السنة الدراسية، ورقم هاتف الطالب وولي الأمر.';
+                        this.createStudentModal.submitting = false;
+                        this.showToast('يرجى تحديد الشُعبة والبيانات الأكاديمية الإلزامية');
+                        return;
+                    }
+
                     try {
                         const payload = {
                             ...this.createStudentModal.form,
                             attached_docs: this.createStudentModal.attachedDocs
                         };
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/students', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'Accept': 'application/json'
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
                             },
                             body: JSON.stringify(payload)
                         });
                         const data = await res.json();
-                        if (data.status === 'success' || data.success) {
+                        if (res.ok && (data.status === 'success' || data.success)) {
                             const newStudent = data.data || data.student;
                             this.createStudentModal.open = false;
                             this.stopCamera();
@@ -1665,11 +1696,18 @@
                                 this.openStudentCardModal(newStudent);
                             }
                         } else {
-                            this.createStudentModal.errorMessage = data.message || 'حدث خطأ أثناء حفظ بيانات الطالب. يرجى مراجعة الحقول المطلوبة.';
+                            let errMsg = data.message || 'حدث خطأ أثناء حفظ بيانات الطالب.';
+                            if (data.errors && typeof data.errors === 'object') {
+                                const details = Object.values(data.errors).flat().join(' | ');
+                                if (details) errMsg += ': ' + details;
+                            }
+                            this.createStudentModal.errorMessage = errMsg;
+                            this.showToast(errMsg);
                         }
                     } catch (err) {
                         console.error('Error submitting student:', err);
-                        this.createStudentModal.errorMessage = 'تعذر الاتصال بالخادم لحفظ بيانات الطالب.';
+                        this.createStudentModal.errorMessage = 'تعذر الاتصال بالخادم لحفظ بيانات الطالب: ' + (err.message || '');
+                        this.showToast('تعذر الاتصال بالخادم لحفظ بيانات الطالب');
                     } finally {
                         this.createStudentModal.submitting = false;
                     }
@@ -6163,11 +6201,20 @@ async loadBranchOperations() {
                         await video.play().catch(e => console.warn('Video play warning:', e));
                         this.cameraStream = stream;
                         this.cameraActive = true;
+                        this.cameraError = null;
                         this.showToast('تم تشغيل الكاميرا المباشرة 📷');
                     } catch (e) {
                         this.cameraActive = false;
-                        this.cameraError = e.message || 'تعذر فتح الكاميرا';
-                        this.showToast('تعذر فتح الكاميرا: ' + (e.message || 'يرجى التحقق من إذن الكاميرا'));
+                        let msg = 'تعذر فتح الكاميرا: ';
+                        if (e.name === 'NotAllowedError' || (e.message && e.message.toLowerCase().includes('permission denied'))) {
+                            msg = 'تم حظر إذن الكاميرا. يرجى الضغط على رمز القفل 🔒 أو إعدادات الموقع في المتصفح والسماح بالكاميرا، أو استخدام خيار رفع صورة من الجهاز.';
+                        } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+                            msg = 'لم يتم العثور على كاميرا متصلة بالجهاز. يرجى رفع صورة الطالب كملف من الجهاز.';
+                        } else {
+                            msg = 'تعذر فتح الكاميرا: ' + (e.message || 'يرجى التحقق من إذن الكاميرا');
+                        }
+                        this.cameraError = msg;
+                        this.showToast(msg);
                         console.error('startCamera error:', e);
                     }
                 },
@@ -8028,12 +8075,14 @@ async loadBranchOperations() {
                         url: window.location.href,
                         severity: 'MEDIUM'
                     })
-                });
+                }).catch(() => {});
             } catch (_) {}
         });
 
         window.addEventListener('unhandledrejection', function(e) {
             try {
+                // Do not re-report report-js failures
+                if (e.reason && typeof e.reason.message === 'string' && e.reason.message.includes('report-js')) return;
                 fetch('/api/v1/system-errors/report-js', {
                     method: 'POST',
                     headers: {
@@ -8049,7 +8098,7 @@ async loadBranchOperations() {
                         url: window.location.href,
                         severity: 'HIGH'
                     })
-                });
+                }).catch(() => {});
             } catch (_) {}
         });
     </script>

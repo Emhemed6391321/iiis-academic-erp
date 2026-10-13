@@ -685,7 +685,7 @@
             </div>
 
             <!-- Modal Body (Scrollable Form) -->
-            <form @submit.prevent="submitCreateStudent()" class="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+            <form @submit.prevent="submitCreateStudent()" novalidate class="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
                 
                 <!-- Error Alert -->
                 <div x-show="createStudentModal.errorMessage" class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-3 shadow-sm">
@@ -957,10 +957,11 @@
                                     </button>
                                 </div>
 
-                                <!-- خيار الرفع كملف كبديل -->
-                                <div class="relative text-center">
-                                    <label class="cursor-pointer text-[11px] text-[#2b78a5] dark:text-sky-400 hover:underline inline-flex items-center gap-1 font-bold">
-                                        <span>📁 أو اختر صورة من ملفات الجهاز</span>
+                                <!-- خيار الرفع كملف كبديل واضح -->
+                                <div class="pt-1">
+                                    <label class="cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-dashed border-[#2b78a5]/50 dark:border-blue-500/50 hover:bg-blue-50/60 dark:hover:bg-slate-800 text-[#2b78a5] dark:text-sky-300 font-bold text-xs transition-all shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                        <span>📁 أو رفع صورة مباشرة من ملفات الجهاز</span>
                                         <input type="file" accept="image/*" class="hidden" @change="handlePhotoFileUpload($event)">
                                     </label>
                                 </div>
