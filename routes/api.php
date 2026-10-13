@@ -156,6 +156,8 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::get('/branches/overview', [BranchOperationsController::class, 'getOverview'])->middleware('permission:branches.view');
     Route::get('/branches/directory', [BranchOperationsController::class, 'getBranches'])->middleware('permission:branches.view');
     Route::post('/branches/import-excel', [BranchOperationsController::class, 'importBranchesExcel'])->middleware('permission:branches.manage');
+    Route::get('/branches/requests', [BranchOperationsController::class, 'getRequests'])->middleware('permission:branches.view');
+    Route::post('/branches/requests', [BranchOperationsController::class, 'storeRequest'])->middleware('permission:branches.view');
     Route::post('/branches', [BranchOperationsController::class, 'storeBranch'])->middleware('permission:branches.manage');
     Route::put('/branches/{id}', [BranchOperationsController::class, 'updateBranch'])->middleware('permission:branches.manage');
     Route::post('/branches/{id}', [BranchOperationsController::class, 'updateBranch'])->middleware('permission:branches.manage');
@@ -170,9 +172,7 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::get('/branches/{id}/details', [BranchOperationsController::class, 'getBranchDetails'])->middleware('permission:branches.view');
     Route::post('/branches/{id}/assessments', [BranchOperationsController::class, 'storeAssessment'])->middleware('permission:branches.manage');
     Route::post('/branches/{id}/coordinates', [BranchOperationsController::class, 'updateCoordinates'])->middleware('permission:branches.manage');
-    Route::get('/branches/requests', [BranchOperationsController::class, 'getRequests'])->middleware('permission:branches.view');
-    Route::post('/branches/requests', [BranchOperationsController::class, 'storeRequest'])->middleware('permission:branches.view');
-    Route::patch('/branches/requests/{id}/status', [BranchOperationsController::class, 'updateRequestStatus'])->middleware('permission:branches.manage');
+    Route::patch('/branches/requests/{id}/status', [BranchOperationsController::class, 'updateRequestStatus'])->whereNumber('id')->middleware('permission:branches.manage');
     Route::get('/branches/contracts', [BranchOperationsController::class, 'getContracts'])->middleware('permission:branches.view');
 
     // 9b. Properties & Buildings Module (العقارات والمقرات)
@@ -259,9 +259,9 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     // 15. Student Administrative & Academic Workflow Center (مركز قيادة وسير عمل طلبات الطلاب)
     Route::get('/student-workflow/summary', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'getSummaryCounters'])->middleware('permission:students.view');
     Route::get('/student-workflow/requests', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'getRequests'])->middleware('permission:students.view');
-    Route::post('/student-workflow/status-request/{id}/action', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleStatusAction'])->middleware('permission:CHANGE_STUDENT_STATUS|students.approve_hq');
-    Route::post('/student-workflow/system-request/{id}/action', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleSystemAction'])->middleware('permission:CHANGE_STUDENT_STATUS|students.approve_hq');
-    Route::post('/student-workflow/transfer-request/{id}/step', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleTransferStep'])->middleware('permission:students.transfer');
+    Route::post('/student-workflow/status-request/{id}/action', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleStatusAction'])->whereNumber('id')->middleware('permission:CHANGE_STUDENT_STATUS|students.approve_hq');
+    Route::post('/student-workflow/system-request/{id}/action', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleSystemAction'])->whereNumber('id')->middleware('permission:CHANGE_STUDENT_STATUS|students.approve_hq');
+    Route::post('/student-workflow/transfer-request/{id}/step', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'handleTransferStep'])->whereNumber('id')->middleware('permission:students.transfer');
     Route::get('/student-workflow/requests/{type}/{id}/comments', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'getComments'])->middleware('permission:students.view');
     Route::post('/student-workflow/requests/{type}/{id}/comments', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'addComment'])->middleware('permission:students.view');
     Route::get('/student-workflow/transfers/export', [\App\Http\Controllers\Api\StudentWorkflowController::class, 'exportTransferFollowup'])->middleware('permission:students.view');

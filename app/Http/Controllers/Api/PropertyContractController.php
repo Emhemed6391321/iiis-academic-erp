@@ -292,7 +292,8 @@ class PropertyContractController extends Controller
         }
 
         $validated['created_by_id'] = $user?->id;
-        $validated['status'] = 'ACTIVE';
+        // New contracts start as DRAFT and only become ACTIVE through the approval step
+        $validated['status'] = 'DRAFT';
         $validated['paid_value'] = (float)($request->paid_value ?? 0);
 
         if (!empty($request->contract_number)) {

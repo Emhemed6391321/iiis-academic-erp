@@ -69,6 +69,11 @@
                 settingsTab: '{{ $initialSettingsTab ?? "years" }}',
                 selectedAcademicYearId: '{{ $currentAcademicYear ? $currentAcademicYear->id : 1 }}',
                 activeAcademicYearName: '{{ $currentAcademicYear ? $currentAcademicYear->name : "2026-2027" }}',
+                academicYears: @json($allAcademicYears->map(fn ($y) => ['id' => $y->id, 'name' => $y->name])->values()),
+                studyYears: @json(\App\Models\StudyYear::orderBy('level_order')->get(['id', 'name'])),
+                activeBranchFilter: '0',
+                authUserName: @json(auth()->user()->name ?? ''),
+                branchRequestsList: [],
 
                 // =========================================================================
                 // USER PROFILE STATE & METHODS
@@ -475,6 +480,7 @@
                 },
                 studentWorkflow: {
                     loading: false,
+                    requests: [],
                     activeTab: 'status',
                     counters: {
                         status_pending_count: 0,
@@ -957,6 +963,7 @@
                     open: false,
                     loading: false,
                     student: null,
+                    inputName: '',
                     confirmationText: ''
                 },
 
@@ -1789,8 +1796,8 @@
                         disability_details: st.disability_details || '',
                         chronic_diseases_list: cList,
                         chronic_diseases: st.chronic_diseases || '',
-                        profile_photo_url: st.profile_photo_url || (st.profile_photo_path ? ('/storage/' + st.profile_photo_path) : null),
-                        signature_url: st.signature_url || (st.digital_signature_path ? ('/storage/' + st.digital_signature_path) : null),
+                        profile_photo_url: st.profile_photo_url || (st.profile_photo_path ? ('/storage/' + st.profile_photo_path.replace(/^\/+/, '').replace(/^storage\//, '')) : null),
+                        signature_url: st.signature_url || (st.digital_signature_path ? ('/storage/' + st.digital_signature_path.replace(/^\/+/, '').replace(/^storage\//, '')) : null),
                         profile_photo_base64: null,
                         signature_base64: null,
                         medical_report_base64: null,
@@ -1847,8 +1854,8 @@
                         section_name: st.department ? st.department.name : (st.section_name || 'الشعبة العامة'),
                         study_type_label: st.study_type === 'INTISAB' ? 'انتساب' : 'نظامي',
                         blood_type: st.blood_type || '—',
-                        profile_photo_url: st.profile_photo_url || (st.profile_photo_path ? ('/storage/' + st.profile_photo_path) : null),
-                        signature_url: st.signature_url || (st.digital_signature_path ? ('/storage/' + st.digital_signature_path) : null),
+                        profile_photo_url: st.profile_photo_url || (st.profile_photo_path ? ('/storage/' + st.profile_photo_path.replace(/^\/+/, '').replace(/^storage\//, '')) : null),
+                        signature_url: st.signature_url || (st.digital_signature_path ? ('/storage/' + st.digital_signature_path.replace(/^\/+/, '').replace(/^storage\//, '')) : null),
                         issued_date: new Date().toISOString().split('T')[0]
                     };
                     this.studentCardModal.open = true;
@@ -2950,14 +2957,17 @@
                 openDeleteStudentModal(st) {
                     this.deleteStudentModal.student = st;
                     this.deleteStudentModal.confirmationText = '';
+                    this.deleteStudentModal.inputName = '';
                     this.deleteStudentModal.loading = false;
                     this.deleteStudentModal.open = true;
                 },
 
                 async submitDeleteStudentPermanently() {
                     if (!this.deleteStudentModal.student) return;
-                    if (this.deleteStudentModal.confirmationText !== 'حذف نهائي') {
-                        this.showToast('يرجى كتابة جملة التأكيد "حذف نهائي" للمتابعة');
+                    const typedName = (this.deleteStudentModal.inputName || '').trim();
+                    const expectedName = (this.deleteStudentModal.student.full_name || '').trim();
+                    if (!expectedName || typedName !== expectedName) {
+                        this.showToast('يرجى كتابة الاسم الرباعي للطالب بالضبط للتأكيد');
                         return;
                     }
                     this.deleteStudentModal.loading = true;
@@ -3018,11 +3028,14 @@
                 // =========================================================================
                 getStudentPhotoUrl(st) {
                     if (st && st.profile_photo_url) return st.profile_photo_url;
-                    if (st && st.profile_photo_path) {
-                        const clean = st.profile_photo_path.replace(/^\/?(storage\/)?/, '');
-                        return '/storage/' + clean;
-                    }
+                    if (st && st.profile_photo_path) return this.storageUrl(st.profile_photo_path);
                     return null;
+                },
+
+                // Builds a public storage URL without doubling the "/storage/" prefix
+                storageUrl(path) {
+                    if (!path) return null;
+                    return '/storage/' + String(path).replace(/^\/+/, '').replace(/^storage\//, '');
                 },
 
                 // =========================================================================
@@ -3863,6 +3876,7 @@ async initApp() {
                 },
 
                 async deleteBranchAction(branch) {
+                    if (!branch) return;
                     if (!confirm('تحذير أمني ورقابي:\nهل أنت متأكد من رغبتك في حذف أو إزالة الفرع «' + branch.name + '»؟\n\n(ملاحظة: إذا كان بالفرع طلاب أو سجلات تاريخية سيتم تلقائياً تحويل حالته إلى مغلق [CLOSED] بدلاً من حذفه للحفاظ على البيانات التاريخية).')) return;
                     try {
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -4071,6 +4085,36 @@ async loadBranchOperations() {
                     }
                 },
 
+                async approveBranchContract(contractId) {
+                    if (!confirm('هل تريد اعتماد هذا العقد وتفعيل سريانه؟')) {
+                        return;
+                    }
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/contracts/${contractId}/approve`, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && (data.status === 'success' || data.success)) {
+                            this.showToast('تم اعتماد العقد وتفعيله');
+                            if (this.selectedContractDetails && this.selectedContractDetails.id === contractId) {
+                                this.showContractModal = false;
+                            }
+                            await this.loadBranchOperations();
+                        } else {
+                            this.showToast(data.message || 'تعذر اعتماد العقد');
+                        }
+                    } catch (err) {
+                        console.error('Error approving contract:', err);
+                        this.showToast('تعذر الاتصال بالخادم لاعتماد العقد');
+                    }
+                },
+
                 async deleteContract(contractId) {
                     if (!confirm('هل أنت متأكد من رغبتك في حذف هذا العقد نهائياً من سجلات المعهد؟')) {
                         return;
@@ -4101,7 +4145,7 @@ async loadBranchOperations() {
 
                 async loadGradeSheet() {
                     try {
-                        const branchId = this.activeBranchFilter || 1;
+                        const branchId = (this.activeBranchFilter && this.activeBranchFilter !== '0') ? this.activeBranchFilter : 1;
                         let url = `/api/v1/grades/sheet?branch_id=${branchId}&study_year_id=${this.selectedStudyYearId}`;
                         if (this.selectedCourseId) {
                             url += `&course_id=${this.selectedCourseId}`;
@@ -4148,10 +4192,6 @@ async loadBranchOperations() {
                     } catch (e) {
                         console.error('Error loading grades:', e);
                     }
-                },
-
-                async loadStudents() {
-                    return this.loadRegistry(1);
                 },
 
                 async loadMatrix() {
@@ -4271,6 +4311,7 @@ async loadBranchOperations() {
                 },
 
                 async toggleUserStatus(u) {
+                    if (!u) return;
                     const action = u.is_active ? 'إيقاف وتعطيل' : 'تفعيل';
                     if (!confirm(`هل أنت متأكد من رغبتك في ${action} حساب المستخدم (${u.name})؟`)) {
                         return;
@@ -4426,6 +4467,7 @@ async loadBranchOperations() {
                 },
 
                 async updateBranchRequestStatus(id, newStatus) {
+                    if (!id) return;
                     try {
                         const res = await fetch(`/api/v1/branches/requests/${id}/status`, {
                             method: 'PATCH',
@@ -4654,6 +4696,7 @@ async loadBranchOperations() {
                 },
 
                 async updateTicketStatus(reqId, status) {
+                    if (!reqId) return;
                     try {
                         const res = await fetch('/api/v1/branches/requests/' + reqId + '/status', {
                             method: 'PATCH',
@@ -5558,8 +5601,15 @@ async loadBranchOperations() {
                         const res = await fetch(`/api/v1/student-workflow/requests?${params.toString()}`);
                         const json = await res.json();
                         if (json.status === 'success') {
-                            this.studentWorkflow.requests = json.data.data;
-                            this.studentWorkflow.pagination = json.data.pagination;
+                            // API returns { items, total, per_page, current_page, last_page }
+                            const page = json.data || {};
+                            this.studentWorkflow.requests = page.items || [];
+                            this.studentWorkflow.pagination = {
+                                total: page.total || 0,
+                                per_page: page.per_page || 25,
+                                current_page: page.current_page || 1,
+                                last_page: page.last_page || 1,
+                            };
                         }
                     } catch (e) {
                         console.error('Error loading workflow requests:', e);
@@ -5590,6 +5640,7 @@ async loadBranchOperations() {
 
                 async submitWorkflowDecision() {
                     const modal = this.studentWorkflow.decisionModal;
+                    if (!modal || !modal.requestId) return;
                     modal.submitting = true;
                     try {
                         const endpoint = modal.type === 'status'
@@ -5641,6 +5692,7 @@ async loadBranchOperations() {
 
                 async submitTransferStep() {
                     const modal = this.studentWorkflow.transferModal;
+                    if (!modal || !modal.requestId) return;
                     modal.submitting = true;
                     try {
                         const payload = modal.step === 'central_memo' ? {
@@ -7157,6 +7209,7 @@ async loadBranchOperations() {
                     }
                 },
                 async deleteStudyYear(sy) {
+                    if (!sy) return;
                     if (!confirm(`هل أنت متأكد من رغبتك في حذف المرحلة الدراسية «${sy.name}»؟`)) return;
                     try {
                         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -7229,6 +7282,7 @@ async loadBranchOperations() {
                     }
                 },
                 async deleteDepartment(dept) {
+                    if (!dept) return;
                     if (!confirm(`هل أنت متأكد من رغبتك في حذف القسم «${dept.name}»؟`)) return;
                     try {
                         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -7297,6 +7351,7 @@ async loadBranchOperations() {
                     }
                 },
                 async deleteBranchClass(c) {
+                    if (!c) return;
                     if (!confirm(`هل أنت متأكد من حذف الفصل «${c.name}»؟`)) return;
                     try {
                         const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -8219,9 +8274,44 @@ async loadBranchOperations() {
     </script>
 <!-- Global Client-side JavaScript Error Monitoring (SYSTEM_ERROR_MONITORING.md) -->
     <script>
+        // Hide uploaded images (student photos, signatures, attachments) that fail to load so no broken-image icon shows
+        document.addEventListener('error', function (e) {
+            var el = e.target;
+            if (el && el.tagName === 'IMG' && /\/storage\//.test(el.getAttribute('src') || '')) {
+                el.style.visibility = 'hidden';
+            }
+        }, true);
+
+        // Surface API rate-limit responses (HTTP 429) to the user instead of failing silently
+        (function () {
+            var nativeFetch = window.fetch.bind(window);
+            var lastToastAt = 0;
+            window.fetch = function (input, init) {
+                return nativeFetch(input, init).then(function (res) {
+                    var url = typeof input === 'string' ? input : (input && input.url) || '';
+                    if (res.status === 429 && url.indexOf('report-js') === -1 && Date.now() - lastToastAt > 8000) {
+                        lastToastAt = Date.now();
+                        try {
+                            if (window._academicApp) {
+                                window._academicApp.showToast('تم تجاوز عدد الطلبات المسموح بها مؤقتاً، يرجى الانتظار دقيقة ثم إعادة المحاولة');
+                            }
+                        } catch (_) {}
+                    }
+                    return res;
+                });
+            };
+        })();
+
+        // Cap and de-duplicate client error reports so a repeating error cannot flood the API rate limit
+        var __jsErrSent = 0, __jsErrSeen = {};
+
         window.addEventListener('error', function(e) {
             // Ignore generic cross-origin third-party script error with no message or source
             if (!e.message || (e.message === 'Script error.' && (!e.filename || e.lineno === 0))) return;
+            var __key = e.message + '|' + e.filename + '|' + e.lineno;
+            if (__jsErrSent >= 20 || __jsErrSeen[__key]) return;
+            __jsErrSeen[__key] = true;
+            __jsErrSent++;
             try {
                 fetch('/api/v1/system-errors/report-js', {
                     method: 'POST',
@@ -8246,6 +8336,10 @@ async loadBranchOperations() {
             try {
                 // Do not re-report report-js failures
                 if (e.reason && typeof e.reason.message === 'string' && e.reason.message.includes('report-js')) return;
+                var __rkey = 'rej|' + String(e.reason);
+                if (__jsErrSent >= 20 || __jsErrSeen[__rkey]) return;
+                __jsErrSeen[__rkey] = true;
+                __jsErrSent++;
                 fetch('/api/v1/system-errors/report-js', {
                     method: 'POST',
                     headers: {

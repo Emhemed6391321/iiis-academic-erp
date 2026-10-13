@@ -249,7 +249,7 @@
                 </div>
                 <div class="space-y-1.5">
                     <template x-for="r in searchResults.requests" :key="r.id">
-                        <div @click="currentSection = 'branch_requests'; showSearchModal = false"
+                        <div @click="currentSection = 'branch_requests'; showSearchModal = false; if (branchRequestsList.length === 0) loadBranchOperations();"
                             class="p-2.5 rounded-[12px] border cursor-pointer hover:border-[#2b78a5] flex items-center justify-between transition-all"
                             :class="darkMode ? 'bg-slate-800/40 border-slate-700/60 hover:bg-[#2b78a5]/10' : 'bg-slate-50 border-[#e8ebf2] hover:bg-[#2b78a5]/5'">
                             <div>

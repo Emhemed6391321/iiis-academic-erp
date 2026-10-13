@@ -237,10 +237,10 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center space-x-2 space-x-reverse">
                                         <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-black text-slate-700 dark:text-slate-300 text-xs">
-                                            <span x-text="req.student ? req.student.first_name.charAt(0) : 'ط'"></span>
+                                            <span x-text="(req.student && req.student.full_name) ? req.student.full_name.charAt(0) : 'ط'"></span>
                                         </div>
                                         <div>
-                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? `${req.student.first_name} ${req.student.family_name}` : 'غير معروف'"></span>
+                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? req.student.full_name : 'غير معروف'"></span>
                                             <p class="text-[10px] font-mono text-slate-400" x-text="req.student ? req.student.academic_number : ''"></p>
                                         </div>
                                     </div>
@@ -327,10 +327,10 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center space-x-2 space-x-reverse">
                                         <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-black text-slate-700 dark:text-slate-300 text-xs">
-                                            <span x-text="req.student ? req.student.first_name.charAt(0) : 'ط'"></span>
+                                            <span x-text="(req.student && req.student.full_name) ? req.student.full_name.charAt(0) : 'ط'"></span>
                                         </div>
                                         <div>
-                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? `${req.student.first_name} ${req.student.family_name}` : 'غير معروف'"></span>
+                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? req.student.full_name : 'غير معروف'"></span>
                                             <p class="text-[10px] font-mono text-slate-400" x-text="req.student ? req.student.academic_number : ''"></p>
                                         </div>
                                     </div>
@@ -415,10 +415,10 @@
                                 <td class="py-3 px-4">
                                     <div class="flex items-center space-x-2 space-x-reverse">
                                         <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-black text-slate-700 dark:text-slate-300 text-xs">
-                                            <span x-text="req.student ? req.student.first_name.charAt(0) : 'ط'"></span>
+                                            <span x-text="(req.student && req.student.full_name) ? req.student.full_name.charAt(0) : 'ط'"></span>
                                         </div>
                                         <div>
-                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? `${req.student.first_name} ${req.student.family_name}` : 'غير معروف'"></span>
+                                            <span class="font-black text-slate-900 dark:text-white" x-text="req.student ? req.student.full_name : 'غير معروف'"></span>
                                             <p class="text-[10px] font-mono text-slate-400" x-text="req.student ? req.student.academic_number : ''"></p>
                                         </div>
                                     </div>

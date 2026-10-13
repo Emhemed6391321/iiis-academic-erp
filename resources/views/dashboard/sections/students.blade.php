@@ -264,7 +264,6 @@
                             <span class="px-2.5 py-1 rounded-[8px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25"
                                   x-text="'المؤرشفون: ' + (studentRegistry.stats.archived || 0)"></span>
                         </div>
-                        </div>
 
                         <div class="flex items-center gap-3">
                             <button @click="resetRegistryFilters()"
@@ -2125,14 +2124,14 @@
                             <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                            <div class="font-black text-sm text-[#14268d]" x-text="enrollmentCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
-                            <div class="text-[11px] font-bold text-amber-700" x-text="'فرع: ' + (enrollmentCertModal.cert.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
+                            <div class="font-black text-sm text-[#14268d]" x-text="enrollmentCertModal.cert?.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
+                            <div class="text-[11px] font-bold text-amber-700" x-text="'فرع: ' + (enrollmentCertModal.cert?.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
                         </div>
 
                         <!-- شعار المعهد المركزي المعتمد -->
                         <div class="flex flex-col items-center">
                             <div class="w-20 h-20 rounded-full border-2 border-slate-900 flex items-center justify-center p-1 bg-white overflow-hidden shadow-xs">
-                                <img :src="enrollmentCertModal.cert.logo_url || adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
+                                <img :src="enrollmentCertModal.cert?.logo_url || adminSettings.logoPreviewUrl || adminSettings.profile.logo_url || '/images/logo.png'" 
                                      class="w-full h-full object-contain" 
                                      alt="شعار المعهد المركزي">
                             </div>
@@ -2140,9 +2139,9 @@
                         </div>
 
                         <div class="text-left space-y-1 font-mono text-[11px]">
-                            <div><strong>الرقم الإشاري:</strong> <span class="text-slate-800 font-bold" x-text="enrollmentCertModal.cert.ref_number"></span></div>
-                            <div><strong>التاريخ الميلادي:</strong> <span x-text="enrollmentCertModal.cert.issued_date"></span></div>
-                            <div><strong>العام الدراسي:</strong> <span x-text="enrollmentCertModal.cert.student.academic_year"></span></div>
+                            <div><strong>الرقم الإشاري:</strong> <span class="text-slate-800 font-bold" x-text="enrollmentCertModal.cert?.ref_number"></span></div>
+                            <div><strong>التاريخ الميلادي:</strong> <span x-text="enrollmentCertModal.cert?.issued_date"></span></div>
+                            <div><strong>العام الدراسي:</strong> <span x-text="enrollmentCertModal.cert?.student.academic_year"></span></div>
                         </div>
                     </div>
 
@@ -2159,10 +2158,10 @@
                         <!-- إطار الصورة الشخصية إن كان مفعلاً -->
                         <div x-show="enrollmentCertModal.showPhoto" class="flex-shrink-0">
                             <div class="w-24 h-32 rounded-xl border-2 border-slate-900 overflow-hidden bg-slate-100 flex items-center justify-center p-1 shadow-sm">
-                                <template x-if="enrollmentCertModal.cert.student.photo_url">
-                                    <img :src="enrollmentCertModal.cert.student.photo_url" class="w-full h-full object-cover rounded-lg">
+                                <template x-if="enrollmentCertModal.cert?.student.photo_url">
+                                    <img :src="enrollmentCertModal.cert?.student.photo_url" class="w-full h-full object-cover rounded-lg">
                                 </template>
-                                <template x-if="!enrollmentCertModal.cert.student.photo_url">
+                                <template x-if="!enrollmentCertModal.cert?.student.photo_url">
                                     <div class="flex flex-col items-center text-slate-400">
                                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                         <span class="text-[8px] mt-1 font-bold">صورة الطالب</span>
@@ -2175,31 +2174,31 @@
                         <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 rounded-xl bg-slate-50/80 border border-slate-300 text-xs">
                             <div class="col-span-2">
                                 <span class="text-slate-500 block text-[10px]">اسم الطالب الرباعي:</span>
-                                <strong class="text-slate-950 font-black text-[13px]" x-text="enrollmentCertModal.cert.student.full_name"></strong>
+                                <strong class="text-slate-950 font-black text-[13px]" x-text="enrollmentCertModal.cert?.student.full_name"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">الرقم الوطني:</span>
-                                <strong class="font-mono text-slate-900" x-text="enrollmentCertModal.cert.student.national_id"></strong>
+                                <strong class="font-mono text-slate-900" x-text="enrollmentCertModal.cert?.student.national_id"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">رقم القيد:</span>
-                                <strong class="font-mono text-[#14268d] font-black" x-text="enrollmentCertModal.cert.student.academic_number"></strong>
+                                <strong class="font-mono text-[#14268d] font-black" x-text="enrollmentCertModal.cert?.student.academic_number"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">تاريخ ومكان الميلاد:</span>
-                                <strong class="text-slate-800" x-text="(enrollmentCertModal.cert.student.birth_place || 'ليبيا') + ' - ' + (enrollmentCertModal.cert.student.birth_date || '—')"></strong>
+                                <strong class="text-slate-800" x-text="(enrollmentCertModal.cert?.student.birth_place || 'ليبيا') + ' - ' + (enrollmentCertModal.cert?.student.birth_date || '—')"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">الجنسية:</span>
-                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.nationality || 'ليبي'"></strong>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert?.student.nationality || 'ليبي'"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">المرحلة الدراسية:</span>
-                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.stage_name"></strong>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert?.student.stage_name"></strong>
                             </div>
                             <div>
                                 <span class="text-slate-500 block text-[10px]">الشعبة / التخصص:</span>
-                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert.student.section_name"></strong>
+                                <strong class="text-slate-800" x-text="enrollmentCertModal.cert?.student.section_name"></strong>
                             </div>
                         </div>
                     </div>
@@ -2208,7 +2207,7 @@
                     <div class="my-6 space-y-4 text-justify leading-loose text-sm font-semibold text-slate-800 relative z-10">
                         <p class="text-base font-black text-slate-900">إلى من يهمه الأمر،،،</p>
                         
-                        <p class="leading-loose text-[13.5px] indent-6 text-justify" x-text="enrollmentCertModal.cert.official_text"></p>
+                        <p class="leading-loose text-[13.5px] indent-6 text-justify" x-text="enrollmentCertModal.cert?.official_text"></p>
 
                         <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-blue-950 flex items-center gap-2">
                             <span>📌 هذا التعريف ساري المفعول للفصل الدراسي المسجل به الطالب خلال العام الدراسي المذكور أعلاه، وصادر لتقديمه للجهات الرسمية دون أدنى مسؤولية مالية أو قانونية على المعهد.</span>
@@ -2221,8 +2220,8 @@
                         <div class="space-y-6">
                             <div>
                                 <div class="text-slate-500 text-[10px]">الموظف المختص بالتسجيل:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="enrollmentCertModal.cert.issuer.name"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="enrollmentCertModal.cert.issuer.timestamp"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="enrollmentCertModal.cert?.issuer.name"></div>
+                                <div class="text-[9px] text-slate-400 font-mono" x-text="enrollmentCertModal.cert?.issuer.timestamp"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
@@ -2237,8 +2236,8 @@
 
                         <div class="space-y-6 relative">
                             <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert.stamp_url" 
+                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert?.stamp_url">
+                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert?.stamp_url" 
                                      class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
                                      alt="الختم الرسمي">
                             </template>
@@ -2254,7 +2253,7 @@
                     <!-- باركود التحقق الرقمي والرمز المشفر -->
                     <div class="mt-6 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
                         <span>شهادة رسمية صادرة إلكترونياً ومسجلة بالسجل الإلكتروني العام للمعهد التخصصي</span>
-                        <span>رمز التحقق: <strong class="text-slate-700" x-text="enrollmentCertModal.cert.ref_number"></strong></span>
+                        <span>رمز التحقق: <strong class="text-slate-700" x-text="enrollmentCertModal.cert?.ref_number"></strong></span>
                     </div>
 
                 </div>
@@ -2466,13 +2465,13 @@
                             <div class="px-4 py-1 rounded-lg border-2 border-rose-800 bg-rose-50 text-rose-900 font-black text-sm tracking-widest inline-block">
                                 سري ومكتوم
                             </div>
-                            <div class="text-[9px] font-mono text-slate-500 mt-1" x-text="confidentialReportModal.report.header.report_code"></div>
+                            <div class="text-[9px] font-mono text-slate-500 mt-1" x-text="confidentialReportModal.report?.header.report_code"></div>
                         </div>
 
                         <div class="text-left font-mono text-[10px] space-y-0.5">
-                            <div><strong>تاريخ الاستخراج:</strong> <span x-text="confidentialReportModal.report.header.extracted_at"></span></div>
-                            <div><strong>الموظف المستخرج:</strong> <span class="font-bold text-rose-900" x-text="confidentialReportModal.report.header.extracted_by"></span></div>
-                            <div><strong>الصفة:</strong> <span x-text="confidentialReportModal.report.header.extracted_by_role"></span></div>
+                            <div><strong>تاريخ الاستخراج:</strong> <span x-text="confidentialReportModal.report?.header.extracted_at"></span></div>
+                            <div><strong>الموظف المستخرج:</strong> <span class="font-bold text-rose-900" x-text="confidentialReportModal.report?.header.extracted_by"></span></div>
+                            <div><strong>الصفة:</strong> <span x-text="confidentialReportModal.report?.header.extracted_by_role"></span></div>
                         </div>
                     </div>
 
@@ -2480,33 +2479,33 @@
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 relative z-10">
                         <h4 class="font-black text-xs text-rose-900 pb-2 border-b border-slate-200 mb-3 flex items-center justify-between">
                             <span>أولاً: البيانات الشخصية والمدنية وهوية الطالب</span>
-                            <span class="font-mono text-[10px] text-slate-500" x-text="'الرقم الوطني: ' + confidentialReportModal.report.personal_data.national_id"></span>
+                            <span class="font-mono text-[10px] text-slate-500" x-text="'الرقم الوطني: ' + confidentialReportModal.report?.personal_data.national_id"></span>
                         </h4>
 
                         <div class="flex items-start gap-4">
                             <!-- الصورة -->
                             <div class="w-24 h-28 rounded-lg border-2 border-slate-300 overflow-hidden bg-white flex-shrink-0 flex items-center justify-center p-1">
-                                <template x-if="confidentialReportModal.report.personal_data.profile_photo_url">
-                                    <img :src="confidentialReportModal.report.personal_data.profile_photo_url" class="w-full h-full object-cover">
+                                <template x-if="confidentialReportModal.report?.personal_data.profile_photo_url">
+                                    <img :src="confidentialReportModal.report?.personal_data.profile_photo_url" class="w-full h-full object-cover">
                                 </template>
-                                <template x-if="!confidentialReportModal.report.personal_data.profile_photo_url">
+                                <template x-if="!confidentialReportModal.report?.personal_data.profile_photo_url">
                                     <span class="text-slate-400 text-[10px] text-center">لا توجد صورة</span>
                                 </template>
                             </div>
 
                             <!-- شبكة البيانات الشخصية -->
                             <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
-                                <div><span class="text-slate-400 block text-[9px]">الاسم الرباعي:</span><strong class="font-black text-slate-900" x-text="confidentialReportModal.report.personal_data.full_name"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">اسم الأم:</span><strong class="font-bold text-slate-800" x-text="confidentialReportModal.report.personal_data.mother_name"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">الجنس / السن:</span><strong x-text="confidentialReportModal.report.personal_data.gender + ' (' + confidentialReportModal.report.personal_data.age + ' سنة)'"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">الميلاد:</span><strong x-text="confidentialReportModal.report.personal_data.birth_place + ' - ' + confidentialReportModal.report.personal_data.birth_date"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">الجنسية والديانة:</span><strong x-text="confidentialReportModal.report.personal_data.nationality + ' / ' + confidentialReportModal.report.personal_data.religion"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">رقم جواز السفر:</span><strong class="font-mono" x-text="confidentialReportModal.report.personal_data.passport_number"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">رقم المنظومة الوزارية:</span><strong class="font-mono text-[#2b78a5]" x-text="confidentialReportModal.report.personal_data.ministry_student_id"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">فصيلة الدم:</span><strong class="font-mono" x-text="confidentialReportModal.report.health_and_disability.blood_type"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">هاتف الطالب:</span><strong class="font-mono" x-text="confidentialReportModal.report.personal_data.phone"></strong></div>
-                                <div><span class="text-slate-400 block text-[9px]">ولي الأمر وهاتفه:</span><strong class="font-mono" x-text="confidentialReportModal.report.personal_data.guardian_name + ' (' + confidentialReportModal.report.personal_data.guardian_phone + ')'"></strong></div>
-                                <div class="col-span-2"><span class="text-slate-400 block text-[9px]">عنوان السكن والإقامة:</span><strong x-text="confidentialReportModal.report.personal_data.address"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">الاسم الرباعي:</span><strong class="font-black text-slate-900" x-text="confidentialReportModal.report?.personal_data.full_name"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">اسم الأم:</span><strong class="font-bold text-slate-800" x-text="confidentialReportModal.report?.personal_data.mother_name"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">الجنس / السن:</span><strong x-text="confidentialReportModal.report?.personal_data.gender + ' (' + confidentialReportModal.report?.personal_data.age + ' سنة)'"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">الميلاد:</span><strong x-text="confidentialReportModal.report?.personal_data.birth_place + ' - ' + confidentialReportModal.report?.personal_data.birth_date"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">الجنسية والديانة:</span><strong x-text="confidentialReportModal.report?.personal_data.nationality + ' / ' + confidentialReportModal.report?.personal_data.religion"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">رقم جواز السفر:</span><strong class="font-mono" x-text="confidentialReportModal.report?.personal_data.passport_number"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">رقم المنظومة الوزارية:</span><strong class="font-mono text-[#2b78a5]" x-text="confidentialReportModal.report?.personal_data.ministry_student_id"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">فصيلة الدم:</span><strong class="font-mono" x-text="confidentialReportModal.report?.health_and_disability.blood_type"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">هاتف الطالب:</span><strong class="font-mono" x-text="confidentialReportModal.report?.personal_data.phone"></strong></div>
+                                <div><span class="text-slate-400 block text-[9px]">ولي الأمر وهاتفه:</span><strong class="font-mono" x-text="confidentialReportModal.report?.personal_data.guardian_name + ' (' + confidentialReportModal.report?.personal_data.guardian_phone + ')'"></strong></div>
+                                <div class="col-span-2"><span class="text-slate-400 block text-[9px]">عنوان السكن والإقامة:</span><strong x-text="confidentialReportModal.report?.personal_data.address"></strong></div>
                             </div>
                         </div>
                     </div>
@@ -2515,18 +2514,18 @@
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 relative z-10">
                         <h4 class="font-black text-xs text-slate-900 pb-2 border-b border-slate-200 mb-3 flex items-center justify-between">
                             <span>ثانياً: بيانات القيد والتنسيب ومسار القيد والاعتماد</span>
-                            <span class="font-mono text-[10px] text-emerald-700 font-bold" x-text="'رقم القيد الرسمي: ' + confidentialReportModal.report.academic_data.academic_number"></span>
+                            <span class="font-mono text-[10px] text-emerald-700 font-bold" x-text="'رقم القيد الرسمي: ' + confidentialReportModal.report?.academic_data.academic_number"></span>
                         </h4>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
-                            <div><span class="text-slate-400 block text-[9px]">الفرع التعليمي:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report.academic_data.branch_name"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">المرحلة الدراسية:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report.academic_data.study_year_name"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">الشعبة / التخصص:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report.academic_data.department_name"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">صفة القيد:</span><strong class="font-bold text-indigo-700" x-text="confidentialReportModal.report.academic_data.study_type"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">العام الدراسي للالتحاق:</span><strong class="font-mono" x-text="confidentialReportModal.report.academic_data.enrolled_year_name"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">حالة القيد الحالية:</span><strong class="font-bold text-emerald-700" x-text="confidentialReportModal.report.academic_data.academic_status"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">المعتمد بواسطة:</span><strong x-text="confidentialReportModal.report.academic_data.approved_by_name + ' (' + confidentialReportModal.report.academic_data.approved_at + ')'"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">مدقق البيانات:</span><strong x-text="confidentialReportModal.report.academic_data.data_verified_by + ' (' + confidentialReportModal.report.academic_data.data_verified_at + ')'"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">الفرع التعليمي:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report?.academic_data.branch_name"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">المرحلة الدراسية:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report?.academic_data.study_year_name"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">الشعبة / التخصص:</span><strong class="font-bold text-slate-900" x-text="confidentialReportModal.report?.academic_data.department_name"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">صفة القيد:</span><strong class="font-bold text-indigo-700" x-text="confidentialReportModal.report?.academic_data.study_type"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">العام الدراسي للالتحاق:</span><strong class="font-mono" x-text="confidentialReportModal.report?.academic_data.enrolled_year_name"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">حالة القيد الحالية:</span><strong class="font-bold text-emerald-700" x-text="confidentialReportModal.report?.academic_data.academic_status"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">المعتمد بواسطة:</span><strong x-text="confidentialReportModal.report?.academic_data.approved_by_name + ' (' + confidentialReportModal.report?.academic_data.approved_at + ')'"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">مدقق البيانات:</span><strong x-text="confidentialReportModal.report?.academic_data.data_verified_by + ' (' + confidentialReportModal.report?.academic_data.data_verified_at + ')'"></strong></div>
                         </div>
                     </div>
 
@@ -2534,12 +2533,12 @@
                     <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 relative z-10">
                         <h4 class="font-black text-xs text-slate-900 pb-2 border-b border-slate-200 mb-2">ثالثاً: الملف الصحي والاحتياجات الخاصة والإعاقة</h4>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                            <div><span class="text-slate-400 block text-[9px]">الحالة الصحية العامة:</span><strong x-text="confidentialReportModal.report.health_and_disability.health_status"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">الأمراض المزمنة:</span><strong x-text="confidentialReportModal.report.health_and_disability.chronic_diseases"></strong></div>
-                            <div><span class="text-slate-400 block text-[9px]">الحساسية الدوائية/الغذائية:</span><strong x-text="confidentialReportModal.report.health_and_disability.allergies"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">الحالة الصحية العامة:</span><strong x-text="confidentialReportModal.report?.health_and_disability.health_status"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">الأمراض المزمنة:</span><strong x-text="confidentialReportModal.report?.health_and_disability.chronic_diseases"></strong></div>
+                            <div><span class="text-slate-400 block text-[9px]">الحساسية الدوائية/الغذائية:</span><strong x-text="confidentialReportModal.report?.health_and_disability.allergies"></strong></div>
                             <div>
                                 <span class="text-slate-400 block text-[9px]">الإعاقة / الرعاية الخاصة:</span>
-                                <strong x-text="confidentialReportModal.report.health_and_disability.has_disability ? ('نعم - ' + confidentialReportModal.report.health_and_disability.disability_type) : 'لا يوجد'"></strong>
+                                <strong x-text="confidentialReportModal.report?.health_and_disability.has_disability ? ('نعم - ' + confidentialReportModal.report?.health_and_disability.disability_type) : 'لا يوجد'"></strong>
                             </div>
                         </div>
                     </div>
@@ -2552,22 +2551,22 @@
                             <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                                 <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل الحضور والغياب</h5>
                                 <div class="space-y-1.5 text-[10px]">
-                                    <div class="flex justify-between"><span>نسبة الحضور:</span><strong class="text-emerald-700 font-mono font-black" x-text="confidentialReportModal.report.attendance_summary.RATE + '%'"></strong></div>
-                                    <div class="flex justify-between"><span>أيام الحضور:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.PRESENT"></strong></div>
-                                    <div class="flex justify-between"><span>أيام الغياب بدون عذر:</span><strong class="text-rose-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.ABSENT"></strong></div>
-                                    <div class="flex justify-between"><span>الغياب بعذر معتمد:</span><strong class="text-amber-700 font-mono" x-text="confidentialReportModal.report.attendance_summary.EXCUSED"></strong></div>
-                                    <div class="flex justify-between"><span>مرات التأخير:</span><strong class="font-mono" x-text="confidentialReportModal.report.attendance_summary.LATE"></strong></div>
+                                    <div class="flex justify-between"><span>نسبة الحضور:</span><strong class="text-emerald-700 font-mono font-black" x-text="confidentialReportModal.report?.attendance_summary.RATE + '%'"></strong></div>
+                                    <div class="flex justify-between"><span>أيام الحضور:</span><strong class="font-mono" x-text="confidentialReportModal.report?.attendance_summary.PRESENT"></strong></div>
+                                    <div class="flex justify-between"><span>أيام الغياب بدون عذر:</span><strong class="text-rose-700 font-mono" x-text="confidentialReportModal.report?.attendance_summary.ABSENT"></strong></div>
+                                    <div class="flex justify-between"><span>الغياب بعذر معتمد:</span><strong class="text-amber-700 font-mono" x-text="confidentialReportModal.report?.attendance_summary.EXCUSED"></strong></div>
+                                    <div class="flex justify-between"><span>مرات التأخير:</span><strong class="font-mono" x-text="confidentialReportModal.report?.attendance_summary.LATE"></strong></div>
                                 </div>
                             </div>
 
                             <!-- سجل السلوكيات والمخالفات -->
                             <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                                 <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل المخالفات التأديبية</h5>
-                                <template x-if="confidentialReportModal.report.behaviors_record.length === 0">
+                                <template x-if="confidentialReportModal.report?.behaviors_record.length === 0">
                                     <div class="text-slate-400 text-[10px] text-center py-4">سجل سلوكي نظيف (لا توجد مخالفات) ✅</div>
                                 </template>
                                 <div class="space-y-1 max-h-24 overflow-y-auto">
-                                    <template x-for="b in confidentialReportModal.report.behaviors_record" :key="b.date">
+                                    <template x-for="b in confidentialReportModal.report?.behaviors_record" :key="b.date">
                                         <div class="p-1.5 rounded bg-rose-50 border border-rose-200 text-[9px]">
                                             <div class="font-bold text-rose-900" x-text="b.date + ' • ' + b.type"></div>
                                             <div class="text-slate-600" x-text="b.action_taken"></div>
@@ -2579,11 +2578,11 @@
                             <!-- سجل الأعذار والإجازات -->
                             <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                                 <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأعذار والإجازات المعتمدة</h5>
-                                <template x-if="confidentialReportModal.report.excuses_record.length === 0">
+                                <template x-if="confidentialReportModal.report?.excuses_record.length === 0">
                                     <div class="text-slate-400 text-[10px] text-center py-4">لا توجد طلبات أعذار مسجلة</div>
                                 </template>
                                 <div class="space-y-1 max-h-24 overflow-y-auto">
-                                    <template x-for="e in confidentialReportModal.report.excuses_record" :key="e.start_date">
+                                    <template x-for="e in confidentialReportModal.report?.excuses_record" :key="e.start_date">
                                         <div class="p-1.5 rounded bg-amber-50 border border-amber-200 text-[9px]">
                                             <div class="font-bold text-amber-900" x-text="e.start_date + ' إلى ' + e.end_date"></div>
                                             <div class="text-slate-600" x-text="e.reason + ' (' + (e.status === 'APPROVED' ? 'معتمد' : 'قيد المراجعة') + ')'"></div>
@@ -2602,7 +2601,7 @@
                             <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                                 <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">الأرشيف والمستندات الثبوتية المعتمدة</h5>
                             <div class="space-y-1 max-h-24 overflow-y-auto text-[10px]">
-                                <template x-for="doc in confidentialReportModal.report.documents_archive" :key="doc.id">
+                                <template x-for="doc in confidentialReportModal.report?.documents_archive" :key="doc.id">
                                     <div class="flex items-center justify-between p-1 rounded bg-white border border-slate-200">
                                         <span class="font-bold text-slate-800" x-text="'📄 ' + doc.type"></span>
                                         <span class="text-[9px] text-emerald-700 font-mono">✔️ معتمد وموثق</span>
@@ -2615,10 +2614,10 @@
                         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                             <h5 class="font-black text-xs text-slate-900 pb-1.5 border-b border-slate-200 mb-2">سجل التنقلات وتغيير حالة القيد</h5>
                             <div class="space-y-1 max-h-24 overflow-y-auto text-[10px]">
-                                <template x-if="confidentialReportModal.report.transfers_record.length === 0 && confidentialReportModal.report.status_history_record.length === 0">
+                                <template x-if="confidentialReportModal.report?.transfers_record.length === 0 && confidentialReportModal.report?.status_history_record.length === 0">
                                     <div class="text-slate-400 text-center py-4">لم تسجل أي عمليات نقل أو إيقاف قيد سابقة</div>
                                 </template>
-                                <template x-for="t in confidentialReportModal.report.transfers_record" :key="t.transfer_date">
+                                <template x-for="t in confidentialReportModal.report?.transfers_record" :key="t.transfer_date">
                                     <div class="p-1 rounded bg-blue-50 border border-blue-200 text-[9px]">
                                         <strong class="text-[#2b78a5]" x-text="'نقل من ' + t.from_branch + ' إلى ' + t.to_branch"></strong>
                                         <span class="text-slate-500 font-mono" x-text="' (' + t.transfer_date + ')'"></span>
@@ -2635,8 +2634,8 @@
                         <div class="space-y-6">
                             <div>
                                 <div class="text-slate-500 text-[10px]">اسم مستخرج التقرير السري:</div>
-                                <div class="font-black text-rose-900 mt-1" x-text="confidentialReportModal.report.header.extracted_by"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="confidentialReportModal.report.header.extracted_at"></div>
+                                <div class="font-black text-rose-900 mt-1" x-text="confidentialReportModal.report?.header.extracted_by"></div>
+                                <div class="text-[9px] text-slate-400 font-mono" x-text="confidentialReportModal.report?.header.extracted_at"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
@@ -2662,7 +2661,7 @@
                     <!-- شريط الرقابة الأمنية السري -->
                     <div class="mt-6 pt-2 border-t border-rose-300 flex items-center justify-between text-[9px] font-mono text-slate-400 relative z-10">
                         <span class="text-rose-800 font-bold">⚠️ تحذير: هذه الوثيقة سرية للغاية ولا يجوز تداولها أو إفشاؤها لغير المخولين تحت طائلة المسؤولية القانونية</span>
-                        <span class="font-bold">رمز التتبع الأمني: <strong class="text-rose-900" x-text="confidentialReportModal.report.header.report_code"></strong></span>
+                        <span class="font-bold">رمز التتبع الأمني: <strong class="text-rose-900" x-text="confidentialReportModal.report?.header.report_code"></strong></span>
                     </div>
 
                 </div>
@@ -2784,7 +2783,7 @@
                             <span>تحذير أمني وإداري مشدد:</span>
                         </div>
                         <p class="text-[11px] leading-relaxed">
-                            أنت على وشك حذف الطالب <strong class="underline font-bold" x-text="deleteStudentModal.student.full_name"></strong> بشكل <strong>نهائي لا رجعة فيه</strong>.
+                            أنت على وشك حذف الطالب <strong class="underline font-bold" x-text="deleteStudentModal.student?.full_name"></strong> بشكل <strong>نهائي لا رجعة فيه</strong>.
                             سيؤدي هذا الإجراء إلى مسح كافة سجلات الحضور، الوثائق المرفوعة، التقييمات، والبيانات الأكاديمية للطالب نهائياً وتوثيق العملية في سجل التدقيق الأمني السيادي.
                         </p>
                     </div>
@@ -2792,7 +2791,7 @@
                     <!-- Student Info Summary -->
                     <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                         <div class="grid grid-cols-2 gap-2 text-[11px]">
-                            <div>اسم الطالب: <strong class="font-bold text-slate-900 dark:text-white" x-text="deleteStudentModal.student.full_name"></strong></div>
+                            <div>اسم الطالب: <strong class="font-bold text-slate-900 dark:text-white" x-text="deleteStudentModal.student?.full_name"></strong></div>
                             <div>رقم القيد: <strong class="font-mono font-bold text-[#2b78a5]" x-text="deleteStudentModal.student.academic_number || deleteStudentModal.student.id"></strong></div>
                             <div>الفرع: <span x-text="deleteStudentModal.student.branch ? deleteStudentModal.student.branch.name : (deleteStudentModal.student.branch_name || 'الفرع')"></span></div>
                             <div>الرقم الوطني: <span class="font-mono" x-text="deleteStudentModal.student.national_id || '—'"></span></div>
@@ -2805,7 +2804,7 @@
                             لتأكيد الحذف النهائي، اكتب اسم الطالب كاملاً كما هو أدناه:
                         </label>
                         <div class="font-mono font-bold text-red-600 dark:text-red-400 text-xs p-1.5 bg-red-50 dark:bg-red-950/30 rounded border border-red-200 dark:border-red-900 select-all"
-                             x-text="deleteStudentModal.student.full_name"></div>
+                             x-text="deleteStudentModal.student?.full_name"></div>
                         <input type="text"
                                x-model="deleteStudentModal.inputName"
                                placeholder="اكتب اسم الطالب هنا للمطابقة والتأكيد"
@@ -2825,7 +2824,7 @@
                         </button>
                         <button type="button"
                                 @click="submitDeleteStudentPermanently()"
-                                :disabled="deleteStudentModal.loading || deleteStudentModal.inputName.trim() !== deleteStudentModal.student.full_name.trim()"
+                                :disabled="deleteStudentModal.loading || !deleteStudentModal.student || (deleteStudentModal.inputName || '').trim() !== (deleteStudentModal.student.full_name || '').trim()"
                                 class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black transition-all shadow-md shadow-red-900/30 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
                             <span x-show="deleteStudentModal.loading" class="animate-spin inline-block">⏳</span>
                             <span>حذف الطالب نهائياً 🗑️</span>
@@ -3300,7 +3299,7 @@
                             <span>🏢 الفروع الجديدة التي تم تسجيلها في دليل الفروع تلقائياً:</span>
                         </div>
                         <div class="flex flex-wrap gap-2 mt-2">
-                            <template x-for="br in batchImportModal.results.created_branches" :key="br">
+                            <template x-for="br in ((batchImportModal.results && batchImportModal.results.created_branches) || [])" :key="br">
                                 <span class="px-3 py-1 rounded-lg bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 font-bold text-blue-700 dark:text-blue-300" x-text="br"></span>
                             </template>
                         </div>

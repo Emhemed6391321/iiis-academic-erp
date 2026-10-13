@@ -71,7 +71,7 @@
                                         <td class="p-3 font-mono text-slate-400" x-text="excuse.start_date + ' ← ' + (excuse.end_date || excuse.start_date)"></td>
                                         <td class="p-3">
                                             <template x-if="excuse.attachment_path">
-                                                <a :href="'/storage/' + excuse.attachment_path" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1 font-bold">
+                                                <a :href="storageUrl(excuse.attachment_path)" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1 font-bold">
                                                     <span>📎 معاينة</span>
                                                 </a>
                                             </template>

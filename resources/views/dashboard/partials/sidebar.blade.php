@@ -205,53 +205,53 @@
             </div>
             <div class="space-y-1">
                 <!-- قسم الدراسة والامتحانات -->
-                <button @click="openComingSoon('قسم الدراسة والامتحانات')"
+                <button @click="currentSection = 'study_and_exams'"
                         x-show="hasPermission('grades.view')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all group"
                         :class="[
                             darkMode ? 'text-slate-300 hover:bg-slate-800/60 hover:text-white' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900',
                             sidebarCollapsed ? 'justify-center px-0' : ''
                         ]"
-                        title="قسم الدراسة والامتحانات (قريباً)">
+                        title="قسم الدراسة والامتحانات">
                     <div class="flex items-center space-x-3 space-x-reverse min-w-0">
                         <svg class="w-5 h-5 flex-shrink-0 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                         <span x-show="!sidebarCollapsed" class="truncate">قسم الدراسة والامتحانات</span>
                     </div>
-                    <span x-show="!sidebarCollapsed" class="px-1.5 py-0.5 text-[10px] font-black rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">قريباً</span>
+                    
                 </button>
 
                 <!-- الشهادات والوثائق والتحقق -->
-                <button @click="openComingSoon('الشهادات والوثائق والتحقق')"
+                <button @click="currentSection = 'transcripts'"
                         x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700',
                             sidebarCollapsed ? 'justify-center px-0' : ''
                         ]"
-                        title="الشهادات والوثائق (قريباً)">
+                        title="الشهادات والوثائق">
                     <div class="flex items-center space-x-3 space-x-reverse min-w-0">
                         <svg class="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                         <span x-show="!sidebarCollapsed" class="truncate">الشهادات والوثائق</span>
                     </div>
-                    <span x-show="!sidebarCollapsed" class="px-1.5 py-0.5 text-[10px] font-black rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">قريباً</span>
+                    
                 </button>
 
                 <!-- الطباعة الرسمية والتصدير -->
-                <button @click="openComingSoon('الطباعة الرسمية والتصدير')"
+                <button @click="currentSection = 'batch_print'"
                         x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
                             darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-[#f6f7fb] text-slate-700',
                             sidebarCollapsed ? 'justify-center px-0' : ''
                         ]"
-                        title="الطباعة والتصدير (قريباً)">
+                        title="الطباعة والتصدير">
                     <div class="flex items-center space-x-3 space-x-reverse min-w-0">
                         <svg class="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         <span x-show="!sidebarCollapsed" class="truncate">الطباعة الرسمية والتصدير</span>
                     </div>
-                    <span x-show="!sidebarCollapsed" class="px-1.5 py-0.5 text-[10px] font-black rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">قريباً</span>
+                    
                 </button>
             </div>
         </div>
@@ -285,7 +285,7 @@
                 </button>
                 @endif
 
-                <button @click="currentSection = 'branch_requests'"
+                <button @click="currentSection = 'branch_requests'; if (branchRequestsList.length === 0) loadBranchOperations();"
                         x-show="hasPermission('branches.view')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[

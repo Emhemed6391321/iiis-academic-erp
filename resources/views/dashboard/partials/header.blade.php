@@ -1,7 +1,7 @@
     <!-- 1. STICKY TOP NAVIGATION BAR (الشريط العلوي) -->
     <header class="sticky top-0 z-40 border-b backdrop-blur-md transition-colors"
             :class="darkMode ? 'bg-[#151f32]/95 border-slate-800 text-slate-100' : 'bg-white/95 border-[#e8ebf2] text-[#1f2937] shadow-sm'">
-        <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+        <div class="px-4 sm:px-6 lg:px-8 min-h-[4rem] py-2 flex flex-wrap items-center justify-between gap-3">
             
             <!-- Brand & Sidebar Toggle -->
             <div class="flex items-center space-x-3 space-x-reverse flex-shrink-0">
@@ -35,16 +35,16 @@
             </div>
 
             <!-- محرك البحث الموحد والشامل (Universal Search Trigger - Ctrl + K) -->
-            <div class="flex-1 max-w-xl mx-2 hidden md:block">
-                <button @click="openSearchModal()" 
-                        type="button" 
-                        class="w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs border transition-all"
+            <div class="flex-1 min-w-[180px] max-w-xl mx-2 hidden md:block">
+                <button @click="openSearchModal()"
+                        type="button"
+                        class="w-full flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl text-xs border transition-all whitespace-nowrap overflow-hidden"
                         :class="darkMode ? 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200' : 'bg-[#f6f7fb] hover:bg-white border-[#e8ebf2] text-slate-500 hover:border-slate-300 shadow-sm'">
-                    <div class="flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-[#2b78a5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <svg class="w-4 h-4 flex-shrink-0 text-[#2b78a5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <span>بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات...</span>
+                        <span class="truncate">بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات...</span>
                     </div>
                     <kbd class="px-2 py-0.5 rounded text-[11px] font-mono border"
                          :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600'">Ctrl + K</kbd>
@@ -76,10 +76,10 @@
                 @endif
 
                 <!-- محدد العام الدراسي الفعال (Active Academic Year Switcher) -->
-                <div class="relative hidden md:block">
+                <div class="relative hidden md:block max-w-[210px]">
                     <select x-model="selectedAcademicYearId"
                             @change="handleAcademicYearChange($event.target.value)"
-                            class="text-xs font-bold rounded-xl px-3 py-2 border outline-none cursor-pointer transition-all shadow-sm"
+                            class="w-full truncate text-xs font-bold rounded-xl px-3 py-2 border outline-none cursor-pointer transition-all shadow-sm"
                             :class="darkMode ? 'bg-slate-800/90 border-[#2b78a5]/50 text-sky-300 hover:border-[#2b78a5]' : 'bg-[#f0f7fb] border-[#2b78a5]/30 text-[#14268d] hover:bg-white'">
                         @if(isset($allAcademicYears) && count($allAcademicYears) > 0)
                             @foreach($allAcademicYears as $y)
@@ -96,7 +96,7 @@
                 </div>
 
                 <!-- شريط المؤقت والنافذة الزمنية (Operational Window Badge) -->
-                <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold"
+                <div class="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold"
                      :class="darkMode ? 'bg-blue-950/40 border-blue-800/60 text-blue-300' : 'bg-blue-50/80 border-blue-200 text-[#14268d]'">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="font-bold" x-text="'العام الدراسي النشط: ' + getActiveAcademicYearLabel()">العام الدراسي النشط: {{ $currentAcademicYear ? $currentAcademicYear->name : '2026-2027' }}</span>

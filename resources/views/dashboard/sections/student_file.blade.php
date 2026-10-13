@@ -70,7 +70,7 @@
                                     <div class="relative flex-shrink-0">
                                         <div class="w-24 h-24 rounded-[16px] border-2 border-[#2b78a5]/30 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-md">
                                             <template x-if="studentFile.student.profile_photo_path">
-                                                <img :src="'/storage/' + studentFile.student.profile_photo_path" class="w-full h-full object-cover">
+                                                <img :src="storageUrl(studentFile.student.profile_photo_path)" class="w-full h-full object-cover">
                                             </template>
                                             <template x-if="!studentFile.student.profile_photo_path">
                                                 <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -353,7 +353,7 @@
                                         <div class="text-[11px] text-slate-400 mb-1.5 font-bold">التوقيع الإلكتروني المعتمد للطالب:</div>
                                         <div class="h-16 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center p-2">
                                             <template x-if="studentFile.student.digital_signature_path">
-                                                <img :src="'/storage/' + studentFile.student.digital_signature_path" class="max-h-full max-w-full object-contain">
+                                                <img :src="storageUrl(studentFile.student.digital_signature_path)" class="max-h-full max-w-full object-contain">
                                             </template>
                                             <template x-if="!studentFile.student.digital_signature_path">
                                                 <span class="text-slate-400 font-mono text-[11px]">✍️ لم يتم تسجيل توقيع إلكتروني</span>
@@ -385,7 +385,7 @@
                                                     <div class="text-[10px] text-slate-400 font-mono truncate" x-text="doc.created_at ? doc.created_at.split('T')[0] : 'مؤرشف'"></div>
                                                 </div>
                                             </div>
-                                            <a :href="'/storage/' + doc.file_path" target="_blank"
+                                            <a :href="storageUrl(doc.file_path)" target="_blank"
                                                class="px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] hover:bg-indigo-100 transition-all flex-shrink-0">
                                                 معاينة ↗
                                             </a>
@@ -486,11 +486,13 @@
                         <!-- تبويب: الحضور والغياب -->
                         <div x-show="studentFile.activeTab === 'attendance'" class="space-y-4">
                             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div x-for="(label, key) in {PRESENT:'حاضر', ABSENT:'غائب', LATE:'متأخر', EXCUSED:'بعذر'}" class="p-4 rounded-[16px] border text-center transition-all"
+                                <template x-for="(label, key) in {PRESENT:'حاضر', ABSENT:'غائب', LATE:'متأخر', EXCUSED:'بعذر'}" :key="key">
+                                <div class="p-4 rounded-[16px] border text-center transition-all"
                                      :class="darkMode ? 'bg-slate-900/90 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'bg-white border-[#e8ebf2] shadow-[0_12px_24px_rgba(15,23,42,0.04)]'">
                                     <div class="text-2xl font-black text-[#2b78a5] dark:text-blue-400 tracking-tight" x-text="studentFile.attendanceSummary[key] || 0"></div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold" x-text="label"></div>
                                 </div>
+                                </template>
                             </div>
                             <div class="p-6 rounded-[20px] border"
                                  :class="darkMode ? 'bg-slate-900/90 border-slate-800 shadow-[0_12px_24px_rgba(0,0,0,0.2)]' : 'bg-white border-[#e8ebf2] shadow-[0_12px_24px_rgba(15,23,42,0.04)]'">
@@ -706,12 +708,12 @@
                                             <div x-show="studentFile.docsByType['NATIONAL_ID_CARD']" class="p-2.5 rounded-xl text-[11px] mb-3 border space-y-1"
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
                                                 <div class="flex items-center justify-between truncate">
-                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? (studentFile.docsByType['NATIONAL_ID_CARD'][0]?.original_name || 'وثيقة_الرقم_الوطني.pdf') : ''"></span>
-                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? (studentFile.docsByType['NATIONAL_ID_CARD'][0]?.formatted_size || '') : ''"></span>
+                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? (studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.original_name || 'وثيقة_الرقم_الوطني.pdf') : ''"></span>
+                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? (studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.formatted_size || '') : ''"></span>
                                                 </div>
                                                 <div class="text-[10px] text-slate-400 flex items-center justify-between">
                                                     <span>تاريخ الرفع:</span>
-                                                    <span class="font-mono" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? studentFile.docsByType['NATIONAL_ID_CARD'][0]?.created_at?.slice(0, 10) : ''"></span>
+                                                    <span class="font-mono" x-text="studentFile.docsByType['NATIONAL_ID_CARD'] ? studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.created_at?.slice(0, 10) : ''"></span>
                                                 </div>
                                             </div>
 
@@ -724,11 +726,11 @@
                                         <div class="pt-2 border-t flex items-center gap-2" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                                             <template x-if="studentFile.docsByType['NATIONAL_ID_CARD']">
                                                 <div class="flex items-center gap-1.5 w-full">
-                                                    <button @click="openDocPreview(studentFile.docsByType['NATIONAL_ID_CARD'][0])"
+                                                    <button @click="openDocPreview(studentFile.docsByType['NATIONAL_ID_CARD']?.[0])"
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="'/storage/' + studentFile.docsByType['NATIONAL_ID_CARD'][0]?.file_path" download
+                                                    <a :href="storageUrl(studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.file_path)" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -736,7 +738,7 @@
                                                             class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="استبدال المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                     </button>
-                                                    <button @click="sfDeleteDoc(studentFile.docsByType['NATIONAL_ID_CARD'][0]?.id)"
+                                                    <button @click="sfDeleteDoc(studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.id)"
                                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="حذف">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
@@ -777,12 +779,12 @@
                                             <div x-show="studentFile.docsByType['BIRTH_CERT']" class="p-2.5 rounded-xl text-[11px] mb-3 border space-y-1"
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
                                                 <div class="flex items-center justify-between truncate">
-                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['BIRTH_CERT'] ? (studentFile.docsByType['BIRTH_CERT'][0]?.original_name || 'شهادة_الميلاد.pdf') : ''"></span>
-                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['BIRTH_CERT'] ? (studentFile.docsByType['BIRTH_CERT'][0]?.formatted_size || '') : ''"></span>
+                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['BIRTH_CERT'] ? (studentFile.docsByType['BIRTH_CERT']?.[0]?.original_name || 'شهادة_الميلاد.pdf') : ''"></span>
+                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['BIRTH_CERT'] ? (studentFile.docsByType['BIRTH_CERT']?.[0]?.formatted_size || '') : ''"></span>
                                                 </div>
                                                 <div class="text-[10px] text-slate-400 flex items-center justify-between">
                                                     <span>تاريخ الرفع:</span>
-                                                    <span class="font-mono" x-text="studentFile.docsByType['BIRTH_CERT'] ? studentFile.docsByType['BIRTH_CERT'][0]?.created_at?.slice(0, 10) : ''"></span>
+                                                    <span class="font-mono" x-text="studentFile.docsByType['BIRTH_CERT'] ? studentFile.docsByType['BIRTH_CERT']?.[0]?.created_at?.slice(0, 10) : ''"></span>
                                                 </div>
                                             </div>
 
@@ -794,11 +796,11 @@
                                         <div class="pt-2 border-t flex items-center gap-2" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                                             <template x-if="studentFile.docsByType['BIRTH_CERT']">
                                                 <div class="flex items-center gap-1.5 w-full">
-                                                    <button @click="openDocPreview(studentFile.docsByType['BIRTH_CERT'][0])"
+                                                    <button @click="openDocPreview(studentFile.docsByType['BIRTH_CERT']?.[0])"
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="'/storage/' + studentFile.docsByType['BIRTH_CERT'][0]?.file_path" download
+                                                    <a :href="storageUrl(studentFile.docsByType['BIRTH_CERT']?.[0]?.file_path)" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -806,7 +808,7 @@
                                                             class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="استبدال المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                     </button>
-                                                    <button @click="sfDeleteDoc(studentFile.docsByType['BIRTH_CERT'][0]?.id)"
+                                                    <button @click="sfDeleteDoc(studentFile.docsByType['BIRTH_CERT']?.[0]?.id)"
                                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="حذف">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
@@ -847,12 +849,12 @@
                                             <div x-show="studentFile.docsByType['BASIC_EDUCATION_CERT']" class="p-2.5 rounded-xl text-[11px] mb-3 border space-y-1"
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
                                                 <div class="flex items-center justify-between truncate">
-                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? (studentFile.docsByType['BASIC_EDUCATION_CERT'][0]?.original_name || 'شهادة_التعليم_الأساسي.pdf') : ''"></span>
-                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? (studentFile.docsByType['BASIC_EDUCATION_CERT'][0]?.formatted_size || '') : ''"></span>
+                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? (studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.original_name || 'شهادة_التعليم_الأساسي.pdf') : ''"></span>
+                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? (studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.formatted_size || '') : ''"></span>
                                                 </div>
                                                 <div class="text-[10px] text-slate-400 flex items-center justify-between">
                                                     <span>تاريخ الرفع:</span>
-                                                    <span class="font-mono" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? studentFile.docsByType['BASIC_EDUCATION_CERT'][0]?.created_at?.slice(0, 10) : ''"></span>
+                                                    <span class="font-mono" x-text="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.created_at?.slice(0, 10) : ''"></span>
                                                 </div>
                                             </div>
 
@@ -864,11 +866,11 @@
                                         <div class="pt-2 border-t flex items-center gap-2" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                                             <template x-if="studentFile.docsByType['BASIC_EDUCATION_CERT']">
                                                 <div class="flex items-center gap-1.5 w-full">
-                                                    <button @click="openDocPreview(studentFile.docsByType['BASIC_EDUCATION_CERT'][0])"
+                                                    <button @click="openDocPreview(studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0])"
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="'/storage/' + studentFile.docsByType['BASIC_EDUCATION_CERT'][0]?.file_path" download
+                                                    <a :href="storageUrl(studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.file_path)" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -876,7 +878,7 @@
                                                             class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="استبدال المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                     </button>
-                                                    <button @click="sfDeleteDoc(studentFile.docsByType['BASIC_EDUCATION_CERT'][0]?.id)"
+                                                    <button @click="sfDeleteDoc(studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.id)"
                                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="حذف">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
@@ -917,12 +919,12 @@
                                             <div x-show="studentFile.docsByType['HEALTH_CERT']" class="p-2.5 rounded-xl text-[11px] mb-3 border space-y-1"
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
                                                 <div class="flex items-center justify-between truncate">
-                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['HEALTH_CERT'] ? (studentFile.docsByType['HEALTH_CERT'][0]?.original_name || 'الكشف_الطبي.pdf') : ''"></span>
-                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['HEALTH_CERT'] ? (studentFile.docsByType['HEALTH_CERT'][0]?.formatted_size || '') : ''"></span>
+                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['HEALTH_CERT'] ? (studentFile.docsByType['HEALTH_CERT']?.[0]?.original_name || 'الكشف_الطبي.pdf') : ''"></span>
+                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['HEALTH_CERT'] ? (studentFile.docsByType['HEALTH_CERT']?.[0]?.formatted_size || '') : ''"></span>
                                                 </div>
                                                 <div class="text-[10px] text-slate-400 flex items-center justify-between">
                                                     <span>تاريخ الرفع:</span>
-                                                    <span class="font-mono" x-text="studentFile.docsByType['HEALTH_CERT'] ? studentFile.docsByType['HEALTH_CERT'][0]?.created_at?.slice(0, 10) : ''"></span>
+                                                    <span class="font-mono" x-text="studentFile.docsByType['HEALTH_CERT'] ? studentFile.docsByType['HEALTH_CERT']?.[0]?.created_at?.slice(0, 10) : ''"></span>
                                                 </div>
                                             </div>
 
@@ -934,11 +936,11 @@
                                         <div class="pt-2 border-t flex items-center gap-2" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                                             <template x-if="studentFile.docsByType['HEALTH_CERT']">
                                                 <div class="flex items-center gap-1.5 w-full">
-                                                    <button @click="openDocPreview(studentFile.docsByType['HEALTH_CERT'][0])"
+                                                    <button @click="openDocPreview(studentFile.docsByType['HEALTH_CERT']?.[0])"
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="'/storage/' + studentFile.docsByType['HEALTH_CERT'][0]?.file_path" download
+                                                    <a :href="storageUrl(studentFile.docsByType['HEALTH_CERT']?.[0]?.file_path)" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -946,7 +948,7 @@
                                                             class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="استبدال المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                     </button>
-                                                    <button @click="sfDeleteDoc(studentFile.docsByType['HEALTH_CERT'][0]?.id)"
+                                                    <button @click="sfDeleteDoc(studentFile.docsByType['HEALTH_CERT']?.[0]?.id)"
                                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="حذف">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
@@ -991,12 +993,12 @@
                                             <div x-show="studentFile.docsByType['DISABILITY_MEDICAL_REP']" class="p-2.5 rounded-xl text-[11px] mb-3 border space-y-1"
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
                                                 <div class="flex items-center justify-between truncate">
-                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? (studentFile.docsByType['DISABILITY_MEDICAL_REP'][0]?.original_name || 'تقرير_الإعاقة_الطبي.pdf') : ''"></span>
-                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? (studentFile.docsByType['DISABILITY_MEDICAL_REP'][0]?.formatted_size || '') : ''"></span>
+                                                    <span class="truncate font-semibold" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? (studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.original_name || 'تقرير_الإعاقة_الطبي.pdf') : ''"></span>
+                                                    <span class="font-mono text-[10px] text-slate-400 flex-shrink-0" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? (studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.formatted_size || '') : ''"></span>
                                                 </div>
                                                 <div class="text-[10px] text-slate-400 flex items-center justify-between">
                                                     <span>تاريخ الرفع:</span>
-                                                    <span class="font-mono" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? studentFile.docsByType['DISABILITY_MEDICAL_REP'][0]?.created_at?.slice(0, 10) : ''"></span>
+                                                    <span class="font-mono" x-text="studentFile.docsByType['DISABILITY_MEDICAL_REP'] ? studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.created_at?.slice(0, 10) : ''"></span>
                                                 </div>
                                             </div>
 
@@ -1011,11 +1013,11 @@
                                         <div class="pt-2 border-t flex items-center gap-2" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                                             <template x-if="studentFile.docsByType['DISABILITY_MEDICAL_REP']">
                                                 <div class="flex items-center gap-1.5 w-full">
-                                                    <button @click="openDocPreview(studentFile.docsByType['DISABILITY_MEDICAL_REP'][0])"
+                                                    <button @click="openDocPreview(studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0])"
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="'/storage/' + studentFile.docsByType['DISABILITY_MEDICAL_REP'][0]?.file_path" download
+                                                    <a :href="storageUrl(studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.file_path)" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -1023,7 +1025,7 @@
                                                             class="p-1.5 rounded-lg border text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition" title="استبدال المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                                     </button>
-                                                    <button @click="sfDeleteDoc(studentFile.docsByType['DISABILITY_MEDICAL_REP'][0]?.id)"
+                                                    <button @click="sfDeleteDoc(studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.id)"
                                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="حذف">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                     </button>
@@ -1069,7 +1071,7 @@
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'">
                                                 <div class="w-12 h-14 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden flex-shrink-0 border flex items-center justify-center">
                                                     <template x-if="studentFile.student?.profile_photo_path">
-                                                        <img :src="'/storage/' + studentFile.student.profile_photo_path" class="w-full h-full object-cover">
+                                                        <img :src="storageUrl(studentFile.student.profile_photo_path)" class="w-full h-full object-cover">
                                                     </template>
                                                     <template x-if="!studentFile.student?.profile_photo_path">
                                                         <span class="text-xl">👤</span>
@@ -1147,7 +1149,7 @@
                                                                     class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#2b78a5] dark:text-sky-300 hover:bg-blue-100 transition" title="معاينة المستند">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                             </button>
-                                                            <a :href="'/storage/' + doc.file_path" download
+                                                            <a :href="storageUrl(doc.file_path)" download
                                                                class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition" title="تنزيل">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                             </a>

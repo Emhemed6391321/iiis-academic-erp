@@ -504,7 +504,7 @@
                         </div>
 
                         <div class="pt-2 border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
-                            <button @click="currentSection = 'branch_requests'" class="w-full py-2.5 rounded-[12px] text-xs font-bold border flex items-center justify-center gap-2 hover:bg-[#f6f7fb] dark:hover:bg-slate-800/60 transition-colors"
+                            <button @click="currentSection = 'branch_requests'; if (branchRequestsList.length === 0) loadBranchOperations();" class="w-full py-2.5 rounded-[12px] text-xs font-bold border flex items-center justify-center gap-2 hover:bg-[#f6f7fb] dark:hover:bg-slate-800/60 transition-colors"
                                     :class="darkMode ? 'border-slate-700 text-slate-300' : 'border-[#e8ebf2] text-slate-700'">
                                 <span>صندوق تذاكر الدعم والصيانة المركزية</span>
                                 <span class="px-2 py-0.5 rounded-[8px] bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold" x-text="branchOverview.pending_requests + ' طلب'"></span>

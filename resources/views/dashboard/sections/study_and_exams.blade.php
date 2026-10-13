@@ -240,7 +240,7 @@
                         </div>
 
                         <!-- Gateway 6: Forensic Audit Logs -->
-                        <div @click="currentSection = 'audit_logs'; loadAuditLogs();"
+                        <div @click="currentSection = 'audit'; loadAuditLogs();"
                              class="p-4 rounded-[20px] border cursor-pointer group transition-all duration-300 hover:scale-[1.02] relative overflow-hidden"
                              :class="darkMode ? 'bg-slate-900/80 hover:bg-slate-800/90 border-slate-800 hover:border-red-500/50' : 'bg-white hover:bg-red-50/50 border-slate-200 hover:border-red-400'">
                             <div class="flex items-start justify-between mb-3">
@@ -772,7 +772,7 @@
                                 الرقابة الجنائية اللحظية (أحدث حركات وتعديلات درجات الطلاب في الكنترول)
                             </h3>
                         </div>
-                        <button @click="currentSection = 'audit_logs'; loadAuditLogs();"
+                        <button @click="currentSection = 'audit'; loadAuditLogs();"
                                 class="text-xs font-bold text-amber-500 hover:text-amber-400 flex items-center gap-1">
                             <span>عرض سجل التدقيق الكامل</span>
                             <svg class="w-3.5 h-3.5 transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">

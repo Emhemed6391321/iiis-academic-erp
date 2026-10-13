@@ -115,7 +115,8 @@ class AuditLogController extends Controller
         }
 
         // 4. Pending Grade Batches (دفعات الكنترول)
-        $pendingBatches = \App\Models\GradeBatch::with(['branch', 'course'])
+        // GradeBatch is scoped per branch/department/study year (there is no course relation)
+        $pendingBatches = \App\Models\GradeBatch::with(['branch', 'department'])
             ->whereIn('status', ['SUBMITTED_TO_HQ', 'PENDING'])
             ->orderBy('id', 'desc')
             ->limit(3)
@@ -123,15 +124,15 @@ class AuditLogController extends Controller
 
         foreach ($pendingBatches as $b) {
             $branchName = $b->branch?->name ?? 'الفرع';
-            $courseName = $b->course?->name ?? 'المقرر';
+            $departmentName = $b->department?->name ?? 'القسم';
 
             $alerts[] = [
                 'id' => 'batch_' . $b->id,
                 'title' => "دفعة درجات ورصد بانتظار الاعتماد المركزي",
-                'description' => "مرفوعة من {$branchName} لمقرر {$courseName}",
+                'description' => "مرفوعة من {$branchName} لقسم {$departmentName}",
                 'time_ago' => $b->submitted_at ? \Carbon\Carbon::parse($b->submitted_at)->diffForHumans() : 'حديثاً',
                 'badge_color' => 'bg-blue-500',
-                'target_section' => 'study_exams_hub',
+                'target_section' => 'study_and_exams',
                 'type' => 'EXAM',
             ];
             $unreadCount++;

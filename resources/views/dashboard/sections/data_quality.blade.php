@@ -424,7 +424,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    <template x-for="(st, idx) in filteredQualityStudents()" :key="st.student_id">
+                    <template x-for="(st, idx) in filteredQualityStudents()" :key="st.id">
                         <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                             <td class="py-3 px-4 text-center font-bold text-slate-400" x-text="idx + 1"></td>
                             <td class="py-3 px-4">
@@ -433,7 +433,7 @@
                                         <span x-text="st.full_name ? st.full_name.charAt(0) : 'ط'"></span>
                                     </div>
                                     <div>
-                                        <a :href="`/?section=students&student_id=${st.student_id}`"
+                                        <a href="#" @click.prevent="openStudentFile(st.id)"
                                            class="font-black text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 underline decoration-dotted transition-colors"
                                            x-text="st.full_name"></a>
                                         <p class="text-[10px] text-slate-400" x-text="st.national_id ? `الرقم الوطني: ${st.national_id}` : 'الرقم الوطني غير مدخل'"></p>
@@ -449,7 +449,7 @@
                             </td>
                             <td class="py-3 px-4">
                                 <div class="flex flex-wrap gap-1.5 max-w-xl">
-                                    <template x-for="item in st.missing_fields" :key="item.field">
+                                    <template x-for="item in st.missing_fields" :key="item.key">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border"
                                               :class="{
                                                   'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50': item.category === 'personal',
@@ -465,7 +465,7 @@
                                 </div>
                             </td>
                             <td class="py-3 px-4 text-center print:hidden">
-                                <a :href="`/?section=students&student_id=${st.student_id}`"
+                                <a href="#" @click.prevent="openStudentFile(st.id)"
                                    class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950 hover:text-teal-600 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors inline-block">
                                     استكمال الملف
                                 </a>

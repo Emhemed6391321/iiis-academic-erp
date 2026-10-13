@@ -122,7 +122,7 @@ class StudentAttendanceController extends Controller
                 'branch_name'       => $student->branch?->name ?: '—',
                 'stage_name'        => $student->currentStudyYear?->name ?: '—',
                 'section_name'      => $student->department?->name ?: '—',
-                'photo_url'         => $student->profile_photo_path ? asset('storage/' . $student->profile_photo_path) : null,
+                'photo_url'         => $student->profile_photo_url,
                 
                 // تفاصيل سجل الحضور
                 'attendance_id'     => $rec?->id,
@@ -1132,7 +1132,7 @@ class StudentAttendanceController extends Controller
                     'branch_name' => $student->branch?->name ?: 'الفرع الرئيسي',
                     'stage_name' => $student->currentStudyYear?->name ?: '—',
                     'section_name' => $student->department?->name ?: '—',
-                    'photo_url' => $student->profile_photo_path ? asset('storage/' . $student->profile_photo_path) : null,
+                    'photo_url' => $student->profile_photo_url,
                     'status' => $attendance->status,
                     'status_label' => $attendance->status_label,
                     'check_in_time' => $attendance->check_in_time,
@@ -1192,7 +1192,7 @@ class StudentAttendanceController extends Controller
                     'branch_name' => $student->branch?->name ?: 'الفرع الرئيسي',
                     'stage_name' => $student->currentStudyYear?->name ?: '—',
                     'section_name' => $student->department?->name ?: '—',
-                    'photo_url' => $student->profile_photo_path ? asset('storage/' . $student->profile_photo_path) : null,
+                    'photo_url' => $student->profile_photo_url,
                     'status' => $attendance->status,
                     'status_label' => $attendance->status_label,
                     'check_in_time' => $attendance->check_in_time,
