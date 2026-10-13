@@ -292,8 +292,34 @@ class PropertyContractController extends Controller
         }
 
         $validated['created_by_id'] = $user?->id;
-        $validated['status'] = 'DRAFT'; // Initial lifecycle status: مسودة
-        $validated['contract_number'] = 'CNT-' . date('Y') . '-' . str_pad((string)(BranchContract::count() + 1), 4, '0', STR_PAD_LEFT);
+        $validated['status'] = 'ACTIVE';
+        $validated['paid_value'] = (float)($request->paid_value ?? 0);
+
+        if (!empty($request->contract_number)) {
+            $validated['contract_number'] = $request->contract_number;
+        } else {
+            $validated['contract_number'] = 'CNT-' . date('Y') . '-' . str_pad((string)(BranchContract::count() + 1), 4, '0', STR_PAD_LEFT);
+        }
+
+        // Auto create associated Property if property_name supplied without property_id
+        if (empty($validated['property_id']) && !empty($request->property_name)) {
+            $branch = Branch::find($validated['branch_id']);
+            $prop = Property::create([
+                'name' => $request->property_name,
+                'branch_id' => $validated['branch_id'],
+                'type' => str_contains($validated['contract_type'], 'إيجار') ? 'rented' : 'owned',
+                'property_number' => 'PROP-' . ($branch ? $branch->code : 'BR') . '-' . rand(100, 999),
+                'city' => $branch ? $branch->city : 'ليبيا',
+                'address' => $request->address ?: ($branch ? $branch->address : null),
+                'area_sqm' => $request->area_sqm ?: 500,
+                'floors_count' => $request->floors_count ?: 1,
+                'halls_count' => $request->halls_count ?: 4,
+                'owner_name' => $validated['contractor_name'],
+                'property_status' => 'READY',
+                'usage_status' => 'OCCUPIED',
+            ]);
+            $validated['property_id'] = $prop->id;
+        }
 
         if (empty($validated['rent_amount'])) {
             $validated['rent_amount'] = $validated['total_value'];
@@ -508,6 +534,33 @@ class PropertyContractController extends Controller
             'status' => 'success',
             'message' => 'تم إنهاء العقد رسمياً وتسجيل الالتزامات المالية وحالة المقر.',
             'data' => $contract->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete contract completely and clean associated installments.
+     */
+    public function destroyContract(int $id): JsonResponse
+    {
+        $contract = BranchContract::findOrFail($id);
+        $user = Auth::user();
+
+        $this->authorizeContractAccess($contract, $user);
+
+        SystemAuditTrail::log(
+            'CONTRACT_DELETED',
+            "حذف العقد «{$contract->title}» (رقم: {$contract->contract_number})",
+            $contract->toArray(),
+            $user?->id,
+            $contract->branch_id
+        );
+
+        $contract->installments()->delete();
+        $contract->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم حذف العقد بنجاح.',
         ]);
     }
 

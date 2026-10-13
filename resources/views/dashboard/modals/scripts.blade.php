@@ -1026,21 +1026,45 @@
                 branchOverview: {},
                 branchContractsList: [],
                 contractsKpis: {
-                    total_properties: 21,
-                    owned_properties: 17,
-                    rented_properties: 4,
-                    active_contracts: 21,
-                    expiring_contracts: 1,
-                    total_annual_rent: 147600,
-                    total_contract_value: 549800,
-                    total_paid_value: 481000,
-                    total_remaining: 68800,
-                    compliance_rate: 87.5
+                    total_properties: 0,
+                    owned_properties: 0,
+                    rented_properties: 0,
+                    active_contracts: 0,
+                    expiring_contracts: 0,
+                    total_annual_rent: 0,
+                    total_contract_value: 0,
+                    total_paid_value: 0,
+                    total_remaining: 0,
+                    compliance_rate: 0
                 },
                 contractFilterType: 'all',
                 contractSearchQuery: '',
                 selectedContractDetails: null,
                 showContractModal: false,
+                showNewContractModal: false,
+                isSavingContract: false,
+                newContractForm: {
+                    branch_id: '',
+                    title: '',
+                    property_name: '',
+                    ownership_type: 'rented',
+                    contract_number: '',
+                    contractor_name: '',
+                    contractor_phone: '',
+                    lessor_name: '',
+                    start_date: '',
+                    end_date: '',
+                    duration_months: 12,
+                    total_value: 0,
+                    rent_amount: 0,
+                    payment_frequency: 'ANNUAL',
+                    paid_value: 0,
+                    area_sqm: '',
+                    halls_count: '',
+                    floors_count: '',
+                    address: '',
+                    notes: ''
+                },
                 centralExcuses: [],
                 batchPrintTab: 'cards',
 
@@ -3934,6 +3958,145 @@ async loadBranchOperations() {
                 openContractDetails(contract) {
                     this.selectedContractDetails = contract;
                     this.showContractModal = true;
+                },
+
+                openNewContractModal() {
+                    const today = new Date();
+                    const nextYear = new Date();
+                    nextYear.setFullYear(today.getFullYear() + 1);
+
+                    const pad = (n) => String(n).padStart(2, '0');
+                    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+                    const nextYearStr = `${nextYear.getFullYear()}-${pad(nextYear.getMonth() + 1)}-${pad(nextYear.getDate())}`;
+
+                    let defaultBranchId = (this.branchesList && this.branchesList[0]) ? this.branchesList[0].id : (this.branches && this.branches[0] ? this.branches[0].id : 1);
+
+                    this.newContractForm = {
+                        branch_id: defaultBranchId,
+                        title: '',
+                        property_name: '',
+                        ownership_type: 'rented',
+                        contract_number: 'CONT-' + today.getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000),
+                        contractor_name: '',
+                        contractor_phone: '',
+                        lessor_name: '',
+                        start_date: todayStr,
+                        end_date: nextYearStr,
+                        duration_months: 12,
+                        total_value: 0,
+                        rent_amount: 0,
+                        payment_frequency: 'ANNUAL',
+                        paid_value: 0,
+                        area_sqm: 500,
+                        halls_count: 6,
+                        floors_count: 2,
+                        address: '',
+                        notes: ''
+                    };
+                    this.showNewContractModal = true;
+                },
+
+                async submitNewContract() {
+                    const f = this.newContractForm;
+                    if (!f.branch_id) {
+                        this.showToast('يرجى اختيار الفرع التابع له المقر');
+                        return;
+                    }
+                    if (!f.property_name && !f.title) {
+                        this.showToast('يرجى إدخال اسم أو وصف المقر التعليمي');
+                        return;
+                    }
+                    if (!f.contractor_name) {
+                        this.showToast('يرجى تحديد الجهة المالكة أو المؤجر');
+                        return;
+                    }
+                    if (!f.start_date || !f.end_date) {
+                        this.showToast('يرجى تحديد تاريخ بداية ونهاية العقد');
+                        return;
+                    }
+
+                    this.isSavingContract = true;
+                    try {
+                        const payload = {
+                            title: f.title || (`عقد مقر: ${f.property_name}`),
+                            contract_type: f.ownership_type === 'rented' ? 'إيجار مقر فرع' : 'تخصيص أصل وقفي',
+                            branch_id: parseInt(f.branch_id),
+                            contract_number: f.contract_number,
+                            contractor_name: f.contractor_name,
+                            contractor_phone: f.contractor_phone,
+                            lessor_name: f.lessor_name || f.contractor_name,
+                            start_date: f.start_date,
+                            end_date: f.end_date,
+                            duration_months: parseInt(f.duration_months) || 12,
+                            total_value: f.ownership_type === 'rented' ? parseFloat(f.total_value || f.rent_amount || 0) : 0,
+                            rent_amount: f.ownership_type === 'rented' ? parseFloat(f.rent_amount || f.total_value || 0) : 0,
+                            paid_value: parseFloat(f.paid_value || 0),
+                            payment_frequency: f.payment_frequency || 'ANNUAL',
+                            notes: f.notes,
+                            property_name: f.property_name,
+                            area_sqm: f.area_sqm ? parseFloat(f.area_sqm) : null,
+                            floors_count: f.floors_count ? parseInt(f.floors_count) : null,
+                            halls_count: f.halls_count ? parseInt(f.halls_count) : null,
+                            address: f.address
+                        };
+
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/contracts', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await res.json();
+                        if (res.ok && (data.status === 'success' || data.success)) {
+                            this.showToast('تم تسجيل وتوثيق العقد بنجاح 📑');
+                            this.showNewContractModal = false;
+                            await this.loadBranchOperations();
+                        } else {
+                            let errMsg = data.message || 'تعذر حفظ العقد.';
+                            if (data.errors) {
+                                errMsg += ': ' + Object.values(data.errors).flat().join(', ');
+                            }
+                            this.showToast(errMsg);
+                        }
+                    } catch (err) {
+                        console.error('Error saving contract:', err);
+                        this.showToast('تعذر الاتصال بالخادم لحفظ العقد');
+                    } finally {
+                        this.isSavingContract = false;
+                    }
+                },
+
+                async deleteContract(contractId) {
+                    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا العقد نهائياً من سجلات المعهد؟')) {
+                        return;
+                    }
+
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/contracts/${contractId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+                        const data = await res.json();
+                        if (res.ok && (data.status === 'success' || data.success)) {
+                            this.showToast('تم حذف العقد بنجاح');
+                            this.showContractModal = false;
+                            await this.loadBranchOperations();
+                        } else {
+                            this.showToast(data.message || 'تعذر حذف العقد');
+                        }
+                    } catch (err) {
+                        console.error('Error deleting contract:', err);
+                        this.showToast('تعذر الاتصال بالخادم لحذف العقد');
+                    }
                 },
 
                 async loadGradeSheet() {

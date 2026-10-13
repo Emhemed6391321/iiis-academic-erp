@@ -191,6 +191,7 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::post('/contracts/{id}/suspend', [\App\Http\Controllers\Api\PropertyContractController::class, 'suspendContract'])->middleware('permission:branches.manage');
     Route::post('/contracts/{id}/activate', [\App\Http\Controllers\Api\PropertyContractController::class, 'activateContract'])->middleware('permission:branches.manage');
     Route::post('/contracts/{id}/terminate', [\App\Http\Controllers\Api\PropertyContractController::class, 'terminateContract'])->middleware('permission:branches.manage');
+    Route::delete('/contracts/{id}', [\App\Http\Controllers\Api\PropertyContractController::class, 'destroyContract'])->middleware('permission:branches.manage');
     Route::post('/contracts/{id}/payments', [\App\Http\Controllers\Api\PropertyContractController::class, 'recordPayment'])->middleware('permission:branches.manage');
 
     // 9d. Financial Statements Engine
