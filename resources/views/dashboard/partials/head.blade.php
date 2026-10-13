@@ -126,8 +126,6 @@
             --white: #ffffff;
             --bg-body: #0b1120;
             --bg-card: #151f32;
-            --primary: #38bdf8;
-            --primary-dark: #0284c7;
             --text-main: #f3f4f6;
             --text-secondary: #94a3b8;
             --border-color: #1e293b;

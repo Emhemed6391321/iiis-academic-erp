@@ -85,17 +85,17 @@
     <style>
         [x-cloak] { display: none !important; }
         
-        /* Permanent SVG Size Protection */
+        /* Permanent Bulletproof SVG Protection */
         svg {
-            display: inline-block;
-            vertical-align: middle;
-            max-width: 100%;
-            flex-shrink: 0;
+            display: inline-block !important;
+            vertical-align: middle !important;
+            max-width: 100% !important;
+            flex-shrink: 0 !important;
         }
-        svg.w-3\.5 { width: 14px !important; height: 14px !important; }
-        svg.w-4 { width: 16px !important; height: 16px !important; }
-        svg.w-5 { width: 20px !important; height: 20px !important; }
-        svg.w-6 { width: 24px !important; height: 24px !important; }
+        svg.w-3\.5 { width: 14px !important; height: 14px !important; max-width: 14px !important; max-height: 14px !important; }
+        svg.w-4 { width: 16px !important; height: 16px !important; max-width: 16px !important; max-height: 16px !important; }
+        svg.w-5 { width: 20px !important; height: 20px !important; max-width: 20px !important; max-height: 20px !important; }
+        svg.w-6 { width: 24px !important; height: 24px !important; max-width: 24px !important; max-height: 24px !important; }
         
         body {
             font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
@@ -103,26 +103,25 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Ambient Geometric Mesh Background */
+        /* Clean High-Definition Andalusian Ambient Mesh Background */
         .login-bg-pattern {
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             background-image: 
-                radial-gradient(at 10% 10%, rgba(43, 120, 165, 0.08) 0px, transparent 50%),
-                radial-gradient(at 90% 10%, rgba(20, 38, 141, 0.07) 0px, transparent 50%),
-                radial-gradient(at 50% 90%, rgba(217, 119, 6, 0.05) 0px, transparent 50%),
-                radial-gradient(#2b78a5 0.75px, transparent 0.75px),
-                radial-gradient(#14268d 0.75px, #f8fafc 0.75px);
-            background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px, 28px 28px;
-            background-position: 0 0, 0 0, 0 0, 0 0, 14px 14px;
+                radial-gradient(circle at 15% 15%, rgba(43, 120, 165, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 15%, rgba(20, 38, 141, 0.07) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(217, 119, 6, 0.05) 0%, transparent 50%),
+                linear-gradient(135deg, #f0f7fb 0%, #ffffff 50%, #f1f5f9 100%);
+            background-attachment: fixed;
         }
 
         /* Glassmorphic Login Card */
         .login-card {
-            background: rgba(255, 255, 255, 0.94);
+            background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(226, 232, 240, 0.9);
             border-radius: 24px;
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.8);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -157,15 +156,11 @@
 <body class="min-h-screen flex flex-col justify-between selection:bg-[#2b78a5] selection:text-white relative login-bg-pattern"
       x-data="{
           showPassword: false,
-          submitting: false,
-          init() {
-              document.documentElement.classList.remove('dark');
-              localStorage.setItem('login_theme', 'light');
-          }
+          submitting: false
       }">
 
     <!-- Top Sticky Header -->
-    <header class="w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 py-3 px-4 sm:px-8 shadow-xs sticky top-0 z-30">
+    <header class="w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 py-3 px-4 sm:px-8 shadow-xs sticky top-0 z-30">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             
             <!-- Institution Brand (Official Titles) -->
@@ -210,27 +205,32 @@
                 <!-- Institute Logo & Emblem Header -->
                 <div class="text-center mb-6 pt-2">
 
+                    <!-- Official Emblem/Logo -->
+                    <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex items-center justify-center p-2 overflow-hidden">
+                        <img src="{{ $logoUrl }}" alt="{{ $instituteName }}" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='/images/logo.png'">
+                    </div>
+
                     <!-- Titles Directly from Central Governance Settings -->
-                    <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-center gap-1.5">
+                    <div class="text-[11px] font-bold text-slate-500 mb-1 flex items-center justify-center gap-1.5">
                         <span>{{ $supervisingBody }}</span>
                         <span>•</span>
                         <span>{{ $supervisingDepartment }}</span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                         {{ $instituteName }}
                     </h1>
-                    <div class="text-xs font-bold text-[#2b78a5] dark:text-blue-400 mt-1">
+                    <div class="text-xs font-bold text-[#2b78a5] mt-1">
                         بوابة تسجيل الدخول الموحدة للمنظومة
                     </div>
-                    <p class="text-[12px] text-slate-500 dark:text-slate-400 font-medium mt-1.5">
+                    <p class="text-[12px] text-slate-500 font-medium mt-1.5">
                         أدخل بيانات الاعتماد الرسمية للوصول إلى لوحة الإدارة وشؤون الطلاب
                     </p>
                 </div>
 
                 <!-- Flash Status Alert -->
                 @if (session('status'))
-                    <div class="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs font-bold flex items-center gap-2.5">
-                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <div class="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-2.5 shadow-2xs">
+                        <svg class="w-4 h-4 text-emerald-600 flex-shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         <span>{{ session('status') }}</span>
                     </div>
                 @endif
@@ -256,12 +256,12 @@
 
                     <!-- Email or National ID Input -->
                     <div>
-                        <label for="email_input" class="block text-xs font-extrabold text-slate-700 dark:text-slate-300 mb-1.5">
+                        <label for="email_input" class="block text-xs font-extrabold text-slate-700 mb-1.5">
                             البريد الإلكتروني أو الرقم الوطني <span class="text-rose-500">*</span>
                         </label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                                <svg class="w-4 h-4 text-[#2b78a5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4 text-[#2b78a5]" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                                 </svg>
                             </div>
@@ -272,21 +272,21 @@
                                    required
                                    autofocus
                                    placeholder="أدخل البريد الإلكتروني أو الرقم الوطني..."
-                                   class="w-full pr-10 pl-4 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-[#2b78a5] dark:focus:border-blue-400 focus:ring-3 focus:ring-[#2b78a5]/15 outline-none login-input">
+                                   class="w-full pr-10 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold placeholder-slate-400 focus:bg-white focus:border-[#2b78a5] focus:ring-3 focus:ring-[#2b78a5]/15 outline-none login-input">
                         </div>
                     </div>
 
                     <!-- Password Input -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
-                            <label for="password_input" class="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                            <label for="password_input" class="block text-xs font-extrabold text-slate-700">
                                 كلمة المرور الرسمية <span class="text-rose-500">*</span>
                             </label>
-                            <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500">مشفرة ومحمية</span>
+                            <span class="text-[10px] font-bold text-slate-400">مشفرة ومحمية</span>
                         </div>
                         <div class="relative">
-                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
-                                <svg class="w-4 h-4 text-[#2b78a5] dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-4 h-4 text-[#2b78a5]" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                 </svg>
                             </div>
@@ -295,15 +295,15 @@
                                    name="password"
                                    required
                                    placeholder="••••••••••••"
-                                   class="w-full pr-10 pl-11 py-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white text-xs font-mono font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-[#2b78a5] dark:focus:border-blue-400 focus:ring-3 focus:ring-[#2b78a5]/15 outline-none login-input">
+                                   class="w-full pr-10 pl-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-mono font-semibold placeholder-slate-400 focus:bg-white focus:border-[#2b78a5] focus:ring-3 focus:ring-[#2b78a5]/15 outline-none login-input">
                             
                             <!-- Toggle Password Visibility -->
                             <button type="button"
                                     @click="showPassword = !showPassword"
-                                    class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none cursor-pointer"
+                                    class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                                     tabindex="-1">
-                                <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                <svg x-show="showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
+                                <svg x-show="!showPassword" class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                <svg x-show="showPassword" class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/></svg>
                             </button>
                         </div>
                     </div>
@@ -311,11 +311,11 @@
                     <!-- Remember Me Option -->
                     <div class="flex items-center justify-between text-xs pt-1">
                         <label class="flex items-center space-x-2 space-x-reverse cursor-pointer select-none">
-                            <input type="checkbox" name="remember" checked class="w-4 h-4 rounded text-[#2b78a5] focus:ring-[#2b78a5] border-slate-300 dark:border-slate-600 dark:bg-slate-800">
-                            <span class="text-slate-700 dark:text-slate-300 font-semibold text-[11.5px]">تذكر تسجيل الدخول</span>
+                            <input type="checkbox" name="remember" checked class="w-4 h-4 rounded text-[#2b78a5] focus:ring-[#2b78a5] border-slate-300">
+                            <span class="text-slate-700 font-semibold text-[11.5px]">تذكر تسجيل الدخول</span>
                         </label>
-                        <span class="text-[10.5px] text-[#2b78a5] dark:text-blue-400 font-bold flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
+                        <span class="text-[10.5px] text-[#2b78a5] font-bold flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-emerald-600" width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"/></svg>
                             جلسة آمنة ومعتمدة
                         </span>
                     </div>
@@ -325,15 +325,15 @@
                         <button type="submit"
                                 :disabled="submitting"
                                 class="w-full py-3.5 px-6 login-submit-btn text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
-                            <svg x-show="submitting" class="w-4 h-4 animate-spin text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            <svg x-show="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                            <svg x-show="submitting" class="w-4 h-4 animate-spin text-white" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <svg x-show="!submitting" class="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
                             <span x-text="submitting ? 'جاري التحقق والمصادقة...' : 'تسجيل الدخول الآمن للبوابة'">تسجيل الدخول الآمن للبوابة</span>
                         </button>
                     </div>
                 </form>
 
                 <!-- Card Security Footer -->
-                <div class="mt-7 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 font-semibold">
+                <div class="mt-7 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                     <div class="flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                         <span>اتصال مشفر (SSL 256-bit)</span>

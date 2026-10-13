@@ -143,10 +143,14 @@ class LoginController extends Controller
 
         Auth::logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        try {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } catch (\Throwable $e) {
+            // Ignore if session was already invalidated
+        }
 
-        return redirect('/login')->with('status', 'تم تسجيل الخروج الآمن بنجاح.');
+        return redirect('/login')->with('status', 'تم تسجيل الخروج بنجاح.');
     }
 
     /**

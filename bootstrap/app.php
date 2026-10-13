@@ -43,6 +43,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission'            => \App\Http\Middleware\CheckPermission::class,
         ]);
 
+        // Exempt logout and api from CSRF token verification to prevent 419 Page Expired errors
+        $middleware->validateCsrfTokens(except: [
+            'logout',
+            '/logout',
+            'api/*',
+        ]);
+
         // Trust proxies to prevent IP spoofing behind reverse proxies (Requirement 1.7)
         $proxies = env('TRUSTED_PROXIES');
         if (!empty($proxies)) {
@@ -57,6 +64,27 @@ return Application::configure(basePath: dirname(__DIR__))
             } catch (\Throwable $ignore) {
                 // Safeguard to never block default reporting
             }
+        });
+
+        // Gracefully handle session expiration / CSRF mismatch (prevent default 419 error screen)
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Auth::logout();
+            try {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            } catch (\Throwable $ignored) {}
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'انتهت صلاحية جلسة العمل، يرجى إعادة تسجيل الدخول.'
+                ], 419);
+            }
+
+            $message = ($request->is('logout') || $request->is('*/logout'))
+                ? 'تم تسجيل الخروج بنجاح.'
+                : 'انتهت صلاحية جلسة العمل بسبب عدم النشاط. يرجى تسجيل الدخول مجدداً.';
+
+            return redirect('/login')->with('status', $message);
         });
     })->create();
 

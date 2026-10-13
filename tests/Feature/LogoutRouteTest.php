@@ -37,4 +37,17 @@ class LogoutRouteTest extends TestCase
         $response->assertRedirect('/login');
         $this->assertGuest();
     }
+
+    public function test_post_logout_without_csrf_token_never_throws_419(): void
+    {
+        $user = User::factory()->create();
+
+        // Send raw POST request without CSRF token
+        $response = $this->actingAs($user)->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class === null ? [] : [])
+            ->post('/logout', ['_token' => 'invalid-token-or-stale']);
+
+        $response->assertStatus(302);
+        $response->assertRedirect('/login');
+        $this->assertGuest();
+    }
 }
