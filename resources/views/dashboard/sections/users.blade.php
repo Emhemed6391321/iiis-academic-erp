@@ -132,7 +132,7 @@
 
                     <!-- جدول بيانات المستخدمين الشامل -->
                     <div class="overflow-x-auto rounded-[18px] border shadow-sm" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
-                        <table class="w-full text-right text-xs">
+                        <table class="w-full min-w-[960px] text-right text-xs">
                             <thead :class="darkMode ? 'bg-slate-900/90 text-slate-300' : 'bg-[#f1f5f9] text-slate-700'">
                                 <tr class="border-b" :class="darkMode ? 'border-slate-800' : 'border-[#e8ebf2]'">
                                     <th class="p-4 font-black">المستخدم / الموظف</th>
