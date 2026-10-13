@@ -93,7 +93,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     
                     <button @click="openCreateStudentModal()" 
-                            class="p-4 rounded-[18px] border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group flex flex-col items-center justify-center gap-2"
+                            class="p-4 rounded-[18px] border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group flex flex-col items-center justify-center gap-2 cursor-pointer"
                             :class="darkMode ? 'bg-slate-900/90 border-slate-800 hover:border-blue-700' : 'bg-white border-[#e8ebf2] hover:border-blue-300 shadow-sm'">
                         <span class="w-10 h-10 rounded-[12px] bg-blue-50 text-[#2b78a5] dark:bg-blue-950/70 dark:text-blue-300 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>

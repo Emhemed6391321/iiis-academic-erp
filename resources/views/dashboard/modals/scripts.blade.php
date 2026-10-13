@@ -1612,7 +1612,7 @@
                         phone: '',
                         guardian_phone: '',
                         branch_id: (this.branchesList && this.branchesList[0]) ? this.branchesList[0].id : 1,
-                        department_id: (this.courseDepartments && this.courseDepartments[0]) ? this.courseDepartments[0].id : 1,
+                        department_id: (this.studentRegistry?.meta?.departments && this.studentRegistry.meta.departments[0]) ? this.studentRegistry.meta.departments[0].id : 1,
                         current_study_year_id: 1,
                         study_type: 'REGULAR',
                         blood_type: 'O+',
@@ -1626,6 +1626,14 @@
                         disability_report_base64: null,
                         notes: ''
                     };
+
+                    // Load metadata in background if not already loaded to populate dropdowns
+                    if ((!this.studentRegistry || !this.studentRegistry.meta || !this.studentRegistry.meta.departments || !this.studentRegistry.meta.departments.length) && typeof this.loadRegistry === 'function') {
+                        this.loadRegistry(1);
+                    }
+                    if ((!this.branchesList || !this.branchesList.length) && typeof this.loadBranchOperations === 'function') {
+                        this.loadBranchOperations();
+                    }
                 },
 
                 async submitCreateStudent() {

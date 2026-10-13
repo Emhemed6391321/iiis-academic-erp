@@ -615,7 +615,12 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>{{-- نهاية قسم سجل الطلاب (Current Section Students) لتمكين النوافذ المنبثقة من الظهور فوق كل الأقسام --}}
 
+    <!-- ========================================================================= -->
+    <!-- استمارة القبول الموحدة وتوليد رقم القيد الرسمي (CREATE STUDENT MODAL)     -->
+    <!-- ========================================================================= -->
     <div x-show="createStudentModal.open"
          class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md"
          x-cloak
@@ -3394,4 +3399,4 @@
 
         </div>
     </div>
-</div>{{-- end students section --}}
+
