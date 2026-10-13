@@ -1587,6 +1587,10 @@
                 },
 
 
+                openAddStudentModal() {
+                    this.openCreateStudentModal();
+                },
+
                 openCreateStudentModal() {
                     this.createStudentModal.open = true;
                     this.createStudentModal.activeTab = 'personal';

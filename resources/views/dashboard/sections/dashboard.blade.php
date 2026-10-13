@@ -92,7 +92,7 @@
                 <!-- 2. منصة الإجراءات الميدانية السريعة (Executive Quick Action Station) -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                     
-                    <button @click="openAddStudentModal()" 
+                    <button @click="openCreateStudentModal()" 
                             class="p-4 rounded-[18px] border text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md group flex flex-col items-center justify-center gap-2"
                             :class="darkMode ? 'bg-slate-900/90 border-slate-800 hover:border-blue-700' : 'bg-white border-[#e8ebf2] hover:border-blue-300 shadow-sm'">
                         <span class="w-10 h-10 rounded-[12px] bg-blue-50 text-[#2b78a5] dark:bg-blue-950/70 dark:text-blue-300 flex items-center justify-center group-hover:scale-110 transition-transform">
