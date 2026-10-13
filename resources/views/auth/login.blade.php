@@ -27,58 +27,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول الموحد | {{ $instituteName }}</title>
     
+    <!-- Precompiled Bulletproof Static CSS (Loads instantly, zero JS dependency) -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    
     <!-- Google Fonts: Cairo & IBM Plex Sans Arabic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS with Custom Theme -->
-    <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
+    <!-- Tailwind CSS Engine (Fallback & Dynamic Utility compiler) -->
+    <script src="{{ asset('js/tailwind.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#2b78a5',
-                            dark: '#14268d',
-                            50: '#f0f7fb',
-                            100: '#e0eff7',
-                            200: '#c1dfef',
-                            500: '#2b78a5',
-                            600: '#24658d',
-                            700: '#1d5273',
-                            800: '#17415b',
-                            900: '#14268d',
-                            950: '#0b164f'
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                DEFAULT: '#2b78a5',
+                                dark: '#14268d',
+                                50: '#f0f7fb',
+                                100: '#e0eff7',
+                                200: '#c1dfef',
+                                500: '#2b78a5',
+                                600: '#24658d',
+                                700: '#1d5273',
+                                800: '#17415b',
+                                900: '#14268d',
+                                950: '#0b164f'
+                            },
+                            andalusian: {
+                                blue: '#2b78a5',
+                                navy: '#14268d',
+                                dark: '#0d1838',
+                                gold: '#d97706',
+                                goldLight: '#f59e0b'
+                            }
                         },
-                        andalusian: {
-                            blue: '#2b78a5',
-                            navy: '#14268d',
-                            dark: '#0d1838',
-                            gold: '#d97706',
-                            goldLight: '#f59e0b'
+                        fontFamily: {
+                            sans: ['Cairo', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif']
+                        },
+                        boxShadow: {
+                            'glow': '0 0 35px -5px rgba(43, 120, 165, 0.25)',
+                            'glow-lg': '0 0 50px -10px rgba(20, 38, 141, 0.35)',
+                            'card': '0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.8)'
                         }
-                    },
-                    fontFamily: {
-                        sans: ['Cairo', 'IBM Plex Sans Arabic', 'system-ui', 'sans-serif']
-                    },
-                    boxShadow: {
-                        'glow': '0 0 35px -5px rgba(43, 120, 165, 0.25)',
-                        'glow-lg': '0 0 50px -10px rgba(20, 38, 141, 0.35)',
-                        'card': '0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.8)'
                     }
                 }
-            }
+            };
         }
     </script>
     
     <!-- Alpine.js -->
-    <script defer src="/js/alpine.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
+    <script defer src="{{ asset('js/alpine.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
 
     <style>
         [x-cloak] { display: none !important; }
+        
+        /* Permanent SVG Size Protection */
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            max-width: 100%;
+            flex-shrink: 0;
+        }
+        svg.w-3\.5 { width: 14px !important; height: 14px !important; }
+        svg.w-4 { width: 16px !important; height: 16px !important; }
+        svg.w-5 { width: 20px !important; height: 20px !important; }
+        svg.w-6 { width: 24px !important; height: 24px !important; }
         
         body {
             font-family: 'Cairo', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;

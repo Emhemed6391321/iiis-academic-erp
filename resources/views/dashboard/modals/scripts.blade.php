@@ -4590,9 +4590,12 @@ async loadBranchOperations() {
                     this.showToast(this.activeBranchFilter == 0 ? 'عرض كافة فروع المعهد (نطاق مركزي)' : 'تم تصفية نطاق العمل حسب الفرع المحدد');
                 },
 
+                logout() {
+                    window.location.href = '/logout';
+                },
+
                 logoutSimulation() {
-                    alert('تم تسجيل الخروج الآمن وإنهاء الجلسة.');
-                    window.location.reload();
+                    window.location.href = '/logout';
                 },
 
                 showToast(msg) {

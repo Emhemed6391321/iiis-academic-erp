@@ -3,26 +3,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>البوابة الإلكترونية للمعهد التخصصي للدراسات الإسلامية (IIIS Enterprise ERP)</title>
     
+    <!-- Precompiled Bulletproof Static CSS (Loads immediately with zero FOUC) -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    
     <!-- PWA Web App Manifest & Mobile Integration -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#14268d">
     
     <!-- Offline Attendance Engine (IndexedDB + PWA Sync) -->
-    <script src="/js/offline-attendance.js"></script>
+    <script src="{{ asset('js/offline-attendance.js') }}"></script>
     
     <!-- Tailwind CSS with Dark Mode Support (Local + CDN Fallback) -->
-    <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
+    <script src="{{ asset('js/tailwind.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: 'var(--primary, #2b78a5)',
-                            dark: 'var(--primary-dark, #14268d)',
-                            50: '#f0f7fb',
-                            100: '#e0eff7',
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                DEFAULT: 'var(--primary, #2b78a5)',
+                                dark: 'var(--primary-dark, #14268d)',
+                                50: '#f0f7fb',
+                                100: '#e0eff7',
                             200: '#c1dfef',
                             300: '#92c7e3',
                             400: '#5ba9d3',
@@ -84,8 +88,8 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Alpine.js Plugins & Core (Local + CDN Fallback) -->
-    <script defer src="/js/alpine-collapse.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js'"></script>
-    <script defer src="/js/alpine.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
+    <script defer src="{{ asset('js/alpine-collapse.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.1/dist/cdn.min.js'"></script>
+    <script defer src="{{ asset('js/alpine.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
     
     <!-- Google Fonts: Cairo, Readex Pro, Almarai, IBM Plex Sans Arabic, Amiri, Tajawal -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

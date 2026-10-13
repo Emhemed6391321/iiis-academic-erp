@@ -6,50 +6,61 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'نظام المعهد الأكاديمي التخصصي IIIS - ERP')</title>
 
+    <!-- Precompiled Bulletproof Static CSS -->
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+
     <!-- Google Fonts: Cairo & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- TailwindCSS & Alpine.js -->
-    <script src="/js/tailwind.min.js" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
+    <script src="{{ asset('js/tailwind.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.tailwindcss.com'"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Cairo', 'Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['Courier Prime', 'monospace']
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f7fb',
-                            100: '#dbeff7',
-                            500: '#2b78a5',
-                            600: '#1e5e84',
-                            700: '#184764',
-                            900: '#14268d',
+        if (window.tailwind) {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Cairo', 'Plus Jakarta Sans', 'sans-serif'],
+                            mono: ['Courier Prime', 'monospace']
                         },
-                        islamic: {
-                            50: '#f4f9f6',
-                            500: '#1e824c',
-                            600: '#16693d',
-                            700: '#10522e'
+                        colors: {
+                            brand: {
+                                50: '#f0f7fb',
+                                100: '#dbeff7',
+                                500: '#2b78a5',
+                                600: '#1e5e84',
+                                700: '#184764',
+                                900: '#14268d',
+                            },
+                            islamic: {
+                                50: '#f4f9f6',
+                                500: '#1e824c',
+                                600: '#16693d',
+                                700: '#10522e'
+                            }
+                        },
+                        boxShadow: {
+                            'sticky-rtl': '-6px 0 16px -4px rgba(0, 0, 0, 0.08)',
+                            'bottom-sheet': '0 -10px 25px -5px rgba(0, 0, 0, 0.2)',
                         }
-                    },
-                    boxShadow: {
-                        'sticky-rtl': '-6px 0 16px -4px rgba(0, 0, 0, 0.08)',
-                        'bottom-sheet': '0 -10px 25px -5px rgba(0, 0, 0, 0.2)',
                     }
                 }
-            }
+            };
         }
     </script>
-    <script defer src="/js/alpine.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
+    <script defer src="{{ asset('js/alpine.min.js') }}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js'"></script>
 
     <!-- Custom CSS for Mobile Touch & RTL Sticky Components -->
     <style>
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            max-width: 100%;
+            flex-shrink: 0;
+        }
         /* Smooth Momentum Scrolling for iOS / Mobile */
         .touch-scroll {
             -webkit-overflow-scrolling: touch;

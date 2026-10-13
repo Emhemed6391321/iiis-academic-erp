@@ -3,10 +3,11 @@
  * منظومة المعهد التخصصي للدراسات الإسلامية - عامل الخدمة للعمل دون اتصال
  */
 
-const CACHE_NAME = 'iiis-academic-v1.2';
+const CACHE_NAME = 'iiis-academic-v1.3';
 const STATIC_ASSETS = [
     '/',
     '/favicon.ico',
+    '/css/app.css',
     '/js/alpine.min.js',
     '/js/tailwind.min.js',
     '/js/alpine-collapse.min.js',
@@ -39,8 +40,14 @@ self.addEventListener('fetch', (event) => {
     const request = event.request;
     const url = new URL(request.url);
 
-    // Skip non-GET requests
-    if (request.method !== 'GET') {
+    // Bypass Service Worker completely for auth, logout, and non-GET requests
+    if (
+        request.method !== 'GET' ||
+        url.pathname.includes('/login') ||
+        url.pathname.includes('/logout') ||
+        url.pathname.includes('/mfa') ||
+        url.pathname.includes('/password')
+    ) {
         return;
     }
 

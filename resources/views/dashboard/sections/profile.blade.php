@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'profile'" class="space-y-6">
+            <div x-show="currentSection === 'profile'" class="space-y-6">
                 <div class="p-6 md:p-8 rounded-[24px] border space-y-6 transition-all duration-300"
                      :class="darkMode ? 'bg-slate-900/80 border-slate-800 text-slate-100' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
                     
@@ -163,6 +163,28 @@
                             </form>
                         </div>
 
+                    </div>
+
+                    <!-- Session & Logout Card -->
+                    <div class="p-5 md:p-6 rounded-[20px] border flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-6"
+                         :class="darkMode ? 'bg-rose-950/20 border-rose-900/40 text-rose-200' : 'bg-rose-50/70 border-rose-200 text-rose-900'">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 flex-shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-extrabold text-sm">تسجيل الخروج وإنهاء جلسة العمل الرسمية</h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">سيتم إبطال رمز الجلسة الحالي وتوجيهك فوراً وبسلاسة إلى بوابة تسجيل الدخول الرسمية.</p>
+                            </div>
+                        </div>
+                        <form method="POST" action="/logout" class="m-0 flex-shrink-0">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full sm:w-auto px-5 py-2.5 rounded-[12px] bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                <span>تسجيل الخروج الآن</span>
+                            </button>
+                        </form>
                     </div>
 
                 </div>

@@ -1,13 +1,30 @@
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans: 'Cairo', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+/* ============================================================
+   🛡️ BULLETPROOF SVG & ICON CONSTRAINTS
+   Prevents unconstrained SVGs from ever blowing up across the screen
+   ============================================================ */
+svg {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
+
+svg.w-3, svg[class*="w-3 "] { width: 0.75rem !important; }
+svg.h-3, svg[class*="h-3 "] { height: 0.75rem !important; }
+svg.w-3\.5, svg[class*="w-3.5"] { width: 0.875rem !important; }
+svg.h-3\.5, svg[class*="h-3.5"] { height: 0.875rem !important; }
+svg.w-4, svg[class*="w-4 "] { width: 1rem !important; }
+svg.h-4, svg[class*="h-4 "] { height: 1rem !important; }
+svg.w-5, svg[class*="w-5 "] { width: 1.25rem !important; }
+svg.h-5, svg[class*="h-5 "] { height: 1.25rem !important; }
+svg.w-6, svg[class*="w-6 "] { width: 1.5rem !important; }
+svg.h-6, svg[class*="h-6 "] { height: 1.5rem !important; }
+svg.w-8, svg[class*="w-8 "] { width: 2rem !important; }
+svg.h-8, svg[class*="h-8 "] { height: 2rem !important; }
 
 /* ============================================================
    📱 RESPONSIVE & TOUCH UTILITIES (MOBILE & TABLET UI/UX)
@@ -32,12 +49,12 @@
 }
 
 /* 2. RTL Sticky Column with Elevation Shadow */
-.sticky-first-col-rtl {
+.sticky-first-col-rtl, .sticky-col-first {
     position: sticky;
     right: 0;
     z-index: 20;
 }
-.sticky-first-col-rtl::after {
+.sticky-first-col-rtl::after, .sticky-col-first::after {
     content: '';
     position: absolute;
     top: 0;
@@ -54,7 +71,7 @@
     min-width: 48px;
 }
 
-/* 4. Bottom Sheet Sheet Animation on Mobile */
+/* 4. Bottom Sheet Animation on Mobile */
 @media (max-width: 640px) {
     .modal-bottom-sheet {
         position: fixed !important;
@@ -70,4 +87,3 @@
         width: 100% !important;
     }
 }
-
