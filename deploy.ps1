@@ -62,7 +62,7 @@ if ($ahead -gt 0) {
 # 2. Make sure the server working tree is clean before pulling (hand edits on the VPS block the pull)
 Write-Host "`n[2/3] Connecting to VPS (102.203.201.67) and checking its working tree..." -ForegroundColor Yellow
 
-$dirty = ssh $server "cd $appDir && git status --porcelain --untracked-files=no"
+$dirty = ssh -n $server "cd $appDir && git status --porcelain --untracked-files=no"
 if ($LASTEXITCODE -ne 0) {
     Write-Host "SSH failed - nothing was deployed. Check the connection and try again." -ForegroundColor Red
     exit 1
@@ -80,7 +80,7 @@ Write-Host "`n[3/3] Applying updates on the server..." -ForegroundColor Yellow
 
 $remoteCmd = "cd $appDir && git pull --ff-only origin main && $php artisan migrate --force && $php artisan view:clear && $php artisan route:clear && $php artisan cache:clear && $php artisan config:clear && systemctl restart iiis-erp.service"
 
-ssh $server "$remoteCmd"
+ssh -n $server "$remoteCmd"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`n================================================================" -ForegroundColor Green
