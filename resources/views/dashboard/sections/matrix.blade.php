@@ -1,4 +1,4 @@
-﻿            <div x-show="currentSection === 'matrix'" class="space-y-6" x-init="loadMatrix()">
+﻿            <div x-show="currentSection === 'matrix'" class="space-y-6" x-init="loadMatrix(); loadModuleStates()">
                 <div class="p-6 md:p-8 rounded-[20px] border space-y-6 transition-all duration-300"
                      :class="darkMode ? 'bg-slate-900/60 border-slate-800 text-slate-100' : 'bg-white border-[#e8ebf2] text-slate-800 shadow-sm'">
                     
@@ -20,6 +20,34 @@
                                     :class="darkMode ? 'border-slate-700 bg-slate-800 hover:bg-slate-700' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'">
                                 <span>تحديث المصفوفة</span>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- تفعيل وتعطيل الوحدات (المدير العام فقط): يرى كل الوحدات دائماً، ويحدد ما يراه بقية المستخدمين -->
+                    <div x-show="isSuperAdmin" class="p-4 rounded-[14px] border space-y-3"
+                         :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-slate-200'">
+                        <div>
+                            <h3 class="text-sm font-extrabold">تفعيل الوحدات وتعطيلها</h3>
+                            <p class="text-[11px] text-slate-400">المدير العام يرى كل الوحدات بالكامل. الوحدة المعطّلة تظهر مقفلة "قريباً" لبقية المستخدمين.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <template x-for="m in moduleStates" :key="m.key">
+                                <div class="flex items-center justify-between gap-3 p-3 rounded-[12px] border"
+                                     :class="darkMode ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'">
+                                    <div>
+                                        <div class="text-xs font-bold" x-text="m.label"></div>
+                                        <div class="text-[10px]" :class="m.locked ? 'text-amber-500' : 'text-emerald-500'"
+                                             x-text="m.locked ? 'معطّلة لبقية المستخدمين (مقفلة)' : 'مفعّلة لبقية المستخدمين'"></div>
+                                    </div>
+                                    <button type="button" @click="toggleModuleLock(m.key)"
+                                            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                                            :class="m.locked ? 'bg-slate-400' : 'bg-emerald-500'"
+                                            :aria-pressed="(!m.locked).toString()" :title="m.locked ? 'تفعيل الوحدة' : 'تعطيل الوحدة'">
+                                        <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+                                              :class="m.locked ? 'translate-x-0.5' : 'translate-x-5'"></span>
+                                    </button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 

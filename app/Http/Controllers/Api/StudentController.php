@@ -14,6 +14,7 @@ use App\Models\StudyYear;
 use App\Models\SystemAuditTrail;
 use App\Rules\MinimumAdmissionAgeRule;
 use App\Services\AcademicNumberGeneratorService;
+use App\Services\StudentDocumentService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -26,6 +27,29 @@ class StudentController extends Controller
     public function __construct(AcademicNumberGeneratorService $numberGenerator)
     {
         $this->numberGenerator = $numberGenerator;
+    }
+
+    /**
+     * خيارات نموذج القبول الموحد (الفروع، الشُعب، المراحل، الأعوام) في طلب خفيف واحد.
+     * الفروع محصورة بفرع المستخدم لغير المستويات المركزية.
+     */
+    public function formOptions(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        $branches = Branch::where('is_active', true)->orderBy('name');
+        if ($user && !$user->hasGlobalAccessScope() && $user->branch_id) {
+            $branches->where('id', $user->branch_id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'branches' => $branches->get(['id', 'name', 'code', 'gender_type']),
+            'departments' => Department::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']),
+            'study_years' => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
+            'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name', 'code', 'is_current']),
+            'current_academic_year_id' => AcademicYear::where('is_current', true)->value('id'),
+        ]);
     }
 
     /**
@@ -1384,49 +1408,40 @@ class StudentController extends Controller
      */
     private function handleAttachedDocuments(Request $request, Student $student, $user): void
     {
-        $docMapping = [
-            'doc_basic_education' => 'شهادة إتمام المرحلة الأساسية',
-            'doc_birth_certificate' => 'شهادة ميلاد بالرقم الوطني',
-            'doc_family_book' => 'صورة كتيب العائلة',
-            'doc_good_conduct' => 'شهادة حسن سيرة وسلوك',
-            'doc_medical_report' => 'تقرير طبي معتمد',
-            'doc_guardian_pledge' => 'إقرار وتعهد ولي الأمر',
+        $service = app(StudentDocumentService::class);
+        $uploadedBy = $user ? $user->id : 1;
+
+        // ملفات مرفوعة مباشرة بأسماء الحقول المعتمدة
+        $fileInputs = [
+            'doc_basic_education' => ['BASIC_EDUCATION_CERT', null],
+            'doc_birth_certificate' => ['BIRTH_CERT', null],
+            'doc_medical_report' => ['DISABILITY_MEDICAL_REP', null],
+            'doc_family_book' => ['OTHER', 'صورة كتيب العائلة'],
+            'doc_good_conduct' => ['OTHER', 'شهادة حسن سيرة وسلوك'],
+            'doc_guardian_pledge' => ['OTHER', 'إقرار وتعهد ولي الأمر'],
         ];
 
-        // Process standard file inputs
-        foreach ($docMapping as $inputKey => $docTitle) {
+        foreach ($fileInputs as $inputKey => [$docType, $notes]) {
             if ($request->hasFile($inputKey)) {
-                $path = $request->file($inputKey)->store('students/documents', 'public');
-                StudentDocument::create([
-                    'student_id' => $student->id,
-                    'document_type' => $docTitle,
-                    'file_path' => $path,
-                    'file_hash' => hash_file('sha256', $request->file($inputKey)->getRealPath()),
-                    'uploaded_by' => $user ? $user->id : 1,
-                ]);
+                $file = $request->file($inputKey);
+                $service->store($student, $docType, $file, $file->getClientOriginalName(), $notes, $uploadedBy);
             }
         }
 
-        // Process uploaded documents array from frontend
-        if ($request->filled('attached_documents') && is_array($request->attached_documents)) {
-            foreach ($request->attached_documents as $docItem) {
-                if (!empty($docItem['base64']) && !empty($docItem['type'])) {
-                    $path = $this->saveBase64File(
-                        $docItem['base64'],
-                        'students/documents',
-                        'doc_' . time() . '_' . uniqid()
-                    );
-                    if ($path) {
-                        StudentDocument::create([
-                            'student_id' => $student->id,
-                            'document_type' => $docItem['type'],
-                            'file_path' => $path,
-                            'file_hash' => sha1($docItem['base64']),
-                            'uploaded_by' => $user ? $user->id : 1,
-                        ]);
-                    }
-                }
+        // مستندات مرسلة كمصفوفة Base64: attached_documents[] = {type, base64, name}
+        // النوع قد يكون مفتاحاً معتمداً أو عنواناً عربياً، ويُحوَّل إلى المفتاح المناسب
+        $items = $request->input('attached_documents');
+        if (!is_array($items)) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if (!is_array($item) || empty($item['base64']) || !is_string($item['base64'])) {
+                continue;
             }
+            [$docType, $notes] = StudentDocumentService::resolveType($item['type'] ?? '');
+            $name = is_string($item['name'] ?? null) && $item['name'] !== '' ? $item['name'] : 'document_' . time();
+            $service->store($student, $docType, $item['base64'], $name, $notes, $uploadedBy);
         }
     }
 

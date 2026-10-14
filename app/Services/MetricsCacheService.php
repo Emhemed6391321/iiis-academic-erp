@@ -89,7 +89,12 @@ class MetricsCacheService
                 ])
                 ->get();
 
-            $suspendedBranchesCount = Branch::where('branch_status', 'SUSPENDED')->count();
+            // لوحة الفرع لا تعرض عدد الفروع الموقوفة في باقي المنظومة
+            $suspendedBranchesQuery = Branch::where('branch_status', 'SUSPENDED');
+            if ($branchId) {
+                $suspendedBranchesQuery->where('id', $branchId);
+            }
+            $suspendedBranchesCount = $suspendedBranchesQuery->count();
 
             // Active operational windows
             $windows = OperationalWindow::where('academic_year_id', $currentYear?->id)

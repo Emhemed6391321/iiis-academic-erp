@@ -821,17 +821,16 @@
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الفرع التعليمي <span class="text-rose-500">*</span></label>
                                 <select x-model="createStudentModal.form.branch_id" required
                                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
-                                    <template x-for="b in branchesList" :key="b.id">
+                                    <template x-for="b in admissionOptions.branches" :key="b.id">
                                         <option :value="b.id" x-text="b.name"></option>
                                     </template>
-                                    <option value="1" x-show="!branchesList.length">فرع طرابلس المركزي</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">القسم والشعبة <span class="text-rose-500">*</span></label>
                                 <select x-model="createStudentModal.form.department_id" required
                                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
-                                    <template x-for="d in (studentRegistry.meta.departments && studentRegistry.meta.departments.length ? studentRegistry.meta.departments : (academicStructureData.departments || []))" :key="d.id">
+                                    <template x-for="d in admissionOptions.departments" :key="d.id">
                                         <option :value="d.id" x-text="d.name"></option>
                                     </template>
                                 </select>
@@ -840,7 +839,7 @@
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">المرحلة الدراسية <span class="text-rose-500">*</span></label>
                                 <select x-model="createStudentModal.form.current_study_year_id" required
                                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
-                                    <template x-for="sy in (studentRegistry.meta.study_years && studentRegistry.meta.study_years.length ? studentRegistry.meta.study_years : (academicStructureData.study_years || []))" :key="sy.id">
+                                    <template x-for="sy in admissionOptions.study_years" :key="sy.id">
                                         <option :value="sy.id" x-text="sy.name"></option>
                                     </template>
                                 </select>
@@ -1229,7 +1228,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleDocUpload('شهادة إتمام المرحلة الأساسية', $event)">
+                                <input type="file" class="hidden" @change="handleDocUpload($event, 'BASIC_EDUCATION_CERT', 'شهادة إتمام المرحلة الأساسية')">
                             </label>
                         </div>
 
@@ -1244,7 +1243,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleDocUpload('شهادة ميلاد بالرقم الوطني', $event)">
+                                <input type="file" class="hidden" @change="handleDocUpload($event, 'BIRTH_CERT', 'شهادة ميلاد بالرقم الوطني')">
                             </label>
                         </div>
 
@@ -1259,7 +1258,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleDocUpload('صورة كتيب العائلة', $event)">
+                                <input type="file" class="hidden" @change="handleDocUpload($event, 'OTHER', 'صورة كتيب العائلة')">
                             </label>
                         </div>
 
@@ -1274,7 +1273,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleDocUpload('شهادة حسن سيرة وسلوك', $event)">
+                                <input type="file" class="hidden" @change="handleDocUpload($event, 'OTHER', 'شهادة حسن سيرة وسلوك')">
                             </label>
                         </div>
                     </div>
@@ -1287,7 +1286,7 @@
                                 <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900 text-xs">
                                     <div class="flex items-center gap-2">
                                         <span class="text-emerald-500 font-bold">✔️</span>
-                                        <span class="font-bold text-slate-800 dark:text-slate-200" x-text="doc.type"></span>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200" x-text="doc.label || doc.type"></span>
                                         <span class="text-[10px] text-slate-400 font-mono" x-text="doc.name"></span>
                                     </div>
                                     <button type="button" @click="createStudentModal.attachedDocs.splice(idx, 1)" class="text-rose-500 hover:text-rose-700 p-1 font-bold text-xs">✕ حذف</button>
@@ -1536,7 +1535,7 @@
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الفرع التعليمي <span class="text-rose-500">*</span></label>
                             <select x-model="editStudentModal.form.branch_id"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
-                                <template x-for="b in (branches && branches.length ? branches : branchesList)" :key="b.id">
+                                <template x-for="b in admissionOptions.branches" :key="b.id">
                                     <option :value="b.id" x-text="b.name"></option>
                                 </template>
                             </select>
@@ -1546,7 +1545,7 @@
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">القسم / التخصص <span class="text-rose-500">*</span></label>
                             <select x-model="editStudentModal.form.department_id" required
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
-                                <template x-for="d in (studentRegistry.meta.departments && studentRegistry.meta.departments.length ? studentRegistry.meta.departments : (academicStructureData.departments || []))" :key="d.id">
+                                <template x-for="d in admissionOptions.departments" :key="d.id">
                                     <option :value="d.id" x-text="d.name"></option>
                                 </template>
                             </select>
@@ -1555,7 +1554,7 @@
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">السنة الدراسية المقيد بها <span class="text-rose-500">*</span></label>
                             <select x-model="editStudentModal.form.current_study_year_id" required
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
-                                <template x-for="sy in (studentRegistry.meta.study_years && studentRegistry.meta.study_years.length ? studentRegistry.meta.study_years : (academicStructureData.study_years || []))" :key="sy.id">
+                                <template x-for="sy in admissionOptions.study_years" :key="sy.id">
                                     <option :value="sy.id" x-text="sy.name"></option>
                                 </template>
                             </select>
@@ -1825,7 +1824,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleEditDocUpload('الرقم الوطني / إثبات الهوية', $event)">
+                                <input type="file" class="hidden" @change="handleEditDocUpload($event, 'NATIONAL_ID_CARD', 'الرقم الوطني / إثبات الهوية')">
                             </label>
                         </div>
 
@@ -1839,7 +1838,7 @@
                             </div>
                             <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] text-white text-[11px] font-bold shadow-sm hover:brightness-110 transition-all">
                                 <span>إرفاق 📁</span>
-                                <input type="file" class="hidden" @change="handleEditDocUpload('شهادة الميلاد الرسمية', $event)">
+                                <input type="file" class="hidden" @change="handleEditDocUpload($event, 'BIRTH_CERT', 'شهادة الميلاد الرسمية')">
                             </label>
                         </div>
                     </div>
@@ -1852,7 +1851,7 @@
                                 <div class="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900 text-xs">
                                     <div class="flex items-center gap-2">
                                         <span class="text-emerald-500 font-bold">✔️</span>
-                                        <span class="font-bold text-slate-800 dark:text-slate-200" x-text="doc.type"></span>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200" x-text="doc.label || doc.type"></span>
                                         <span class="text-[10px] text-slate-400 font-mono" x-text="doc.name"></span>
                                     </div>
                                     <button type="button" @click="editStudentModal.attachedDocs.splice(idx, 1)" class="text-rose-500 hover:text-rose-700 p-1 font-bold text-xs">✕ حذف</button>
@@ -3219,10 +3218,9 @@
                                 <select x-model="batchImportModal.defaultBranchId"
                                         class="w-full px-3 py-2 rounded-xl border text-xs font-semibold outline-none"
                                         :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-800'">
-                                    <template x-for="b in (branches && branches.length ? branches : branchesList)" :key="b.id">
+                                    <template x-for="b in admissionOptions.branches" :key="b.id">
                                         <option :value="b.id" x-text="b.name + ' (' + (b.city || '') + ')'"></option>
                                     </template>
-                                    <option value="1" x-show="!branchesList.length && !branches.length">فرع طرابلس المركزي</option>
                                 </select>
                             </div>
 

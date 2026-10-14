@@ -2580,7 +2580,7 @@
                 <p class="text-[11px] text-slate-400 mb-3">الصيغ المسموحة: PDF / JPG / JPEG / PNG (بحد أقصى 10 ميجابايت)
                 </p>
 
-                <input type="file" id="sfSlotFileInput" @change="studentFile.docSlotModal.file = $event.target.files[0]"
+                <input type="file" id="sfSlotFileInput" @change="sfSetSlotFile($event)"
                     accept=".pdf,.jpg,.jpeg,.png"
                     class="text-xs file:mr-2 file:px-4 file:py-2 file:rounded-xl file:text-xs file:font-bold file:border-0 file:bg-[#2b78a5] file:text-white file:cursor-pointer cursor-pointer">
 

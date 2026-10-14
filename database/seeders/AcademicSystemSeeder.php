@@ -98,6 +98,7 @@ class AcademicSystemSeeder extends Seeder
             ['code' => 'users.view', 'module' => 'security', 'display_name' => 'استعراض سجلات المستخدمين وحساباتهم'],
             ['code' => 'users.manage', 'module' => 'security', 'display_name' => 'إدارة وإنشاء وتعديل حسابات المستخدمين'],
             ['code' => 'MANAGE_ROLES', 'module' => 'security', 'display_name' => 'إدارة صلاحيات الأدوار ومصفوفة الصلاحيات'],
+            ['code' => 'permissions.manage', 'module' => 'security', 'display_name' => 'إدارة مصفوفة الصلاحيات وتفعيل الوحدات'],
             ['code' => 'MANAGE_USER_PERMISSIONS', 'module' => 'security', 'display_name' => 'إدارة الصلاحيات الاستثنائية للمستخدمين'],
             ['code' => 'CHANGE_STUDENT_STATUS', 'module' => 'security', 'display_name' => 'تغيير حالة الطالب (فصل / تعليق / تخرج / نقل)'],
             ['code' => 'APPROVE_STUDENT_DATA', 'module' => 'security', 'display_name' => 'اعتماد وفك اعتماد بيانات الطالب'],

@@ -32,8 +32,12 @@
                 ],
 
                 sidebarCollapsed: localStorage.getItem('institute_sidebar_collapsed') === '1',
-                // أقسام الدراسة والامتحانات والكنترول: مقفلة حالياً (قريباً)
+                // أقسام الدراسة والامتحانات والكنترول: مقفلة لبقية المستخدمين (قريباً) — يفعّلها المدير العام من مصفوفة الصلاحيات
                 lockedSections: ['study_and_exams', 'grading', 'transcripts', 'batch_print'],
+                // خيارات نموذج القبول الموحد (فروع/شُعب/مراحل/أعوام) — قائمة فروع مستقلة عن لوحة القيادة
+                branchOptions: [],
+                moduleStates: [],
+                admissionOptions: { branches: [], departments: [], study_years: [], academic_years: [], current_academic_year_id: null, loaded: false },
                 mobileSidebarOpen: false,
                 sidebarOpen: false,
                 isDesktopView() {
@@ -1096,8 +1100,8 @@
                     id: null,
                     name: '',
                     code: '',
-                    city: 'طرابلس',
-                    region: 'المنطقة الغربية',
+                    city: 'بنغازي',
+                    region: 'المنطقة الشرقية',
                     branch_type: 'MAIN',
                     gender_type: 'COED',
                     branch_status: 'ACTIVE',
@@ -1109,8 +1113,8 @@
                     phone: '',
                     email: '',
                     address: '',
-                    latitude: 32.8872,
-                    longitude: 13.1913,
+                    latitude: 32.1167,
+                    longitude: 20.0667,
                     academic_staff: 18,
                     admin_staff: 6,
                     facebook_url: '',
@@ -1624,7 +1628,7 @@
                     this.openCreateStudentModal();
                 },
 
-                openCreateStudentModal() {
+                async openCreateStudentModal() {
                     this.createStudentModal.open = true;
                     this.createStudentModal.activeTab = 'personal';
                     this.createStudentModal.errorMessage = '';
@@ -1644,9 +1648,10 @@
                         nationality: 'ليبي',
                         phone: '',
                         guardian_phone: '',
-                        branch_id: (this.branchesList && this.branchesList[0]) ? this.branchesList[0].id : 1,
-                        department_id: (this.studentRegistry?.meta?.departments && this.studentRegistry.meta.departments[0]) ? this.studentRegistry.meta.departments[0].id : 1,
-                        current_study_year_id: 1,
+                        // القيم الافتراضية تُختار من الخيارات المحمّلة من الخادم (applyAdmissionDefaults) لا من أرقام ثابتة
+                        branch_id: null,
+                        department_id: null,
+                        current_study_year_id: null,
                         study_type: 'REGULAR',
                         blood_type: 'O+',
                         has_disability: false,
@@ -1660,13 +1665,9 @@
                         notes: ''
                     };
 
-                    // Load metadata in background if not already loaded to populate dropdowns
-                    if ((!this.studentRegistry || !this.studentRegistry.meta || !this.studentRegistry.meta.departments || !this.studentRegistry.meta.departments.length) && typeof this.loadRegistry === 'function') {
-                        this.loadRegistry(1);
-                    }
-                    if ((!this.branchesList || !this.branchesList.length) && typeof this.loadBranchOperations === 'function') {
-                        this.loadBranchOperations();
-                    }
+                    // تحميل خيارات الفرع والشعبة والمرحلة من الخادم قبل عرض النموذج (لا تعتمد على لوحة القيادة أو السجل)
+                    await this.loadAdmissionOptions(true);
+                    this.applyAdmissionDefaults();
                 },
 
                 async submitCreateStudent() {
@@ -1702,10 +1703,9 @@
                     }
 
                     try {
-                        const payload = {
-                            ...this.createStudentModal.form,
-                            attached_docs: this.createStudentModal.attachedDocs
-                        };
+                        // المستندات تُرفع بعد قيد الطالب عبر مسار الملف الموحد (ملفات حقيقية بدل نصوص Base64 ضخمة)
+                        const payload = { ...this.createStudentModal.form };
+                        delete payload.disability_report_base64;
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/students', {
                             method: 'POST',
@@ -1719,9 +1719,14 @@
                         const data = await res.json();
                         if (res.ok && (data.status === 'success' || data.success)) {
                             const newStudent = data.data || data.student;
+                            const docFailures = newStudent ? await this.uploadAdmissionDocuments(newStudent.id, this.createStudentModal.attachedDocs) : [];
                             this.createStudentModal.open = false;
                             this.stopCamera();
-                            this.showToast('تم تسجيل الطالب وتوليد رقم القيد الرسمي بنجاح!');
+                            if (docFailures.length) {
+                                this.showToast('تم قيد الطالب، لكن تعذر رفع بعض المستندات: ' + docFailures.join(' | '));
+                            } else {
+                                this.showToast('تم تسجيل الطالب وتوليد رقم القيد الرسمي (' + (newStudent?.academic_number || '') + ') بنجاح!');
+                            }
                             await this.loadRegistry(1);
                             
                             // Auto open official student card
@@ -1813,10 +1818,8 @@
                     this.editStudentModal.submitting = true;
                     this.editStudentModal.errorMessage = '';
                     try {
-                        const payload = {
-                            ...this.editStudentModal.form,
-                            attached_docs: this.editStudentModal.attachedDocs
-                        };
+                        const payload = { ...this.editStudentModal.form };
+                        delete payload.disability_report_base64;
                         const res = await fetch(`/api/v1/students/${this.editStudentModal.studentId}`, {
                             method: 'PUT',
                             headers: {
@@ -1827,8 +1830,11 @@
                         });
                         const data = await res.json();
                         if (data.status === 'success' || data.success) {
+                            const docFailures = await this.uploadAdmissionDocuments(this.editStudentModal.studentId, this.editStudentModal.attachedDocs);
                             this.editStudentModal.open = false;
-                            this.showToast('تم تحديث بيانات الطالب بنجاح!');
+                            this.showToast(docFailures.length
+                                ? 'تم حفظ بيانات الطالب، لكن تعذر رفع بعض المستندات: ' + docFailures.join(' | ')
+                                : 'تم تحديث بيانات الطالب بنجاح!');
                             await this.loadRegistry(this.studentRegistry.pagination.current_page || 1);
                             if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.editStudentModal.studentId) {
                                 await this.openStudentFile(this.editStudentModal.studentId);
@@ -3075,13 +3081,15 @@ async initApp() {
                     window._academicApp = this;
                     // منع فتح الأقسام المقفلة من أي مدخل (القائمة، لوحة القيادة، الروابط المباشرة)
                     this.$watch('currentSection', (val) => {
-                        if (this.lockedSections.includes(val)) {
+                        if (this.isModuleLocked(val)) {
                             this.currentSection = 'dashboard';
                             if (typeof this.showToast === 'function') {
                                 this.showToast('هذا القسم قريباً ومقفل حالياً.');
                             }
                         }
                     });
+                    // حالة تفعيل الوحدات من الخادم قبل معالجة الرابط المباشر
+                    await this.loadModuleStates();
                     this.initAppearance();
                     this.initOfflineAttendanceEngine();
 
@@ -3092,7 +3100,13 @@ async initApp() {
                     const qTab = urlParams.get('tab') || '{{ $initialSettingsTab ?? "" }}';
                     const qAction = urlParams.get('action') || '{{ $initialAction ?? "" }}';
 
-                    if (qSection) {
+                    // الأقسام المقفلة لا تُفتح حتى من الرابط المباشر (القيمة الأولية تأتي من الخادم دون مرور بالمراقب)
+                    if (this.isModuleLocked(this.currentSection)) {
+                        this.currentSection = 'dashboard';
+                    }
+                    if (qSection && this.isModuleLocked(qSection)) {
+                        this.showToast('هذا القسم قريباً ومقفل حالياً.');
+                    } else if (qSection) {
                         this.currentSection = qSection;
                     }
                     if (qAction === 'new_branch') {
@@ -3228,6 +3242,128 @@ async initApp() {
                     return Array.from(new Set(cities));
                 },
 
+                // =========================================================================
+                // MODULE SWITCHES (تفعيل وتعطيل الوحدات المقفلة "قريباً")
+                // =========================================================================
+                isModuleLocked(key) {
+                    if (!key) return false;
+                    // المدير العام يرى كل الوحدات دائماً
+                    if (this.isSuperAdmin) return false;
+                    return Array.isArray(this.lockedSections) && this.lockedSections.includes(key);
+                },
+
+                async loadModuleStates() {
+                    try {
+                        const res = await fetch('/api/v1/modules/states', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.lockedSections = Array.isArray(data.locked) ? data.locked : this.lockedSections;
+                            this.moduleStates = Array.isArray(data.modules) ? data.modules : [];
+                        }
+                    } catch (e) {
+                        console.error('Error loading module states:', e);
+                    }
+                },
+
+                async toggleModuleLock(key) {
+                    if (!this.isSuperAdmin) return;
+                    const current = Array.isArray(this.lockedSections) ? [...this.lockedSections] : [];
+                    const next = current.includes(key) ? current.filter(k => k !== key) : [...current, key];
+                    try {
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/modules/states', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            body: JSON.stringify({ locked: next })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.lockedSections = data.locked;
+                            this.moduleStates = data.modules;
+                            this.showToast(next.includes(key) ? 'تم قفل الوحدة لبقية المستخدمين' : 'تم تفعيل الوحدة لبقية المستخدمين');
+                        } else {
+                            this.showToast(data.message || 'تعذر تحديث حالة الوحدة');
+                        }
+                    } catch (e) {
+                        this.showToast('تعذر الاتصال بالخادم لتحديث حالة الوحدة');
+                    }
+                },
+
+                // =========================================================================
+                // ADMISSION FORM OPTIONS (نموذج القبول الموحد)
+                // =========================================================================
+                async loadAdmissionOptions(force = false) {
+                    if (this.admissionOptions.loaded && !force) return;
+                    try {
+                        const res = await fetch('/api/v1/students/form-options', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.admissionOptions = {
+                                branches: data.branches || [],
+                                departments: data.departments || [],
+                                study_years: data.study_years || [],
+                                academic_years: data.academic_years || [],
+                                current_academic_year_id: data.current_academic_year_id || null,
+                                loaded: true
+                            };
+                            this.branchOptions = this.admissionOptions.branches;
+                        }
+                    } catch (e) {
+                        console.error('Error loading admission options:', e);
+                    }
+                },
+
+                applyAdmissionDefaults() {
+                    const o = this.admissionOptions;
+                    const f = this.createStudentModal.form;
+                    if (!f.branch_id && o.branches.length) f.branch_id = o.branches[0].id;
+                    if (!f.department_id && o.departments.length) f.department_id = o.departments[0].id;
+                    if (!f.current_study_year_id && o.study_years.length) f.current_study_year_id = o.study_years[0].id;
+                },
+
+                // حجم الملف الأقصى وصيغه المسموحة — تطابق قيود الخادم
+                validateDocFile(file) {
+                    const maxBytes = 10 * 1024 * 1024;
+                    const allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                    const nameOk = /\.(pdf|jpe?g|png)$/i.test(file.name || '');
+                    if (file.size > maxBytes) {
+                        this.showToast('حجم الملف يتجاوز الحد المسموح (10 ميجابايت).');
+                        return false;
+                    }
+                    if (!nameOk || (file.type && !allowedMimes.includes(file.type))) {
+                        this.showToast('الصيغ المسموحة: PDF / JPG / PNG فقط.');
+                        return false;
+                    }
+                    return true;
+                },
+
+                // يرفع المستندات المرفقة بعد قيد الطالب عبر مسار الملف الموحد المشفر
+                async uploadAdmissionDocuments(studentId, docs) {
+                    const failures = [];
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                    for (const doc of (docs || [])) {
+                        if (!doc || !doc.file) continue;
+                        const fd = new FormData();
+                        fd.append('document_type', doc.type);
+                        fd.append('document', doc.file);
+                        if (doc.type === 'OTHER' && doc.label) fd.append('notes', doc.label);
+                        try {
+                            const res = await fetch(`/api/v1/students/${studentId}/file/documents`, {
+                                method: 'POST',
+                                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                                body: fd
+                            });
+                            const json = await res.json().catch(() => ({}));
+                            if (!res.ok || json.success === false) {
+                                failures.push(`${doc.label}: ${json.message || 'تعذر الرفع'}`);
+                            }
+                        } catch (e) {
+                            failures.push(`${doc.label}: تعذر الاتصال بالخادم`);
+                        }
+                    }
+                    return failures;
+                },
+
                 async loadBranchOperations() {
                     try {
                         const [dirRes, ovRes] = await Promise.all([
@@ -3281,11 +3417,15 @@ async initApp() {
                     const container = document.getElementById('branchesMap');
                     if (!container) return;
 
-                    // If Leaflet is not loaded yet, wait and retry
+                    // If Leaflet is not loaded yet, wait and retry (بحد أقصى حتى لا تستمر المحاولات إذا تعذر تحميل المكتبة)
                     if (typeof L === 'undefined') {
-                        setTimeout(() => this.initBranchesMap(), 200);
+                        this._leafletRetries = (this._leafletRetries || 0) + 1;
+                        if (this._leafletRetries <= 25) {
+                            setTimeout(() => this.initBranchesMap(), 200);
+                        }
                         return;
                     }
+                    this._leafletRetries = 0;
 
                     // Check if already initialized on this DOM node
                     if (container._leaflet_id && this.leafletMap) {
@@ -3304,9 +3444,10 @@ async initApp() {
                     }
 
                     try {
+                        // الوضع الافتراضي للخريطة: مدينة بنغازي (مقر الفرع الشرقي)
                         this.leafletMap = L.map('branchesMap', {
-                            center: [28.0, 17.5],
-                            zoom: 6,
+                            center: [this.defaultMapCenter.lat, this.defaultMapCenter.lng],
+                            zoom: this.defaultMapCenter.zoom,
                             zoomControl: true,
                             scrollWheelZoom: true
                         });
@@ -3388,9 +3529,18 @@ async initApp() {
                     });
                 },
 
+                // الوضع الافتراضي لخريطة الفروع: بنغازي؛ وزر "إعادة الضبط" يعرض ليبيا كاملة
+                defaultMapCenter: { lat: 32.1167, lng: 20.0667, zoom: 11 },
+
                 resetLibyaMap() {
                     if (this.leafletMap) {
                         this.leafletMap.flyTo([28.0, 17.5], 6, { duration: 1 });
+                    }
+                },
+
+                resetDefaultMapView() {
+                    if (this.leafletMap) {
+                        this.leafletMap.flyTo([this.defaultMapCenter.lat, this.defaultMapCenter.lng], this.defaultMapCenter.zoom, { duration: 1 });
                     }
                 },
 
@@ -3508,8 +3658,8 @@ async initApp() {
                         id: null,
                         name: '',
                         code: 'BR-' + Math.floor(100 + Math.random() * 900),
-                        city: 'طرابلس',
-                        region: 'المنطقة الغربية',
+                        city: 'بنغازي',
+                        region: 'المنطقة الشرقية',
                         branch_type: 'MAIN',
                         gender_type: 'COED',
                         branch_status: 'ACTIVE',
@@ -3521,8 +3671,8 @@ async initApp() {
                         phone: '',
                         email: '',
                         address: '',
-                        latitude: 32.8872,
-                        longitude: 13.1913,
+                        latitude: 32.1167,
+                        longitude: 20.0667,
                         academic_staff: 18,
                         admin_staff: 6,
                         facebook_url: '',
@@ -3554,8 +3704,8 @@ async initApp() {
                         phone: branch.phone || '',
                         email: branch.email || '',
                         address: branch.address || '',
-                        latitude: branch.latitude || 32.8872,
-                        longitude: branch.longitude || 13.1913,
+                        latitude: branch.latitude ?? '',
+                        longitude: branch.longitude ?? '',
                         academic_staff: branch.academic_staff || 0,
                         admin_staff: branch.admin_staff || 0,
                         facebook_url: branch.facebook_url || '',
@@ -3593,6 +3743,12 @@ async initApp() {
                             this.showNewBranchModal = false;
                             this.showToast(isEdit ? 'تم تحديث بيانات الفرع بنجاح: ' + data.data.name : 'تم إنشاء ملف الفرع بنجاح: ' + data.data.name);
                             await this.loadBranchOperations();
+                            // بعد حفظ الإحداثيات: تحريك الخريطة إلى الموقع الجديد للفرع ليظهر التغيير فوراً
+                            if (data.data && data.data.latitude != null && data.data.longitude != null) {
+                                this.$nextTick(() => {
+                                    if (this.leafletMap) this.panToBranch(data.data);
+                                });
+                            }
                             if (this.showBranchDetailsModal && this.branchDetailsData && this.branchDetailsData.branch.id === data.data.id) {
                                 this.openBranchDetails(data.data);
                             }
@@ -4500,6 +4656,8 @@ async loadBranchOperations() {
                 },
 
                 async loadLiveAlerts() {
+                    // التنبيهات الحية مرتبطة بسجل التدقيق؛ لا نستدعيها لمن لا يملك audit.view
+                    if (!this.hasPermission('audit.view')) return;
                     try {
                         const res = await fetch('/api/v1/audit/live-notifications', { headers: { 'Accept': 'application/json' } });
                         const data = await res.json();
@@ -6213,27 +6371,49 @@ async loadBranchOperations() {
                 // =========================================================================
                 // 2. STUDENT FILE DOCUMENT SLOTS & MULTIMEDIA
                 // =========================================================================
+                // أسماء أنواع المستندات المعتمدة (تطابق StudentDocument::DOCUMENT_TYPES في الخادم)
+                docTypeLabel(key) {
+                    const labels = {
+                        NATIONAL_ID_CARD: 'صورة من الرقم الوطني أو إثبات الهوية',
+                        BIRTH_CERT: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد',
+                        BASIC_EDUCATION_CERT: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب',
+                        HEALTH_CERT: 'الشهادة الصحية أو الكشف الطبي',
+                        DISABILITY_MEDICAL_REP: 'التقرير الطبي الخاص بالإعاقة',
+                        PERSONAL_PHOTO: 'صورة شخصية للطالب',
+                        OTHER: 'مستندات إضافية'
+                    };
+                    return labels[key] || key;
+                },
+
                 openDocSlotUpload(docType, slotTitle) {
-                    if (!this.studentFile.docSlotModal) {
-                        this.studentFile.docSlotModal = {
-                            open: false,
-                            docType: '',
-                            slotTitle: '',
-                            file: null,
-                            capturedPhoto: null,
-                            cameraStream: null,
-                            submitting: false,
-                            notes: '',
-                            issueDate: ''
-                        };
+                    this.sfStopCamera();
+                    const label = slotTitle || this.docTypeLabel(docType);
+                    this.studentFile.docSlotModal = {
+                        open: true,
+                        type: docType,
+                        typeLabel: label,
+                        slotTitle: label,
+                        file: null,
+                        capturedBase64: null,
+                        mode: 'file',
+                        cameraActive: false,
+                        cameraStream: null,
+                        notes: '',
+                        issueDate: new Date().toISOString().split('T')[0],
+                        submitting: false
+                    };
+                },
+
+                // اختيار ملف المستند من الجهاز مع التحقق من الحجم والصيغة قبل الرفع
+                sfSetSlotFile(event) {
+                    const file = event.target.files[0];
+                    event.target.value = '';
+                    if (!file) return;
+                    if (!this.validateDocFile(file)) {
+                        this.studentFile.docSlotModal.file = null;
+                        return;
                     }
-                    this.studentFile.docSlotModal.docType = docType;
-                    this.studentFile.docSlotModal.slotTitle = slotTitle;
-                    this.studentFile.docSlotModal.file = null;
-                    this.studentFile.docSlotModal.capturedPhoto = null;
-                    this.studentFile.docSlotModal.notes = '';
-                    this.studentFile.docSlotModal.issueDate = new Date().toISOString().split('T')[0];
-                    this.studentFile.docSlotModal.open = true;
+                    this.studentFile.docSlotModal.file = file;
                 },
 
                 closeDocSlotModal() {
@@ -6270,34 +6450,39 @@ async loadBranchOperations() {
                     canvas.height = video.videoHeight || 480;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(video, 0, 0);
-                    this.studentFile.docSlotModal.capturedPhoto = canvas.toDataURL('image/jpeg', 0.85);
+                    this.studentFile.docSlotModal.capturedBase64 = canvas.toDataURL('image/jpeg', 0.85);
                     this.sfStopCamera();
                 },
 
                 sfRetakePhoto() {
-                    this.studentFile.docSlotModal.capturedPhoto = null;
+                    this.studentFile.docSlotModal.capturedBase64 = null;
                     this.sfStartCamera();
                 },
 
                 async sfSubmitSlotUpload() {
                     const modal = this.studentFile.docSlotModal;
-                    if (!modal.file && !modal.capturedPhoto) {
+                    if (!modal.file && !modal.capturedBase64) {
                         this.showToast('يرجى اختيار ملف أو التقاط صورة المستند أولاً');
+                        return;
+                    }
+                    if (modal.type === 'OTHER' && !String(modal.notes || '').trim()) {
+                        this.showToast('يرجى كتابة عنوان أو بيان للمستند الإضافي');
                         return;
                     }
                     modal.submitting = true;
                     try {
                         const formData = new FormData();
-                        formData.append('document_type', modal.docType);
+                        formData.append('document_type', modal.type);
                         if (modal.file) {
+                            if (!this.validateDocFile(modal.file)) return;
                             formData.append('document', modal.file);
-                        } else if (modal.capturedPhoto) {
-                            formData.append('captured_photo', modal.capturedPhoto);
+                        } else {
+                            formData.append('document_base64', modal.capturedBase64);
                         }
                         if (modal.notes) formData.append('notes', modal.notes);
-                        if (modal.issueDate) formData.append('issue_date', modal.issueDate);
 
-                        const res = await fetch(`/api/v1/students/${this.studentFile.student.id}/file/documents`, {
+                        const studentId = this.studentFile.student.id;
+                        const res = await fetch(`/api/v1/students/${studentId}/file/documents`, {
                             method: 'POST',
                             headers: {
                                 'Accept': 'application/json',
@@ -6305,11 +6490,11 @@ async loadBranchOperations() {
                             },
                             body: formData
                         });
-                        const json = await res.json();
-                        if (res.ok) {
-                            this.showToast('تم رفع المستند واعتماده بنجاح ✅');
+                        const json = await res.json().catch(() => ({}));
+                        if (res.ok && json.success !== false) {
+                            this.showToast(json.message || 'تم رفع المستند واعتماده بنجاح ✅');
                             this.closeDocSlotModal();
-                            await this.sfLoadTab('documents');
+                            await this.openStudentFile(studentId);
                         } else {
                             this.showToast(json.message || 'فشل رفع المستند');
                         }
@@ -6333,7 +6518,7 @@ async loadBranchOperations() {
                         const json = await res.json();
                         if (res.ok) {
                             this.showToast('تم حذف المستند بنجاح');
-                            await this.sfLoadTab('documents');
+                            await this.openStudentFile(this.studentFile.student.id);
                         } else {
                             this.showToast(json.message || 'تعذر حذف المستند');
                         }
@@ -6342,18 +6527,33 @@ async loadBranchOperations() {
                     }
                 },
 
-                openDocPreview(url, title) {
-                    if (!this.studentFile.previewModal) {
-                        this.studentFile.previewModal = { open: false, url: '', title: '' };
+                // المعاينة تقبل كائن المستند (يحمل file_url الموقّع) أو رابطاً مباشراً، من أي مكان في النظام
+                openDocPreview(target, title) {
+                    const doc = (target && typeof target === 'object') ? target : null;
+                    const url = doc ? (doc.file_url || this.storageUrl(doc.file_path)) : target;
+                    if (!url) {
+                        this.showToast('لا يوجد ملف مرفوع لعرضه.');
+                        return;
                     }
-                    this.studentFile.previewModal.url = url;
-                    this.studentFile.previewModal.title = title || 'معاينة المستند';
-                    this.studentFile.previewModal.open = true;
+                    const mime = (doc && doc.mime_type) || '';
+                    const path = (doc && doc.file_path) || '';
+                    const isImage = mime.startsWith('image/') || /\.(jpe?g|png|webp|gif)(\.enc)?$/i.test(path);
+                    this.studentFile.docPreviewModal = {
+                        open: true,
+                        title: title || (doc && doc.type_label) || 'معاينة المستند',
+                        url: url,
+                        type: (doc && doc.document_type) || '',
+                        isPdf: !isImage,
+                        isImage: isImage,
+                        originalName: (doc && doc.original_name) || '—',
+                        formattedSize: (doc && doc.formatted_size) || '—',
+                        uploadDate: (doc && doc.created_at) ? String(doc.created_at).slice(0, 10) : '—'
+                    };
                 },
 
                 closeDocPreview() {
-                    if (this.studentFile.previewModal) {
-                        this.studentFile.previewModal.open = false;
+                    if (this.studentFile.docPreviewModal) {
+                        this.studentFile.docPreviewModal.open = false;
                     }
                 },
 
@@ -6380,7 +6580,7 @@ async loadBranchOperations() {
                         if (res.ok) {
                             this.showToast('تم تسجيل المخالفة بنجاح');
                             this.studentFile.behaviorForm = { type: '', level: 'LOW', description: '' };
-                            await this.sfLoadTab('behaviors');
+                            await this.openStudentFile(this.studentFile.student.id);
                         } else {
                             this.showToast(json.message || 'تعذر تسجيل المخالفة');
                         }
@@ -6597,32 +6797,26 @@ async loadBranchOperations() {
                     this.showToast('تم مسح لوحة التوقيع');
                 },
 
-                handleDocUpload(event, type) {
+                // إرفاق مستند في نموذج القبول: type = مفتاح النوع المعتمد، label = اسمه كما يظهر للمستخدم
+                handleDocUpload(event, type, label) {
                     const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        if (!this.createStudentModal.attachedDocs) this.createStudentModal.attachedDocs = [];
-                        this.createStudentModal.attachedDocs.push({
-                            type: type,
-                            name: file.name,
-                            size: file.size,
-                            base64: e.target.result
-                        });
-                        this.showToast(`تم إرفاق: ${type || 'مستند'}`);
-                    };
-                    reader.readAsDataURL(file);
+                    event.target.value = '';
+                    if (!file || !this.validateDocFile(file)) return;
+                    if (!this.createStudentModal.attachedDocs) this.createStudentModal.attachedDocs = [];
+                    const list = this.createStudentModal.attachedDocs;
+                    // المستند الواحد لكل نوع رسمي؛ الإرفاق مرة أخرى يستبدل السابق (المستندات الإضافية تتراكم)
+                    const idx = type === 'OTHER' ? -1 : list.findIndex(d => d.type === type);
+                    const item = { type, label: label || type, name: file.name, size: file.size, file };
+                    if (idx > -1) {
+                        list.splice(idx, 1, item);
+                    } else {
+                        list.push(item);
+                    }
+                    this.showToast(`تم إرفاق: ${item.label}`);
                 },
 
                 handleMedicalReportUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.createStudentModal.form.disability_report_base64 = e.target.result;
-                        this.showToast('تم إرفاق التقرير الطبي للإعاقة بنجاح');
-                    };
-                    reader.readAsDataURL(file);
+                    this.handleDocUpload(event, 'DISABILITY_MEDICAL_REP', 'التقرير الطبي الخاص بالإعاقة');
                 },
 
                 toggleChronicDisease(disease) {
@@ -6736,32 +6930,25 @@ async loadBranchOperations() {
                     }
                 },
 
-                handleEditDocUpload(event, type) {
+                // إرفاق مستند في تعديل الطالب: يُرفع بعد الحفظ عبر مسار الملف الموحد
+                handleEditDocUpload(event, type, label) {
                     const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        if (!this.editStudentModal.attachedDocs) this.editStudentModal.attachedDocs = [];
-                        this.editStudentModal.attachedDocs.push({
-                            type: type,
-                            name: file.name,
-                            size: file.size,
-                            base64: e.target.result
-                        });
-                        this.showToast(`تم إرفاق: ${type || 'مستند'}`);
-                    };
-                    reader.readAsDataURL(file);
+                    event.target.value = '';
+                    if (!file || !this.validateDocFile(file)) return;
+                    if (!this.editStudentModal.attachedDocs) this.editStudentModal.attachedDocs = [];
+                    const list = this.editStudentModal.attachedDocs;
+                    const idx = type === 'OTHER' ? -1 : list.findIndex(d => d.type === type);
+                    const item = { type, label: label || type, name: file.name, size: file.size, file };
+                    if (idx > -1) {
+                        list.splice(idx, 1, item);
+                    } else {
+                        list.push(item);
+                    }
+                    this.showToast(`تم إرفاق: ${item.label}`);
                 },
 
                 handleEditMedicalReportUpload(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        this.editStudentModal.form.disability_report_base64 = e.target.result;
-                        this.showToast('تم إرفاق التقرير الطبي للإعاقة');
-                    };
-                    reader.readAsDataURL(file);
+                    this.handleEditDocUpload(event, 'DISABILITY_MEDICAL_REP', 'التقرير الطبي الخاص بالإعاقة');
                 },
 
                 toggleEditChronicDisease(disease) {

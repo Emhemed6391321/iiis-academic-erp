@@ -15,8 +15,16 @@ class BugReportController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // بلاغات الجميع (وبريد مُبلِّغيها) مقصورة على من يراجع النظام؛ غيره يرى بلاغاته فقط
+        $user = $request->user() ?: Auth::user();
+        $canReviewAll = $user && $user->hasPermission('system.monitor');
+
         $query = BugReport::with(['reporter:id,name,email', 'resolver:id,name'])
             ->orderByDesc('created_at');
+
+        if (!$canReviewAll) {
+            $query->where('reporter_id', $user?->id ?? 0);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -41,13 +49,16 @@ class BugReportController extends Controller
 
         $reports = $query->paginate(min(100, max(1, (int) ($request->per_page ?? 25))));
 
+        $scoped = fn () => BugReport::query()
+            ->when(!$canReviewAll, fn ($q) => $q->where('reporter_id', $user?->id ?? 0));
+
         $stats = [
-            'pending'     => BugReport::where('status', 'pending')->count(),
-            'in_progress' => BugReport::where('status', 'in_progress')->count(),
-            'resolved'    => BugReport::where('status', 'resolved')->count(),
-            'dismissed'   => BugReport::where('status', 'dismissed')->count(),
-            'total'       => BugReport::count(),
-            'avg_rating'  => round(BugReport::avg('rating'), 1),
+            'pending'     => $scoped()->where('status', 'pending')->count(),
+            'in_progress' => $scoped()->where('status', 'in_progress')->count(),
+            'resolved'    => $scoped()->where('status', 'resolved')->count(),
+            'dismissed'   => $scoped()->where('status', 'dismissed')->count(),
+            'total'       => $scoped()->count(),
+            'avg_rating'  => round((float) $scoped()->avg('rating'), 1),
         ];
 
         return response()->json([

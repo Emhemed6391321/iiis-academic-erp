@@ -124,6 +124,10 @@ class Student extends Model
     public function getProfilePhotoUrlAttribute(): ?string
     {
         if (!$this->profile_photo_path) return null;
+        // الصورة الشخصية المرفوعة كمستند تُحفظ في الخزنة المشفرة، ولا تُعرض إلا برابط موقّع مؤقت
+        if (str_starts_with($this->profile_photo_path, 'secure_vault/')) {
+            return app(\App\Services\SecureFileVaultService::class)->generateSignedUrl($this->profile_photo_path);
+        }
         $path = str_replace('\\', '/', $this->profile_photo_path);
         // إزالة أي بادئة storage/ موجودة مسبقاً لتجنب التكرار
         $path = ltrim($path, '/');

@@ -23,6 +23,7 @@ use App\Models\StudyYear;
 use App\Models\SystemAuditTrail;
 use App\Services\StudentStateMachineService;
 use App\Services\SecureFileVaultService;
+use App\Services\StudentDocumentService;
 
 class StudentFileController extends Controller
 {
@@ -360,10 +361,14 @@ class StudentFileController extends Controller
             'document_type'   => 'required|string|in:' . implode(',', $allowedTypes),
             'document'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
             'document_base64' => 'nullable|string',
+            'captured_photo'  => 'nullable|string',
             'notes'           => 'nullable|string|max:500',
         ]);
 
-        if (!$request->hasFile('document') && empty($request->document_base64)) {
+        // الملف المرفوع أو الصورة الملتقطة بالكاميرا (تأتي باسم captured_photo من الواجهة)
+        $capturedData = $request->input('document_base64') ?: $request->input('captured_photo');
+
+        if (!$request->hasFile('document') && empty($capturedData)) {
             return response()->json([
                 'success' => false,
                 'message' => 'يرجى اختيار ملف بصيغة (PDF / JPG / PNG) أو التقاط صورة بالكاميرا.',
@@ -378,87 +383,46 @@ class StudentFileController extends Controller
             ], 403);
         }
 
-        $isReplacement = false;
-        $existing = StudentDocument::where('student_id', $student->id)
-            ->where('document_type', $request->document_type)
-            ->where('document_type', '!=', 'OTHER')
-            ->first();
+        $hasUpload = $request->hasFile('document');
+        $input = $hasUpload ? $request->file('document') : $capturedData;
+        $originalName = $hasUpload ? $request->file('document')->getClientOriginalName() : 'capture_' . time() . '.jpg';
 
-        if ($existing) {
-            $isReplacement = true;
-            if (str_starts_with($existing->file_path, 'secure_vault/')) {
-                Storage::disk('local')->delete($existing->file_path);
-            } else {
-                Storage::disk('public')->delete($existing->file_path);
-            }
-            $existing->delete();
+        $result = app(StudentDocumentService::class)->store(
+            $student,
+            $request->document_type,
+            $input,
+            $originalName,
+            $request->notes,
+            Auth::id() ?? 1
+        );
+
+        if (!$result['success']) {
+            return response()->json(['success' => false, 'message' => $result['message']], 422);
         }
 
-        $vault = app(\App\Services\SecureFileVaultService::class);
-        $fileInput = $request->hasFile('document') ? $request->file('document') : $request->document_base64;
-        $originalName = $request->hasFile('document') ? $request->file('document')->getClientOriginalName() : 'doc_' . time() . '.png';
-
-        $vaultResult = $vault->storeSecure($fileInput, 'students/documents', $student->branch_id);
-        if (!$vaultResult['success']) {
-            return response()->json(['success' => false, 'message' => $vaultResult['error']], 422);
-        }
-
-        $path = $vaultResult['path'];
-        $mimeType = $vaultResult['mime'];
-        $hash = $vaultResult['hash'];
-        $fileSize = $request->hasFile('document') 
-            ? $request->file('document')->getSize() 
-            : (int)(strlen($request->document_base64) * 0.75);
-
-        $isRequired = in_array($request->document_type, [
-            'NATIONAL_ID_CARD',
-            'BIRTH_CERT',
-            'BASIC_EDUCATION_CERT',
-            'HEALTH_CERT',
-        ]) || ($request->document_type === 'DISABILITY_MEDICAL_REP' && $student->has_disability);
-
-        $doc = StudentDocument::create([
-            'student_id'    => $student->id,
-            'document_type' => $request->document_type,
-            'original_name' => $originalName,
-            'file_size'     => $fileSize,
-            'mime_type'     => $mimeType,
-            'is_required'   => $isRequired,
-            'file_path'     => $path,
-            'file_hash'     => $hash,
-            'notes'         => $request->notes,
-            'uploaded_by'   => Auth::id() ?? 1,
-        ]);
-
-        // إذا كان المستند صورة شخصية أو تقرير طبي خاص بالإعاقة، قم بتحديث ملف الطالب أيضاً
-        if ($request->document_type === 'PERSONAL_PHOTO') {
-            $student->update(['profile_photo_path' => $path]);
-        } elseif ($request->document_type === 'DISABILITY_MEDICAL_REP') {
-            $student->update(['medical_report_path' => $path]);
-        }
-
-        // تسجيل في السجل الموحد للأحداث
+        $doc = $result['document'];
         $typeLabel = $doc->type_label;
-        $eventMsg = $isReplacement ? "تم استبدال مستند: {$typeLabel}" : "تم رفع وإرفاق مستند: {$typeLabel}";
+        $replaced = $result['replaced'];
+
         $this->logEvent(
             $student,
-            $isReplacement ? 'DOCUMENT_REPLACE' : 'DOCUMENT_UPLOAD',
+            $replaced ? 'DOCUMENT_REPLACE' : 'DOCUMENT_UPLOAD',
             null,
             null,
-            $eventMsg,
-            $path,
+            $replaced ? "تم استبدال مستند: {$typeLabel}" : "تم رفع وإرفاق مستند: {$typeLabel}",
+            $doc->file_path,
             [
                 'document_id'   => $doc->id,
                 'document_type' => $request->document_type,
                 'original_name' => $originalName,
-                'file_size'     => $fileSize,
-                'mime_type'     => $mimeType,
+                'file_size'     => $doc->file_size,
+                'mime_type'     => $doc->mime_type,
             ]
         );
 
         return response()->json([
             'success'  => true,
-            'message'  => ($isReplacement ? 'تم استبدال وتحديث المستند بنجاح.' : 'تم رفع وإرفاق المستند بملف الطالب بنجاح.'),
+            'message'  => ($replaced ? 'تم استبدال وتحديث المستند بنجاح.' : 'تم رفع وإرفاق المستند بملف الطالب بنجاح.'),
             'document' => $doc,
             'url'      => $doc->file_url,
         ]);

@@ -45,9 +45,9 @@ class SecureFileVaultService
             return ['success' => false, 'path' => null, 'mime' => null, 'hash' => null, 'error' => 'الملف فارغ أو تعذر قراءته.'];
         }
 
-        // 1. Max size check (15 MB)
-        if (strlen($binary) > 15 * 1024 * 1024) {
-            return ['success' => false, 'path' => null, 'mime' => null, 'hash' => null, 'error' => 'حجم الملف يتجاوز الحد الأقصى المسموح به (15 ميغابايت).'];
+        // 1. Max size check (10 MB — same limit shown to users in the upload forms)
+        if (strlen($binary) > StudentDocumentService::MAX_BYTES) {
+            return ['success' => false, 'path' => null, 'mime' => null, 'hash' => null, 'error' => 'حجم الملف يتجاوز الحد الأقصى المسموح به (10 ميغابايت).'];
         }
 
         // 2. Validate Magic Bytes (True MIME detection)

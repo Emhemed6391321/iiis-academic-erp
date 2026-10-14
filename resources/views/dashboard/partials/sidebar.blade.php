@@ -206,6 +206,8 @@
             <div class="space-y-1">
                 <!-- قسم الدراسة والامتحانات -->
                 <button @click="currentSection = 'study_and_exams'"
+                                                :aria-disabled="isModuleLocked('study_and_exams') ? 'true' : 'false'"
+                        :title="isModuleLocked('study_and_exams') ? 'قسم الدراسة والامتحانات - قريباً ومقفل حالياً' : 'قسم الدراسة والامتحانات'"
                         x-show="hasPermission('grades.view')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all group"
                         :class="[
@@ -225,6 +227,8 @@
 
                 <!-- الشهادات والوثائق والتحقق -->
                 <button @click="currentSection = 'transcripts'"
+                                                :aria-disabled="isModuleLocked('transcripts') ? 'true' : 'false'"
+                        :title="isModuleLocked('transcripts') ? 'الشهادات والوثائق - قريباً ومقفل حالياً' : 'الشهادات والوثائق'"
                         x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[
@@ -242,6 +246,8 @@
 
                 <!-- الطباعة الرسمية والتصدير -->
                 <button @click="currentSection = 'batch_print'"
+                                                :aria-disabled="isModuleLocked('batch_print') ? 'true' : 'false'"
+                        :title="isModuleLocked('batch_print') ? 'الطباعة والتصدير - قريباً ومقفل حالياً' : 'الطباعة والتصدير'"
                         x-show="hasPermission('reports.print_official')"
                         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all"
                         :class="[

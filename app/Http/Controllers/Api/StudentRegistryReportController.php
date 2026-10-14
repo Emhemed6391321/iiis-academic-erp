@@ -141,16 +141,28 @@ class StudentRegistryReportController extends Controller
         [$query, $archivedCount] = $this->buildRegistryQuery($request);
         $user = Auth::user();
 
-        // حساب الإحصائيات التجميعية للاستعلام الحالي
-        $totalCount = (clone $query)->count();
-        $maleCount = (clone $query)->where('gender', 'MALE')->count();
-        $femaleCount = (clone $query)->where('gender', 'FEMALE')->count();
-        $regularCount = (clone $query)->where('study_type', 'REGULAR')->count();
-        $intisabCount = (clone $query)->where('study_type', 'INTISAB')->count();
-        $activeCount = (clone $query)->whereIn('academic_status', ['ENROLLED_ACTIVE', 'ACTIVE', 'REGULAR'])->count();
-        $suspendedCount = (clone $query)->where('academic_status', 'SUSPENDED')->count();
-        $transferredCount = (clone $query)->where('academic_status', 'TRANSFERRED')->count();
-        $graduatedCount = (clone $query)->where('academic_status', 'GRADUATED')->count();
+        // حساب الإحصائيات التجميعية للاستعلام الحالي في استعلام واحد بدل تسعة استعلامات منفصلة
+        $counts = (clone $query)->toBase()->selectRaw(
+            "COUNT(*) AS total_count,
+             SUM(CASE WHEN gender = 'MALE' THEN 1 ELSE 0 END) AS male_count,
+             SUM(CASE WHEN gender = 'FEMALE' THEN 1 ELSE 0 END) AS female_count,
+             SUM(CASE WHEN study_type = 'REGULAR' THEN 1 ELSE 0 END) AS regular_count,
+             SUM(CASE WHEN study_type = 'INTISAB' THEN 1 ELSE 0 END) AS intisab_count,
+             SUM(CASE WHEN academic_status IN ('ENROLLED_ACTIVE', 'ACTIVE', 'REGULAR') THEN 1 ELSE 0 END) AS active_count,
+             SUM(CASE WHEN academic_status = 'SUSPENDED' THEN 1 ELSE 0 END) AS suspended_count,
+             SUM(CASE WHEN academic_status = 'TRANSFERRED' THEN 1 ELSE 0 END) AS transferred_count,
+             SUM(CASE WHEN academic_status = 'GRADUATED' THEN 1 ELSE 0 END) AS graduated_count"
+        )->first();
+
+        $totalCount = (int) ($counts->total_count ?? 0);
+        $maleCount = (int) ($counts->male_count ?? 0);
+        $femaleCount = (int) ($counts->female_count ?? 0);
+        $regularCount = (int) ($counts->regular_count ?? 0);
+        $intisabCount = (int) ($counts->intisab_count ?? 0);
+        $activeCount = (int) ($counts->active_count ?? 0);
+        $suspendedCount = (int) ($counts->suspended_count ?? 0);
+        $transferredCount = (int) ($counts->transferred_count ?? 0);
+        $graduatedCount = (int) ($counts->graduated_count ?? 0);
 
         // 10. الفرز (Sorting)
         $sortBy = $request->get('sort_by', 'id');

@@ -70,7 +70,7 @@
                                     <div class="relative flex-shrink-0">
                                         <div class="w-24 h-24 rounded-[16px] border-2 border-[#2b78a5]/30 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden shadow-md">
                                             <template x-if="studentFile.student.profile_photo_path">
-                                                <img :src="storageUrl(studentFile.student.profile_photo_path)" class="w-full h-full object-cover">
+                                                <img :src="studentFile.student.profile_photo_url" class="w-full h-full object-cover">
                                             </template>
                                             <template x-if="!studentFile.student.profile_photo_path">
                                                 <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -385,7 +385,7 @@
                                                     <div class="text-[10px] text-slate-400 font-mono truncate" x-text="doc.created_at ? doc.created_at.split('T')[0] : 'مؤرشف'"></div>
                                                 </div>
                                             </div>
-                                            <a :href="storageUrl(doc.file_path)" target="_blank"
+                                            <a :href="doc.file_url" target="_blank"
                                                class="px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] hover:bg-indigo-100 transition-all flex-shrink-0">
                                                 معاينة ↗
                                             </a>
@@ -730,7 +730,7 @@
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="storageUrl(studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.file_path)" download
+                                                    <a :href="studentFile.docsByType['NATIONAL_ID_CARD']?.[0]?.file_url" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -800,7 +800,7 @@
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="storageUrl(studentFile.docsByType['BIRTH_CERT']?.[0]?.file_path)" download
+                                                    <a :href="studentFile.docsByType['BIRTH_CERT']?.[0]?.file_url" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -870,7 +870,7 @@
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="storageUrl(studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.file_path)" download
+                                                    <a :href="studentFile.docsByType['BASIC_EDUCATION_CERT']?.[0]?.file_url" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -940,7 +940,7 @@
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="storageUrl(studentFile.docsByType['HEALTH_CERT']?.[0]?.file_path)" download
+                                                    <a :href="studentFile.docsByType['HEALTH_CERT']?.[0]?.file_url" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -1017,7 +1017,7 @@
                                                             class="flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white transition flex items-center justify-center gap-1">
                                                         <span>👁️ معاينة</span>
                                                     </button>
-                                                    <a :href="storageUrl(studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.file_path)" download
+                                                    <a :href="studentFile.docsByType['DISABILITY_MEDICAL_REP']?.[0]?.file_url" download
                                                        class="p-1.5 rounded-lg border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تنزيل المستند">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                     </a>
@@ -1071,7 +1071,7 @@
                                                  :class="darkMode ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'">
                                                 <div class="w-12 h-14 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden flex-shrink-0 border flex items-center justify-center">
                                                     <template x-if="studentFile.student?.profile_photo_path">
-                                                        <img :src="storageUrl(studentFile.student.profile_photo_path)" class="w-full h-full object-cover">
+                                                        <img :src="studentFile.student.profile_photo_url" class="w-full h-full object-cover">
                                                     </template>
                                                     <template x-if="!studentFile.student?.profile_photo_path">
                                                         <span class="text-xl">👤</span>
@@ -1149,7 +1149,7 @@
                                                                     class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#2b78a5] dark:text-sky-300 hover:bg-blue-100 transition" title="معاينة المستند">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                             </button>
-                                                            <a :href="storageUrl(doc.file_path)" download
+                                                            <a :href="doc.file_url" download
                                                                class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition" title="تنزيل">
                                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                                                             </a>

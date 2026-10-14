@@ -569,10 +569,42 @@ class StudentWorkflowController extends Controller
     }
 
     /**
+     * هل يحق للمستخدم الوصول لمناقشات الطلب؟
+     * RequestDiscussion لا يحمل فرعاً، لذا نتحقق من الطلب الأصلي بنفس نطاق القائمة (getRequests):
+     * طلب الطالب يخص فرع الطالب، والنقل يخص الفرع المرسِل أو المستقبِل.
+     */
+    private function canAccessRequestDiscussion(string $type, int $id): bool
+    {
+        $user = Auth::user();
+        if (!$user || $user->hasGlobalAccessScope() || empty($user->branch_id)) {
+            return true;
+        }
+
+        $branchId = (int) $user->branch_id;
+
+        return match (strtoupper($type)) {
+            'STATUS' => EnrollmentStatusRequest::where('id', $id)
+                ->whereHas('student', fn ($q) => $q->where('branch_id', $branchId))
+                ->exists(),
+            'SYSTEM' => StudyTypeChangeRequest::where('id', $id)
+                ->whereHas('student', fn ($q) => $q->where('branch_id', $branchId))
+                ->exists(),
+            'TRANSFER' => StudentTransfer::where('id', $id)
+                ->where(fn ($q) => $q->where('from_branch_id', $branchId)->orWhere('to_branch_id', $branchId))
+                ->exists(),
+            default => false,
+        };
+    }
+
+    /**
      * Get or post comments for request internal discussion feed.
      */
     public function getComments(string $type, int $id): JsonResponse
     {
+        if (!$this->canAccessRequestDiscussion($type, $id)) {
+            return response()->json(['status' => 'error', 'message' => 'الطلب غير موجود ضمن نطاق فرعك.'], 404);
+        }
+
         $comments = RequestDiscussion::where('request_type', strtoupper($type))
             ->where('request_id', $id)
             ->with('user')
@@ -594,6 +626,10 @@ class StudentWorkflowController extends Controller
 
     public function addComment(Request $request, string $type, int $id): JsonResponse
     {
+        if (!$this->canAccessRequestDiscussion($type, $id)) {
+            return response()->json(['status' => 'error', 'message' => 'الطلب غير موجود ضمن نطاق فرعك.'], 404);
+        }
+
         $commentText = $request->input('comment_text') ?? $request->input('comment');
         if (empty($commentText) || !is_string($commentText)) {
             return response()->json(['status' => 'error', 'message' => 'نص التعليق مطلوب.'], 422);

@@ -52,9 +52,15 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::get('/permissions/matrix', [PermissionMatrixController::class, 'getMatrix'])->middleware('permission:permissions.manage|MANAGE_ROLES');
     Route::post('/permissions/toggle', [PermissionMatrixController::class, 'toggleRolePermission'])->middleware('permission:permissions.manage|MANAGE_ROLES');
 
+    // 2b. Module on/off switches (الوحدات المقفلة "قريباً") — القراءة لكل مستخدم والتعديل للمدير العام
+    Route::get('/modules/states', [\App\Http\Controllers\Api\ModuleStateController::class, 'index']);
+    Route::post('/modules/states', [\App\Http\Controllers\Api\ModuleStateController::class, 'update']);
+
     // 3. Central Student Registry & Official Documentation Engine (سجل الطلاب العام والخدمات المستندية الرسمية)
     Route::get('/students/registry', [StudentRegistryReportController::class, 'index'])->middleware('permission:students.view');
     Route::get('/students/registry/export', [StudentRegistryReportController::class, 'exportRegistry'])->middleware('permission:students.view');
+    // يجب أن يسبق مسار {student} أدناه لئلا يُفسَّر "form-options" كمعرّف طالب
+    Route::get('/students/form-options', [StudentController::class, 'formOptions'])->middleware('permission:students.view|students.create');
     Route::get('/students/{student}/confidential-report', [StudentRegistryReportController::class, 'getConfidentialReport'])->middleware('permission:reports.print_official');
     Route::get('/students/{student}/certificates/enrollment', [StudentRegistryReportController::class, 'getEnrollmentCertificate'])->middleware('permission:reports.print_official');
     Route::get('/students/{student}/certificates/conduct', [StudentRegistryReportController::class, 'getGoodConductCertificate'])->middleware('permission:reports.print_official');
