@@ -1402,7 +1402,7 @@
             </div>
 
             <!-- Modal Body (Form) -->
-            <form @submit.prevent="submitEditStudent()" class="p-6 overflow-y-auto flex-1 text-xs space-y-6">
+            <form @submit.prevent="submitEditStudent()" novalidate class="p-6 overflow-y-auto flex-1 text-xs space-y-6">
 
                 <!-- ==================================================== -->
                 <!-- TAB 1: البيانات الشخصية والمدنية                      -->

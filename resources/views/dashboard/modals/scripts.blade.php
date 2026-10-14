@@ -1790,9 +1790,9 @@
                         emergency_contact: st.emergency_contact || '',
                         address: st.address || '',
                         email: st.email || '',
-                        branch_id: st.branch_id || (st.branch ? st.branch.id : 1),
-                        department_id: st.department_id || (st.department ? st.department.id : 1),
-                        current_study_year_id: st.current_study_year_id || (st.current_study_year ? st.current_study_year.id : 1),
+                        branch_id: st.branch_id || (st.branch ? st.branch.id : null),
+                        department_id: st.department_id || (st.department ? st.department.id : null),
+                        current_study_year_id: st.current_study_year_id || (st.current_study_year ? st.current_study_year.id : null),
                         study_type: st.study_type || 'REGULAR',
                         academic_number: st.academic_number || '',
                         academic_status: st.academic_status || 'ACTIVE',
@@ -1810,6 +1810,15 @@
                         medical_report_base64: null,
                         notes: st.notes || ''
                     };
+                    // خيارات الفرع والشعبة والمرحلة يجب أن تكون محمّلة، وأي قيمة مفقودة تُملأ من أول خيار متاح
+                    // حتى لا يبقى حقل "مطلوب" فارغاً مخفياً داخل تبويب آخر فيمنع الحفظ
+                    this.loadAdmissionOptions().then(() => {
+                        const ef = this.editStudentModal.form;
+                        const o = this.admissionOptions;
+                        if (!ef.branch_id && o.branches.length) ef.branch_id = o.branches[0].id;
+                        if (!ef.department_id && o.departments.length) ef.department_id = o.departments[0].id;
+                        if (!ef.current_study_year_id && o.study_years.length) ef.current_study_year_id = o.study_years[0].id;
+                    });
                     this.editStudentModal.open = true;
                 },
 
