@@ -36,8 +36,11 @@ class AcademicNumberGeneratorService
             // 3. البادئة: رقم الجنس + كود العام الدراسي (مثلاً: 126 أو 226)
             $prefix = "{$genderDigit}{$yearCode}";
 
-            // Find current maximum sequence for this prefix
-            $latestNumber = Student::where('academic_number', 'LIKE', "{$prefix}%")
+            // Find current maximum sequence for this prefix.
+            // الرقم الأكاديمي فريد على مستوى المنظومة كلها، لذلك يُبحث عنه بلا تقييد الفرع
+            // (وإلا تصادم رقم مدير الفرع مع طالب في فرع آخر).
+            $latestNumber = Student::withoutGlobalScopes()
+                ->where('academic_number', 'LIKE', "{$prefix}%")
                 ->lockForUpdate()
                 ->orderBy('academic_number', 'DESC')
                 ->value('academic_number');
