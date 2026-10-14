@@ -493,6 +493,12 @@ class BranchOperationsController extends Controller
      */
     public function getBranchDetails($id): JsonResponse
     {
+        // مستخدمو الفروع يرون بيانات فرعهم فقط
+        $user = request()->user() ?: Auth::user();
+        if ($user && !$user->hasGlobalAccessScope() && (int) $user->branch_id !== (int) $id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: لا يمكنك عرض بيانات فرع آخر.'], 403);
+        }
+
         $branch = Branch::with([
             'facilities',
             'classes',

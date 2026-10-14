@@ -7,6 +7,7 @@ use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\Branch;
 use App\Models\Department;
+use App\Models\GradeBatch;
 use App\Models\Student;
 use App\Models\StudyYear;
 use App\Models\User;
@@ -120,6 +121,13 @@ class BranchManagerPermissionsTest extends TestCase
         $this->actingAs($this->manager)->getJson("/api/v1/branches/{$this->ownBranch->id}/details")->assertOk();
     }
 
+    public function test_branch_manager_cannot_view_another_branch_details()
+    {
+        $this->actingAs($this->manager)
+            ->getJson("/api/v1/branches/{$this->otherBranch->id}/details")
+            ->assertForbidden();
+    }
+
     public function test_branch_manager_can_view_students_of_own_branch_only()
     {
         $this->actingAs($this->manager)->getJson('/api/v1/students')->assertOk();
@@ -157,43 +165,42 @@ class BranchManagerPermissionsTest extends TestCase
             ->assertSuccessful();
     }
 
-    public function test_branch_manager_can_enter_grades_and_submit_batch_for_own_branch()
+    /**
+     * قسم الدراسة والامتحانات والكنترول مقفل حالياً (قريباً)، لذلك تُحجب واجهات الدرجات
+     * بالدرع حتى لصاحب الصلاحية، ولا تصل أي عملية درجات إلى قاعدة البيانات.
+     */
+    public function test_grades_operations_are_locked_for_branch_manager_while_section_is_coming_soon()
     {
-        $sheet = $this->actingAs($this->manager)->getJson('/api/v1/grades/sheet?' . http_build_query([
+        $this->actingAs($this->manager)->getJson('/api/v1/grades/sheet?' . http_build_query([
             'branch_id' => $this->ownBranch->id,
             'academic_year_id' => AcademicYear::where('is_current', true)->value('id'),
             'department_id' => $this->ownStudent->department_id,
             'study_year_id' => $this->ownStudent->current_study_year_id,
             'semester' => 1,
-        ]));
-        $sheet->assertOk();
-
-        $batchId = $sheet->json('batch.id');
-        $gradeId = collect($sheet->json('grades'))->firstWhere('student_id', $this->ownStudent->id)['id'] ?? null;
-        $this->assertNotNull($batchId, 'يجب أن ينشئ كشف الدرجات دفعة للفرع');
-        $this->assertNotNull($gradeId, 'يجب أن يظهر طالب الفرع في كشف الدرجات');
-
-        $course = Course::findOrFail(collect($sheet->json('grades'))->firstWhere('id', $gradeId)['course_id']);
+        ]))->assertStatus(423)->assertJsonPath('status', 'shielded');
 
         $this->actingAs($this->manager)->postJson('/api/v1/grades/batch-save', [
-            'batch_id' => $batchId,
-            'grades' => [[
-                'id' => $gradeId,
-                'coursework' => $course->max_coursework_grade / 2,
-                'midterm' => $course->max_midterm_grade / 2,
-                'final_exam' => $course->max_final_grade / 2,
-            ]],
-        ])->assertOk();
+            'batch_id' => 1,
+            'grades' => [['id' => 1, 'coursework' => 1]],
+        ])->assertStatus(423);
+
+        $batch = GradeBatch::create([
+            'batch_code' => 'BATCH-TEST-LOCK',
+            'branch_id' => $this->ownBranch->id,
+            'academic_year_id' => AcademicYear::where('is_current', true)->value('id'),
+            'study_year_id' => $this->ownStudent->current_study_year_id,
+            'department_id' => $this->ownStudent->department_id,
+            'semester' => 1,
+            'status' => 'DRAFT',
+        ]);
 
         $this->actingAs($this->manager)
-            ->postJson("/api/v1/grades/batches/{$batchId}/submit-hq")
-            ->assertOk()
-            ->assertJsonPath('success', true);
+            ->postJson("/api/v1/grades/batches/{$batch->id}/submit-hq")
+            ->assertStatus(423);
 
-        // الاعتماد المركزي للدفعة ليس من صلاحياته
         $this->actingAs($this->manager)
-            ->postJson("/api/v1/grades/batches/{$batchId}/approve-hq")
-            ->assertForbidden();
+            ->getJson('/api/v1/study-and-exams/dashboard')
+            ->assertStatus(423);
     }
 
     public function test_branch_manager_can_issue_attendance_warning_for_own_student()

@@ -220,6 +220,7 @@
                         <span x-show="!sidebarCollapsed" class="truncate">قسم الدراسة والامتحانات</span>
                     </div>
                     
+                <span x-show="!sidebarCollapsed" class="ml-2 flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">قريباً</span>
                 </button>
 
                 <!-- الشهادات والوثائق والتحقق -->
@@ -236,6 +237,7 @@
                         <span x-show="!sidebarCollapsed" class="truncate">الشهادات والوثائق</span>
                     </div>
                     
+                <span x-show="!sidebarCollapsed" class="ml-2 flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">قريباً</span>
                 </button>
 
                 <!-- الطباعة الرسمية والتصدير -->
@@ -252,6 +254,7 @@
                         <span x-show="!sidebarCollapsed" class="truncate">الطباعة الرسمية والتصدير</span>
                     </div>
                     
+                <span x-show="!sidebarCollapsed" class="ml-2 flex-shrink-0 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">قريباً</span>
                 </button>
             </div>
         </div>

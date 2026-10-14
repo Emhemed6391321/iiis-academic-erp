@@ -48,6 +48,9 @@ class SecurityPhaseOneComprehensiveTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // قسم الدراسة والامتحانات مقفل بالدرع؛ نُمرر مفتاح التجاوز في الاختبار فقط لاختبار منطق الدرجات
+        config(['app.dev_bypass_secret' => 'phpunit-bypass']);
+        $this->withHeader('X-Bypass-Shield', 'phpunit-bypass');
 
         $roleSuper = Role::firstOrCreate(['name' => 'super_admin'], ['display_name' => 'مدير عام', 'scope_type' => 'GLOBAL_SCOPE']);
         $roleBranch = Role::firstOrCreate(['name' => 'branch_officer'], ['display_name' => 'موظف فرع', 'scope_type' => 'BRANCH_SCOPE']);

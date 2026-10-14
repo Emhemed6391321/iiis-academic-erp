@@ -32,6 +32,8 @@
                 ],
 
                 sidebarCollapsed: localStorage.getItem('institute_sidebar_collapsed') === '1',
+                // أقسام الدراسة والامتحانات والكنترول: مقفلة حالياً (قريباً)
+                lockedSections: ['study_and_exams', 'grading', 'transcripts', 'batch_print'],
                 mobileSidebarOpen: false,
                 sidebarOpen: false,
                 isDesktopView() {
@@ -3071,6 +3073,15 @@
 
 async initApp() {
                     window._academicApp = this;
+                    // منع فتح الأقسام المقفلة من أي مدخل (القائمة، لوحة القيادة، الروابط المباشرة)
+                    this.$watch('currentSection', (val) => {
+                        if (this.lockedSections.includes(val)) {
+                            this.currentSection = 'dashboard';
+                            if (typeof this.showToast === 'function') {
+                                this.showToast('هذا القسم قريباً ومقفل حالياً.');
+                            }
+                        }
+                    });
                     this.initAppearance();
                     this.initOfflineAttendanceEngine();
 

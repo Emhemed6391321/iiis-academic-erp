@@ -25,6 +25,9 @@ class MasterRemediationPhaseP0P1Test extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // قسم الدراسة والامتحانات مقفل بالدرع؛ نُمرر مفتاح التجاوز في الاختبار فقط لاختبار منطق الدرجات
+        config(['app.dev_bypass_secret' => 'phpunit-bypass']);
+        $this->withHeader('X-Bypass-Shield', 'phpunit-bypass');
         $this->seed(\Database\Seeders\AcademicSystemSeeder::class);
     }
 

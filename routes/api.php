@@ -132,10 +132,13 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     });
 
     // 4. Control & Fast Tabular Grade Entry
-    Route::get('/grades/sheet', [FastGradeEntryController::class, 'getGradeSheet'])->middleware('permission:grades.view');
-    Route::post('/grades/batch-save', [FastGradeEntryController::class, 'saveBatchGrades'])->middleware(['academic.year.active', 'permission:grades.enter_coursework|grades.enter_final']);
-    Route::post('/grades/batches/{batch}/submit-hq', [FastGradeEntryController::class, 'submitBatchToHq'])->middleware(['academic.year.active', 'permission:grades.submit_batch']);
-    Route::post('/grades/batches/{batch}/approve-hq', [FastGradeEntryController::class, 'approveBatchByHq'])->middleware('permission:grades.approve_hq');
+    // مقفل حالياً: قسم الدراسة والامتحانات والكنترول (قريباً)
+    Route::middleware(\App\Http\Middleware\ShieldedFeatureMiddleware::class)->group(function () {
+        Route::get('/grades/sheet', [FastGradeEntryController::class, 'getGradeSheet'])->middleware('permission:grades.view');
+        Route::post('/grades/batch-save', [FastGradeEntryController::class, 'saveBatchGrades'])->middleware(['academic.year.active', 'permission:grades.enter_coursework|grades.enter_final']);
+        Route::post('/grades/batches/{batch}/submit-hq', [FastGradeEntryController::class, 'submitBatchToHq'])->middleware(['academic.year.active', 'permission:grades.submit_batch']);
+        Route::post('/grades/batches/{batch}/approve-hq', [FastGradeEntryController::class, 'approveBatchByHq'])->middleware('permission:grades.approve_hq');
+    });
 
     // 5. User Management & IAM
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view|users.manage');
@@ -250,7 +253,7 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::delete('/settings/positions/{id}', [\App\Http\Controllers\Api\SettingsController::class, 'deletePosition'])->middleware('permission:admin_settings.manage');
 
     // 13. Study and Examinations Department (قسم الدراسة والامتحانات)
-    Route::get('/study-and-exams/dashboard', [\App\Http\Controllers\Api\StudyAndExamsController::class, 'getDashboardData'])->middleware('permission:grades.view');
+    Route::middleware(\App\Http\Middleware\ShieldedFeatureMiddleware::class)->get('/study-and-exams/dashboard', [\App\Http\Controllers\Api\StudyAndExamsController::class, 'getDashboardData'])->middleware('permission:grades.view');
 
     // 14. Student Data Quality & Deficiency Audit Hub (جودة البيانات ونواقص الطلاب)
     Route::post('/students/data-quality/audit', [\App\Http\Controllers\Api\StudentDataQualityController::class, 'auditDeficiencies'])->middleware('permission:students.view');
