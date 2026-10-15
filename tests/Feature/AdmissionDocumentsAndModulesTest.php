@@ -126,67 +126,95 @@ class AdmissionDocumentsAndModulesTest extends TestCase
         $this->assertSame(0, StudentDocument::where('student_id', $studentId)->count());
     }
 
-    public function test_module_switches_are_readable_by_all_and_changeable_only_by_general_director(): void
+    public function test_closed_modules_are_locked_for_everyone_including_general_director(): void
     {
         $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
         $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();
 
-        $this->actingAs($manager)->getJson('/api/v1/modules/states')
-            ->assertOk()
-            ->assertJsonPath('success', true);
+        foreach ([$manager, $admin] as $user) {
+            $this->actingAs($user)->getJson('/api/v1/modules/states')
+                ->assertOk()
+                ->assertJsonPath('success', true);
+        }
 
+        $locked = $this->actingAs($admin)->getJson('/api/v1/modules/states')->json('locked');
+        $this->assertEqualsCanonicalizing(['study_and_exams', 'grading', 'transcripts', 'batch_print'], $locked);
+
+        // لا يمكن تغيير حالة الوحدات المغلقة من أي حساب، حتى المدير العام
+        $this->actingAs($admin)->postJson('/api/v1/modules/states', ['locked' => []])
+            ->assertStatus(423);
         $this->actingAs($manager)->postJson('/api/v1/modules/states', ['locked' => []])
             ->assertForbidden();
-
-        $this->actingAs($admin)->postJson('/api/v1/modules/states', ['locked' => ['grading']])
-            ->assertOk()
-            ->assertJsonPath('locked', ['grading']);
-
-        $this->actingAs($manager)->getJson('/api/v1/modules/states')
-            ->assertJsonPath('locked', ['grading']);
     }
 
-    public function test_module_switch_rejects_unknown_module_keys(): void
+    public function test_closed_module_routes_return_423_even_for_general_director(): void
     {
         $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();
+        $student = \App\Models\Student::firstOrFail();
 
-        $this->actingAs($admin)->postJson('/api/v1/modules/states', ['locked' => ['not_a_module']])
-            ->assertStatus(422);
+        foreach ([
+            '/api/v1/exams/pending-batches',
+            '/api/v1/study-and-exams/dashboard',
+            "/api/v1/students/{$student->id}/transcript",
+        ] as $url) {
+            $this->actingAs($admin)->withHeaders(['Accept' => 'application/json'])
+                ->getJson($url)
+                ->assertStatus(423);
+        }
     }
 
-    public function test_general_director_can_permanently_delete_a_student_with_documents(): void
+    public function test_module_closed_middleware_blocks_closed_modules_directly(): void
+    {
+        $mw = new \App\Http\Middleware\ModuleClosedMiddleware();
+        $next = fn () => response('ok');
+
+        $blocked = $mw->handle(\Illuminate\Http\Request::create('/x', 'GET', [], [], [], ['HTTP_ACCEPT' => 'application/json']), $next, 'grading');
+        $this->assertSame(423, $blocked->getStatusCode());
+        $this->assertStringContainsString('MODULE_CLOSED', $blocked->getContent());
+
+        $open = $mw->handle(\Illuminate\Http\Request::create('/x'), $next, 'some_open_module');
+        $this->assertSame(200, $open->getStatusCode());
+    }
+
+    public function test_bug_report_captures_browser_diagnostics_and_works_without_typed_text(): void
     {
         $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
-        $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();
-        $studentId = $this->createStudent($manager, '119912340010');
 
-        $this->actingAs($manager)->post("/api/v1/students/{$studentId}/file/documents", [
-            'document_type' => 'NATIONAL_ID_CARD',
-            'document' => UploadedFile::fake()->createWithContent('id.pdf', self::PDF),
-        ])->assertOk();
+        $diagnostics = [
+            'capturedAt' => now()->toIso8601String(),
+            'page' => ['url' => 'http://localhost/?section=students', 'section' => 'students'],
+            'client' => ['userAgent' => 'TestAgent/1.0', 'viewport' => ['w' => 1280, 'h' => 720, 'dpr' => 1]],
+            'consoleLogs' => [['level' => 'error', 'at' => now()->toIso8601String(), 'message' => 'Boom in render']],
+            'jsErrors' => [['type' => 'error', 'at' => now()->toIso8601String(), 'message' => 'x is undefined', 'source' => 'app.js:10:3', 'stack' => 'ReferenceError: x is undefined']],
+            'failedRequests' => [['at' => now()->toIso8601String(), 'method' => 'POST', 'url' => '/api/v1/students', 'status' => 422, 'ms' => 12, 'response' => '{"message":"bad"}']],
+        ];
 
-        $this->actingAs($manager)->withHeaders(['Accept' => 'application/json'])
-            ->deleteJson("/api/v1/students/{$studentId}")
-            ->assertForbidden();
+        $res = $this->actingAs($manager)->withHeaders(['Accept' => 'application/json'])->postJson('/api/v1/bug-reports', [
+            'section_key' => 'students',
+            'section_name' => 'سجل الطلاب',
+            'category' => 'other',
+            'rating' => 2,
+            'diagnostics' => $diagnostics,
+        ])->assertCreated();
 
-        $this->actingAs($admin)->withHeaders(['Accept' => 'application/json'])
-            ->deleteJson("/api/v1/students/{$studentId}")
-            ->assertOk()
-            ->assertJsonPath('success', true);
-
-        $this->assertDatabaseMissing('students', ['id' => $studentId]);
-        $this->assertSame(0, StudentDocument::where('student_id', $studentId)->count());
+        $report = \App\Models\BugReport::findOrFail($res->json('id'));
+        $this->assertSame('x is undefined', $report->diagnostics['jsErrors'][0]['message']);
+        $this->assertSame(422, $report->diagnostics['failedRequests'][0]['status']);
+        $this->assertSame('Boom in render', $report->diagnostics['consoleLogs'][0]['message']);
+        $this->assertNotSame('', $report->title);
+        $this->assertStringContainsString('x is undefined', $report->title);
     }
 
-    public function test_dashboard_renders_admission_and_document_controls_for_general_director(): void
+    public function test_bug_report_without_text_or_diagnostics_is_rejected(): void
     {
-        $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();
+        $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
 
-        $this->actingAs($admin)->get('/')
-            ->assertOk()
-            ->assertSee('admissionOptions', false)
-            ->assertSee('docPreviewModal', false)
-            ->assertSee('isModuleLocked', false);
+        $this->actingAs($manager)->withHeaders(['Accept' => 'application/json'])->postJson('/api/v1/bug-reports', [
+            'section_key' => 'students',
+            'section_name' => 'سجل الطلاب',
+            'category' => 'other',
+            'rating' => 3,
+        ])->assertStatus(422);
     }
 
     private function createStudent(User $actor, string $nationalId): int

@@ -33,6 +33,7 @@ class MasterRemediationPhaseP0P1Test extends TestCase
 
     public function test_branch_user_cannot_save_grades_for_another_branch(): void
     {
+        $this->markTestSkipped('وحدة الدرجات مغلقة حالياً (قريباً) — يُعاد تفعيل هذا الاختبار عند افتتاح الوحدة.');
         $branch1 = Branch::firstOrCreate(['id' => 1], ['name' => 'فرع طرابلس', 'code' => 'TIP', 'is_active' => true]);
         $branch2 = Branch::firstOrCreate(['id' => 2], ['name' => 'فرع بنغازي', 'code' => 'BEN', 'is_active' => true]);
 

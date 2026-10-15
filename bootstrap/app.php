@@ -41,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password_change' => \App\Http\Middleware\ForcePasswordChangeMiddleware::class,
             'security.headers'      => \App\Http\Middleware\SecurityHeadersMiddleware::class,
             'permission'            => \App\Http\Middleware\CheckPermission::class,
+            'module.closed'         => \App\Http\Middleware\ModuleClosedMiddleware::class,
         ]);
 
         // Exempt logout and api from CSRF token verification to prevent 419 Page Expired errors

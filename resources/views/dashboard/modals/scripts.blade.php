@@ -1,4 +1,66 @@
     <script>
+        // ─── مسجّل تشخيص المتصفح: يلتقط أخطاء وحدة التحكم وأخطاء JavaScript والطلبات الفاشلة ───
+        // يعمل منذ بداية تحميل الصفحة حتى تُرفق سجلاته تلقائياً مع البلاغ عن الخطأ
+        (function installDiagnosticsRecorder() {
+            if (window.__erpDiag) return;
+            const MAX = 150;
+            const diag = { logs: [], errors: [], failed: [] };
+            const push = (list, item) => { list.push(item); if (list.length > MAX) list.shift(); };
+            const stamp = () => new Date().toISOString();
+            const fmt = (args) => args.map(a => {
+                if (a instanceof Error) return a.name + ': ' + a.message;
+                if (a && typeof a === 'object') { try { return JSON.stringify(a).slice(0, 800); } catch (e) { return String(a); } }
+                return String(a);
+            }).join(' ').slice(0, 1500);
+
+            ['error', 'warn'].forEach(level => {
+                const original = console[level].bind(console);
+                console[level] = (...args) => {
+                    push(diag.logs, { level, at: stamp(), message: fmt(args) });
+                    original(...args);
+                };
+            });
+
+            window.addEventListener('error', (e) => {
+                push(diag.errors, {
+                    type: 'error', at: stamp(), message: e.message || 'خطأ غير معروف',
+                    source: (e.filename || '') + ':' + (e.lineno || 0) + ':' + (e.colno || 0),
+                    stack: (e.error && e.error.stack ? e.error.stack.split('\n').slice(0, 8).join('\n') : '')
+                });
+            });
+
+            window.addEventListener('unhandledrejection', (e) => {
+                const reason = e.reason;
+                push(diag.errors, {
+                    type: 'promise', at: stamp(),
+                    message: (reason && reason.message) || String(reason || 'Unhandled promise rejection'),
+                    source: '',
+                    stack: (reason && reason.stack ? reason.stack.split('\n').slice(0, 8).join('\n') : '')
+                });
+            });
+
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async function (input, init) {
+                const method = ((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+                const url = typeof input === 'string' ? input : ((input && input.url) || '');
+                const started = Date.now();
+                try {
+                    const res = await originalFetch(input, init);
+                    if (!res.ok) {
+                        let snippet = '';
+                        try { snippet = (await res.clone().text()).slice(0, 800); } catch (e) {}
+                        push(diag.failed, { at: stamp(), method, url: url.slice(0, 400), status: res.status, ms: Date.now() - started, response: snippet });
+                    }
+                    return res;
+                } catch (err) {
+                    push(diag.failed, { at: stamp(), method, url: url.slice(0, 400), status: 0, ms: Date.now() - started, response: String(err && err.message || err) });
+                    throw err;
+                }
+            };
+
+            window.__erpDiag = diag;
+        })();
+
         function academicApp() {
             return {
                 // =========================================================================
@@ -3270,10 +3332,9 @@ async initApp() {
                 // =========================================================================
                 // MODULE SWITCHES (تفعيل وتعطيل الوحدات المقفلة "قريباً")
                 // =========================================================================
+                // الوحدات المغلقة (الدراسة والامتحانات والكنترول) مغلقة لجميع المستخدمين بمن فيهم المدير العام
                 isModuleLocked(key) {
                     if (!key) return false;
-                    // المدير العام يرى كل الوحدات دائماً
-                    if (this.isSuperAdmin) return false;
                     return Array.isArray(this.lockedSections) && this.lockedSections.includes(key);
                 },
 
@@ -8611,7 +8672,46 @@ async loadBranchOperations() {
             fabRating: 0,
             fabForm: { section_key: '', section_name: '', category: 'other', rating: 0, title: '', description: '' },
             fabErrors: {},
+            // لقطة التشخيص تُلتقط عند فتح نافذة البلاغ مباشرة (قبل أي تنقل) ثم تُرسل مع البلاغ
+            fabDiagnostics: null,
+            collectDiagnostics() {
+                const d = window.__erpDiag || { logs: [], errors: [], failed: [] };
+                const app = window._academicApp;
+                return {
+                    capturedAt: new Date().toISOString(),
+                    page: {
+                        url: location.href,
+                        title: document.title,
+                        section: app ? app.currentSection : null,
+                        activeTab: app && app.studentFile ? app.studentFile.activeTab : null,
+                        studentId: app && app.studentFile && app.studentFile.student ? app.studentFile.student.id : null,
+                    },
+                    client: {
+                        userAgent: navigator.userAgent,
+                        language: navigator.language,
+                        viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio },
+                        darkMode: !!(app && app.darkMode),
+                        online: navigator.onLine,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    },
+                    user: {
+                        isSuperAdmin: !!(app && app.isSuperAdmin),
+                    },
+                    consoleLogs: d.logs.slice(-80),
+                    jsErrors: d.errors.slice(-40),
+                    failedRequests: d.failed.slice(-40),
+                };
+            },
+            fabCapturedSummary() {
+                const d = this.fabDiagnostics || {};
+                return {
+                    errors: (d.jsErrors || []).length,
+                    failed: (d.failedRequests || []).length,
+                    logs: (d.consoleLogs || []).length,
+                };
+            },
             async openFab() {
+                this.fabDiagnostics = this.collectDiagnostics();
                 this.fabOpen = true;
                 this.fabStep = 1;
                 this.fabRating = 0;
@@ -8636,14 +8736,17 @@ async loadBranchOperations() {
             },
             async submitFab() {
                 this.fabErrors = {};
-                if (!this.fabForm.title.trim()) { this.fabErrors.title = 'يرجى كتابة عنوان مختصر.'; return; }
-                if (this.fabForm.description.trim().length < 10) { this.fabErrors.description = 'يرجى وصف المشكلة (10 أحرف على الأقل).'; return; }
+                // إذا التقط المسجّل أخطاء أو طلبات فاشلة فالبلاغ مكتمل حتى بدون كتابة
+                const captured = this.fabCapturedSummary();
+                const selfDescribing = captured.errors > 0 || captured.failed > 0;
+                if (!selfDescribing && !this.fabForm.title.trim()) { this.fabErrors.title = 'يرجى كتابة عنوان مختصر.'; return; }
+                if (!selfDescribing && this.fabForm.description.trim().length < 10) { this.fabErrors.description = 'يرجى وصف المشكلة (10 أحرف على الأقل).'; return; }
                 this.fabSubmitting = true;
                 try {
                     const res = await fetch('/api/v1/bug-reports', {
                         method: 'POST',
                         headers: {'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]')?.content||''},
-                        body: JSON.stringify({...this.fabForm, rating: this.fabRating}),
+                        body: JSON.stringify({...this.fabForm, rating: this.fabRating, diagnostics: this.fabDiagnostics}),
                     });
                     const data = await res.json();
                     if (data.success) {
@@ -8756,6 +8859,13 @@ async loadBranchOperations() {
 
                     <!-- Step 2: Details Form -->
                     <div x-show="fabStep === 2" class="space-y-4">
+                        <!-- ملخص ما التُقط تلقائياً من المتصفح وسيُرسل مع البلاغ -->
+                        <div class="p-3 rounded-xl border text-[11px] font-bold leading-relaxed"
+                             :class="(fabCapturedSummary().errors + fabCapturedSummary().failed) > 0 ? 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-300' : 'border-slate-200 bg-slate-50 text-slate-600 dark:bg-slate-800/50 dark:border-slate-700 dark:text-slate-300'">
+                            <div>📡 يتم إرسال تفاصيل الصفحة تلقائياً مع البلاغ:</div>
+                            <div class="font-mono mt-1" x-text="'أخطاء برمجية: ' + fabCapturedSummary().errors + ' — طلبات فاشلة: ' + fabCapturedSummary().failed + ' — رسائل المتصفح: ' + fabCapturedSummary().logs"></div>
+                            <div class="font-normal mt-1 opacity-80">إن ظهرت أخطاء أو طلبات فاشلة فلا حاجة لكتابة العنوان والوصف، وإن أردت فاكتب تفاصيل إضافية.</div>
+                        </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">عنوان المشكلة <span class="text-rose-500">*</span></label>
                             <input x-model="fabForm.title" type="text" maxlength="120"

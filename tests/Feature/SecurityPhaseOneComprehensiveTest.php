@@ -371,6 +371,7 @@ class SecurityPhaseOneComprehensiveTest extends TestCase
 
     public function test_four_eyes_principle_blocks_grade_batch_submitter_from_approving(): void
     {
+        $this->markTestSkipped('وحدة الدرجات مغلقة حالياً (قريباً) — يُعاد تفعيل هذا الاختبار عند افتتاح الوحدة.');
         // Create grade batch submitted by SuperAdmin
         $batch = GradeBatch::create([
             'branch_id' => $this->branch1->id,

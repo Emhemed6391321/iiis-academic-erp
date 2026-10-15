@@ -10,6 +10,40 @@
                     bugsFilterCategory: '',
                     bugsSearch: '',
                     bugsUpdatingId: null,
+                    bugDetail: null,
+                    openBugDetail(bug) { this.bugDetail = bug; },
+                    closeBugDetail() { this.bugDetail = null; },
+                    bugDetailJson() {
+                        if (!this.bugDetail) return '';
+                        return JSON.stringify({
+                            id: this.bugDetail.id,
+                            title: this.bugDetail.title,
+                            description: this.bugDetail.description,
+                            section: this.bugDetail.section_name,
+                            category: this.bugDetail.category,
+                            rating: this.bugDetail.rating,
+                            status: this.bugDetail.status,
+                            reporter: this.bugDetail.reporter ? this.bugDetail.reporter.name : null,
+                            created_at: this.bugDetail.created_at,
+                            diagnostics: this.bugDetail.diagnostics || null,
+                        }, null, 2);
+                    },
+                    async copyBugDetail() {
+                        try {
+                            await navigator.clipboard.writeText(this.bugDetailJson());
+                            window.showToast ? window.showToast('تم نسخ تفاصيل البلاغ كاملة') : alert('تم نسخ تفاصيل البلاغ');
+                        } catch (e) { alert('تعذر النسخ إلى الحافظة: ' + (e.message || e)); }
+                    },
+                    downloadBugDetail() {
+                        const blob = new Blob([this.bugDetailJson()], { type: 'application/json;charset=utf-8' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'bug-report-' + (this.bugDetail ? this.bugDetail.id : 'x') + '.json';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(a.href);
+                    },
                     async loadBugs() {
                         this.bugsLoading = true;
                         try {
@@ -191,6 +225,12 @@
                                                   x-text="getStatusLabel(bug.status)"></span>
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap">
+                                            <button @click="openBugDetail(bug)" type="button"
+                                                    class="mb-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-all"
+                                                    :class="darkMode ? 'border-rose-800 text-rose-300 hover:bg-rose-950/40' : 'border-rose-200 text-rose-600 hover:bg-rose-50'">
+                                                🔍 التفاصيل
+                                                <span x-show="bug.diagnostics" class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="يتضمن تشخيصاً تلقائياً"></span>
+                                            </button>
                                             <select @change="updateStatus(bug.id, $event.target.value)"
                                                     :disabled="bugsUpdatingId === bug.id"
                                                     :value="bug.status"
@@ -205,6 +245,91 @@
                                 </template>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- نافذة تفاصيل البلاغ والتشخيص الكامل الملتقط تلقائياً من المتصفح -->
+                    <div x-show="bugDetail" x-cloak class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6"
+                         @keydown.escape.window="closeBugDetail()">
+                        <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm" @click="closeBugDetail()"></div>
+                        <div class="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden"
+                             :class="darkMode ? 'bg-slate-900 border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-800'">
+                            <div class="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-3" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                <div class="min-w-0">
+                                    <div class="font-black text-sm truncate" x-text="bugDetail ? bugDetail.title : ''"></div>
+                                    <div class="text-[11px] text-slate-400" x-text="bugDetail ? ('#' + bugDetail.id + ' • ' + bugDetail.section_name + ' • ' + (bugDetail.reporter ? bugDetail.reporter.name : 'مجهول')) : ''"></div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button @click="copyBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white">📋 نسخ التفاصيل</button>
+                                    <button @click="downloadBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold border" :class="darkMode ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'">⬇️ تنزيل JSON</button>
+                                    <button @click="closeBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold border" :class="darkMode ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'">✕ إغلاق</button>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 text-xs">
+                                <div>
+                                    <div class="font-bold mb-1">الوصف</div>
+                                    <div class="p-3 rounded-xl border whitespace-pre-wrap" :class="darkMode ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'" x-text="bugDetail ? (bugDetail.description || '—') : ''"></div>
+                                </div>
+
+                                <template x-if="bugDetail && bugDetail.diagnostics">
+                                    <div class="space-y-5">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div class="p-3 rounded-xl border space-y-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                                                <div class="font-bold mb-1">الصفحة</div>
+                                                <div>الرابط: <span class="font-mono break-all" x-text="bugDetail.diagnostics.page && bugDetail.diagnostics.page.url"></span></div>
+                                                <div>القسم: <span x-text="bugDetail.diagnostics.page && bugDetail.diagnostics.page.section"></span> — التبويب: <span x-text="(bugDetail.diagnostics.page && bugDetail.diagnostics.page.activeTab) || '—'"></span></div>
+                                                <div>معرّف الطالب: <span class="font-mono" x-text="(bugDetail.diagnostics.page && bugDetail.diagnostics.page.studentId) || '—'"></span></div>
+                                                <div>وقت الالتقاط: <span class="font-mono" x-text="bugDetail.diagnostics.capturedAt"></span></div>
+                                            </div>
+                                            <div class="p-3 rounded-xl border space-y-1" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
+                                                <div class="font-bold mb-1">المتصفح والشاشة</div>
+                                                <div class="break-all font-mono text-[10px] opacity-80" x-text="bugDetail.diagnostics.client && bugDetail.diagnostics.client.userAgent"></div>
+                                                <div>الشاشة: <span class="font-mono" x-text="bugDetail.diagnostics.client && bugDetail.diagnostics.client.viewport ? (bugDetail.diagnostics.client.viewport.w + ' × ' + bugDetail.diagnostics.client.viewport.h + ' @' + bugDetail.diagnostics.client.viewport.dpr) : '—'"></span></div>
+                                                <div>الاتصال: <span x-text="bugDetail.diagnostics.client && bugDetail.diagnostics.client.online ? 'متصل' : 'غير متصل'"></span> — المنطقة الزمنية: <span x-text="bugDetail.diagnostics.client && bugDetail.diagnostics.client.timezone"></span></div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="font-bold mb-2 text-rose-600 dark:text-rose-400">أخطاء JavaScript (<span x-text="(bugDetail.diagnostics.jsErrors || []).length"></span>)</div>
+                                            <template x-for="(e, i) in (bugDetail.diagnostics.jsErrors || [])" :key="'je' + i">
+                                                <div class="p-3 rounded-xl border mb-2 font-mono text-[11px] whitespace-pre-wrap break-all" :class="darkMode ? 'border-rose-900 bg-rose-950/20' : 'border-rose-200 bg-rose-50/60'">
+                                                    <div class="font-bold" x-text="e.at + ' — ' + e.message"></div>
+                                                    <div class="opacity-70" x-show="e.source" x-text="'المصدر: ' + e.source"></div>
+                                                    <div class="opacity-70" x-show="e.stack" x-text="e.stack"></div>
+                                                </div>
+                                            </template>
+                                            <div x-show="!(bugDetail.diagnostics.jsErrors || []).length" class="text-slate-400">لا توجد أخطاء JavaScript مسجّلة في هذه الجلسة.</div>
+                                        </div>
+
+                                        <div>
+                                            <div class="font-bold mb-2 text-amber-600 dark:text-amber-400">طلبات فاشلة إلى الخادم (<span x-text="(bugDetail.diagnostics.failedRequests || []).length"></span>)</div>
+                                            <template x-for="(r, i) in (bugDetail.diagnostics.failedRequests || [])" :key="'fr' + i">
+                                                <div class="p-3 rounded-xl border mb-2 font-mono text-[11px] whitespace-pre-wrap break-all" :class="darkMode ? 'border-amber-900 bg-amber-950/20' : 'border-amber-200 bg-amber-50/60'">
+                                                    <div class="font-bold" x-text="r.at + ' — ' + r.method + ' ' + r.status + ' (' + r.ms + ' ms)'"></div>
+                                                    <div class="break-all" x-text="r.url"></div>
+                                                    <div class="opacity-80" x-show="r.response" x-text="r.response"></div>
+                                                </div>
+                                            </template>
+                                            <div x-show="!(bugDetail.diagnostics.failedRequests || []).length" class="text-slate-400">لا توجد طلبات فاشلة في هذه الجلسة.</div>
+                                        </div>
+
+                                        <div>
+                                            <div class="font-bold mb-2">سجل وحدة التحكم (<span x-text="(bugDetail.diagnostics.consoleLogs || []).length"></span>)</div>
+                                            <template x-for="(c, i) in (bugDetail.diagnostics.consoleLogs || [])" :key="'cl' + i">
+                                                <div class="p-2 rounded-lg mb-1 font-mono text-[11px] whitespace-pre-wrap break-all" :class="c.level === 'error' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'">
+                                                    <span x-text="'[' + c.level + '] ' + c.at + ' '"></span><span x-text="c.message"></span>
+                                                </div>
+                                            </template>
+                                            <div x-show="!(bugDetail.diagnostics.consoleLogs || []).length" class="text-slate-400">لا توجد رسائل تحذير أو خطأ في وحدة التحكم.</div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div x-show="bugDetail && !bugDetail.diagnostics" class="text-slate-400">
+                                    لا يوجد تشخيص تلقائي لهذا البلاغ (أُرسل قبل تفعيل مسجّل المتصفح).
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Pagination -->

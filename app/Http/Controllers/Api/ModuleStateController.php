@@ -30,22 +30,17 @@ class ModuleStateController extends Controller
     public const DEFAULT_LOCKED = ['study_and_exams', 'grading', 'transcripts', 'batch_print'];
 
     /**
+     * وحدات الدراسة والامتحانات والكنترول مغلقة بالكامل حالياً "قريباً" — لجميع المستخدمين بمن فيهم المدير العام.
+     * لا يُغيَّر هذا الوضع من الواجهة؛ يُعاد فتحها لاحقاً بتعديل هذا الثابت عند الافتتاح.
+     */
+    public const CLOSED_MODULES = ['study_and_exams', 'grading', 'transcripts', 'batch_print'];
+
+    /**
      * الوحدات المقفلة حالياً (مرتبة حسب ترتيب الكتالوج).
      */
     public static function lockedSections(): array
     {
-        $raw = AdminSettingsService::getSetting(self::SETTING_KEY);
-
-        if ($raw === null || $raw === '') {
-            return self::DEFAULT_LOCKED;
-        }
-
-        $decoded = is_array($raw) ? $raw : json_decode((string) $raw, true);
-        if (!is_array($decoded)) {
-            return self::DEFAULT_LOCKED;
-        }
-
-        return array_values(array_intersect(array_keys(self::TOGGLEABLE_MODULES), $decoded));
+        return array_values(array_intersect(array_keys(self::TOGGLEABLE_MODULES), self::CLOSED_MODULES));
     }
 
     public function index(): JsonResponse
@@ -63,22 +58,12 @@ class ModuleStateController extends Controller
             ], 403);
         }
 
-        $validated = $request->validate([
-            'locked' => 'present|array',
-            'locked.*' => 'string|in:' . implode(',', array_keys(self::TOGGLEABLE_MODULES)),
-        ]);
-
-        AdminSettingsService::setSetting(
-            self::SETTING_KEY,
-            array_values(array_unique($validated['locked'])),
-            'modules',
-            'الوحدات المقفلة',
-            'json',
-            $user->id,
-            'قائمة الوحدات المقفلة على بقية المستخدمين؛ المدير العام يرى كل الوحدات دائماً.'
-        );
-
-        return $this->payload('تم تحديث حالة الوحدات بنجاح.');
+        // الوحدات مغلقة حالياً بالكامل: لا يُقبل أي تغيير في حالتها قبل إعلان الافتتاح
+        return response()->json([
+            'success' => false,
+            'message' => 'وحدات الدراسة والامتحانات والكنترول مغلقة بالكامل حالياً (قريباً) ولا يمكن تفعيلها الآن.',
+            'locked' => self::lockedSections(),
+        ], 423);
     }
 
     private function payload(?string $message = null): JsonResponse

@@ -39,7 +39,9 @@
                                         <div class="text-[10px]" :class="m.locked ? 'text-amber-500' : 'text-emerald-500'"
                                              x-text="m.locked ? 'معطّلة لبقية المستخدمين (مقفلة)' : 'مفعّلة لبقية المستخدمين'"></div>
                                     </div>
-                                    <button type="button" @click="toggleModuleLock(m.key)"
+                                    <button type="button" @click="toggleModuleLock(m.key)" disabled
+                                            title="هذه الوحدة مغلقة بالكامل حالياً (قريباً) ولا يمكن تفعيلها قبل الافتتاح"
+                                            class="cursor-not-allowed opacity-60"
                                             class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
                                             :class="m.locked ? 'bg-slate-400' : 'bg-emerald-500'"
                                             :aria-pressed="(!m.locked).toString()" :title="m.locked ? 'تفعيل الوحدة' : 'تعطيل الوحدة'">

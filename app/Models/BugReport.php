@@ -27,12 +27,14 @@ class BugReport extends Model
         'resolved_by',
         'resolved_at',
         'priority',
+        'diagnostics',
     ];
 
     protected $casts = [
         'resolved_at' => 'datetime',
         'rating' => 'integer',
         'priority' => 'integer',
+        'diagnostics' => 'array',
     ];
 
     public function reporter(): BelongsTo

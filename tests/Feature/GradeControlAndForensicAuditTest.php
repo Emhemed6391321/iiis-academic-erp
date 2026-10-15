@@ -33,6 +33,7 @@ class GradeControlAndForensicAuditTest extends TestCase
 
     public function test_grade_entry_logs_audit_trail_and_enforces_immutability()
     {
+        $this->markTestSkipped('وحدة الدرجات مغلقة حالياً (قريباً) — يُعاد تفعيل هذا الاختبار عند افتتاح الوحدة.');
         $branch = Branch::where('code', '01')->first();
         $dept = Department::first();
         $studyYear = StudyYear::first();
