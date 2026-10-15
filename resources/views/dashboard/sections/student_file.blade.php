@@ -1,4 +1,4 @@
-            <div x-show="currentSection === 'student_file'" class="space-y-5">
+            <div x-show="currentSection === 'student_file'" class="space-y-5 !mt-0">
                 
                 <!-- Loading State -->
                 <div x-show="studentFile.loading" class="flex items-center justify-center py-20">
@@ -104,7 +104,7 @@
                                                   x-text="studentFile.student.study_type_label"></span>
                                             <span x-show="studentFile.student.is_special_needs" class="px-2.5 py-0.5 rounded-[10px] text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">ذوي الاحتياجات الخاصة</span>
                                         </div>
-                                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-3 text-xs break-words">
                                             <div>
                                                 <div class="text-slate-400">رقم القيد</div>
                                                 <div class="font-mono font-bold text-[#2b78a5] dark:text-blue-400" x-text="studentFile.student.academic_number || 'قيد الاعتماد'"></div>
@@ -141,7 +141,7 @@
                                     </div>
 
                                     <!-- الخدمات المستندية والسجلات الرسمية لملف الطالب -->
-                                    <div class="flex flex-col gap-2 flex-shrink-0 min-w-[200px]">
+                                    <div class="flex flex-col gap-2 w-full lg:w-[220px] flex-shrink-0">
                                         <!-- طباعة تعريف طالب -->
                                         <button @click="openEnrollmentCertModal(studentFile.student)"
                                                 class="px-3.5 py-2 rounded-[12px] text-xs font-bold bg-gradient-to-r from-blue-600 to-[#2b78a5] hover:brightness-110 text-white flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-900/20 cursor-pointer">
@@ -213,7 +213,7 @@
                             </div>
 
                             <!-- تبويبات الملف -->
-                            <div class="border-t flex overflow-x-auto" :class="darkMode ? 'border-slate-800 bg-slate-900/50' : 'border-[#e8ebf2] bg-[#f6f7fb]/70'">
+                            <div class="border-t flex flex-wrap" :class="darkMode ? 'border-slate-800 bg-slate-900/50' : 'border-[#e8ebf2] bg-[#f6f7fb]/70'">
                                 <template x-for="tab in studentFile.tabs" :key="tab.id">
                                     <button @click="studentFile.activeTab = tab.id"
                                             class="flex-shrink-0 px-4 py-3 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap"

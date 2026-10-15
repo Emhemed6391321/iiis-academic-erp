@@ -5076,6 +5076,9 @@ async loadBranchOperations() {
                 // ================================================================
 
                 async openStudentFile(studentId) {
+                    // الصفحة تبدأ من أعلى ملف الطالب (لا تحتفظ بموضع التمرير من قائمة الطلاب الطويلة)
+                    const mainScroller = document.querySelector('main');
+                    if (mainScroller) mainScroller.scrollTop = 0;
                     if (typeof studentId === 'object' && studentId !== null) {
                         studentId = studentId.id || studentId.student_id;
                     }

@@ -219,18 +219,23 @@
         }
 
         /* Smooth Custom Drawer Scrollbar */
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(100, 116, 139, 0.55) transparent;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-            width: 5px;
+            width: 8px;
+            height: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.3);
+            background: rgba(100, 116, 139, 0.5);
             border-radius: 9999px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(148, 163, 184, 0.6);
+            background: rgba(100, 116, 139, 0.8);
         }
         /* ────────────────────────────────────────────────────────────────────────── */
 

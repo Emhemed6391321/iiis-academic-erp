@@ -51,3 +51,7 @@ Thumbs.db
 
 *.bak
 *.original_monolith_bak
+
+# أدوات الاختبار في المتصفح — لا تُرفع
+/.playwright-mcp/
+/*.png
