@@ -532,13 +532,49 @@ class StudentWorkflowController extends Controller
     }
 
     /**
+     * يحوّل مفتاح المرحلة القادم من الواجهة (central_memo / receiving_decision) إلى مرحلة الخادم المعتمدة.
+     */
+    private function normalizeTransferStep(string $step): string
+    {
+        return match (strtolower(trim($step))) {
+            'central_memo', 'central-memo', 'academic_review', 'center_memo', 'centralmemo' => 'CENTRAL_MEMO',
+            'receiving_decision', 'receiving-decision', 'receiving_branch', 'destination_decision' => 'RECEIVING_BRANCH',
+            'hq_final', 'hq-final', 'hq_approval' => 'HQ_FINAL',
+            default => strtoupper(trim($step)),
+        };
+    }
+
+    /**
+     * يحدد APPROVED أو REJECTED من الحقل المرسل: decision مباشرة، أو action (توصية بالموافقة/الاعتذار)، أو status.
+     */
+    private function normalizeTransferStatus(Request $request): string
+    {
+        $decision = strtoupper((string) $request->input('decision', ''));
+        if (in_array($decision, ['APPROVED', 'REJECTED'], true)) {
+            return $decision;
+        }
+
+        $action = strtoupper((string) $request->input('action', ''));
+        if (in_array($action, ['RECOMMEND_APPROVE', 'APPROVE'], true)) {
+            return 'APPROVED';
+        }
+        if (in_array($action, ['RECOMMEND_REJECT', 'REJECT'], true)) {
+            return 'REJECTED';
+        }
+
+        return strtoupper((string) $request->input('status', 'APPROVED'));
+    }
+
+    /**
      * Handle Multi-step Handshake for Student Transfers (4-Stage State Machine).
      */
     public function handleTransferStep(Request $request, int $id, \App\Services\StudentTransferWorkflow $workflow): JsonResponse
     {
-        $step = $request->input('step'); // CENTRAL_MEMO | RECEIVING_BRANCH | HQ_FINAL
-        $notes = $request->input('notes') ?? $request->input('decision_notes') ?? $request->input('statement', '');
-        $status = $request->input('status', 'APPROVED'); // APPROVED | REJECTED
+        // الواجهة ترسل المفاتيح بصيغتها (central_memo / receiving_decision) مع memo أو decision أو action،
+        // والخادم يعرف المراحل بأسمائها المعتمدة؛ نوحّد الاثنين هنا.
+        $step = $this->normalizeTransferStep((string) $request->input('step'));
+        $notes = $request->input('notes') ?? $request->input('decision_notes') ?? $request->input('memo') ?? $request->input('statement', '');
+        $status = $this->normalizeTransferStatus($request);
 
         $transfer = StudentTransfer::findOrFail($id);
         $user = Auth::user();

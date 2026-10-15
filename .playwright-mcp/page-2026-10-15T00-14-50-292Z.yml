@@ -1,0 +1,213 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - generic [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - button "تبديل القائمة الجانبية" [expanded] [ref=f2e5] [cursor=pointer]
+        - generic [ref=f2e8] [cursor=pointer]:
+          - img "شعار المعهد" [ref=f2e10]
+          - generic [ref=f2e11]:
+            - generic [ref=f2e12]:
+              - generic [ref=f2e13]: المعهد المتوسط للدراسات الإسلامية
+              - generic [ref=f2e14]: ERP v2.0
+            - generic [ref=f2e15]: إدارة التعليم الأصيل • طرابلس - ليبيا
+      - button "بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات... Ctrl + K" [ref=f2e17] [cursor=pointer]:
+        - generic [ref=f2e18]: بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات...
+        - generic [ref=f2e22]: Ctrl + K
+      - generic [ref=f2e23]:
+        - combobox [ref=f2e25] [cursor=pointer]:
+          - option "🏢 كافة فروع المعهد (الإدارة العامة)" [selected]
+        - combobox [ref=f2e27] [cursor=pointer]:
+          - option "📅 27 — 2027-2026 🔒 (مقفل)"
+          - option "📅 2027-2028 — 1449?? ??????? 2027/2028? 📝 (مسودة)"
+          - option "📅 2026-2027 — 1448هـ الموافق 2026/2027م ★ (فعال)" [selected]
+        - generic [ref=f2e28]: "العام الدراسي النشط: 1448هـ الموافق 2026/2027م"
+        - button "متصل" [ref=f2e31] [cursor=pointer]
+        - button "12" [ref=f2e35] [cursor=pointer]
+        - button "ا الشيخ الدكتور / المدير العام للمعهد التخصصي المدير العام" [ref=f2e40] [cursor=pointer]:
+          - generic [ref=f2e41]: ا
+          - generic [ref=f2e42]:
+            - generic [ref=f2e43]: الشيخ الدكتور / المدير العام للمعهد التخصصي
+            - generic [ref=f2e44]: المدير العام
+  - generic [ref=f2e47]:
+    - complementary "القائمة الجانبية للنظام" [ref=f2e48]:
+      - generic [ref=f2e49]:
+        - generic [ref=f2e50]: لوحة التنقل السريع
+        - button "طي القائمة الجانبية" [ref=f2e52] [cursor=pointer]
+      - generic [ref=f2e55]:
+        - generic [ref=f2e56]:
+          - generic [ref=f2e57]: الرئيسية والقيادة
+          - button "لوحة المؤشرات العامة" [ref=f2e60] [cursor=pointer]
+        - generic [ref=f2e64]:
+          - generic [ref=f2e65]: التعليم وشؤون الطلاب
+          - generic [ref=f2e66]:
+            - button "سجل الطلاب المركزي" [ref=f2e67] [cursor=pointer]
+            - button "حضور وانصراف الطلاب" [ref=f2e71] [cursor=pointer]
+            - button "المناهج واللوائح الدراسية" [ref=f2e75] [cursor=pointer]
+            - button "المراحل والشُعب والأقسام" [ref=f2e79] [cursor=pointer]
+            - button "جودة البيانات والنواقص" [ref=f2e83] [cursor=pointer]
+            - button "طلبات وسير عمل الطلاب" [ref=f2e87] [cursor=pointer]
+        - generic [ref=f2e91]:
+          - generic [ref=f2e92]: الدراسة والامتحانات والكنترول
+          - generic [ref=f2e93]:
+            - button "قسم الدراسة والامتحانات قريباً" [ref=f2e94] [cursor=pointer]:
+              - generic [ref=f2e95]: قسم الدراسة والامتحانات
+              - generic [ref=f2e99]: قريباً
+            - button "الشهادات والوثائق قريباً" [ref=f2e100] [cursor=pointer]:
+              - generic [ref=f2e101]: الشهادات والوثائق
+              - generic [ref=f2e105]: قريباً
+            - button "الطباعة الرسمية والتصدير قريباً" [ref=f2e106] [cursor=pointer]:
+              - generic [ref=f2e107]: الطباعة الرسمية والتصدير
+              - generic [ref=f2e111]: قريباً
+        - generic [ref=f2e112]:
+          - generic [ref=f2e113]: إدارة الفروع والوكالات
+          - generic [ref=f2e114]:
+            - button "دليل الفروع والوكالات" [ref=f2e115] [cursor=pointer]
+            - button "➕ إضافة مقر جديد" [ref=f2e119] [cursor=pointer]
+            - button "طلبات الصيانة والمقرات" [ref=f2e123] [cursor=pointer]
+            - button "عقود وإيجارات المقرات" [ref=f2e129] [cursor=pointer]
+        - generic [ref=f2e133]:
+          - generic [ref=f2e134]: الإدارة والحوكمة والنظام
+          - generic [ref=f2e135]:
+            - button "إدارة المستخدمين" [ref=f2e136] [cursor=pointer]
+            - button "مصفوفة الصلاحيات" [ref=f2e140] [cursor=pointer]
+            - button "سجل التدقيق والرقابة" [ref=f2e144] [cursor=pointer]
+            - button "تخصيص المظهر والخطوط" [ref=f2e148] [cursor=pointer]
+            - button "الإعدادات الإدارية مركزي" [ref=f2e152] [cursor=pointer]:
+              - generic [ref=f2e156]: الإعدادات الإدارية
+              - generic [ref=f2e157]: مركزي
+            - button "التقويم والسنة الدراسية" [ref=f2e158] [cursor=pointer]
+        - generic [ref=f2e163]:
+          - generic [ref=f2e164]: التوثيق والدليل والمساندة
+          - generic [ref=f2e165]:
+            - button "دليل الإجراءات (SOP) دليل" [ref=f2e166] [cursor=pointer]:
+              - generic [ref=f2e170]: دليل الإجراءات (SOP)
+              - generic [ref=f2e171]: دليل
+            - button "سجل التحديثات v2.4" [ref=f2e172] [cursor=pointer]:
+              - generic [ref=f2e176]: سجل التحديثات
+              - generic [ref=f2e177]: v2.4
+            - button "بلاغات الأخطاء 7" [ref=f2e178] [cursor=pointer]:
+              - generic [ref=f2e182]: بلاغات الأخطاء
+              - generic [ref=f2e183]: "7"
+      - generic [ref=f2e185]:
+        - button "ا الشيخ الدكتور / المدير العام للمعهد التخصصي متصل الآن" [ref=f2e186] [cursor=pointer]:
+          - generic [ref=f2e187]: ا
+          - generic [ref=f2e188]:
+            - paragraph [ref=f2e189]: الشيخ الدكتور / المدير العام للمعهد التخصصي
+            - generic [ref=f2e190]: متصل الآن
+        - generic [ref=f2e195]:
+          - button "الملف الشخصي" [ref=f2e196] [cursor=pointer]
+          - button "تسجيل الخروج الآمن وإنهاء الجلسة" [ref=f2e201] [cursor=pointer]
+    - main [ref=f2e204]:
+      - generic [ref=f2e206]:
+        - generic [ref=f2e207]:
+          - generic [ref=f2e208]:
+            - generic [ref=f2e209]:
+              - heading "سجل الطلاب العام والملفات المعتمدة" [level=3] [ref=f2e211]
+              - generic [ref=f2e212]: إجمالي 0 طالب
+            - paragraph [ref=f2e213]: سجل مركزي رسمي قابل للبحث المتعدد، التصفية المجمعة، الفرز، تخصيص الأعمدة، والطباعة الرسمية
+          - generic [ref=f2e214]:
+            - button "تخصيص الأعمدة ⚙️" [ref=f2e215] [cursor=pointer]
+            - button "الطباعة الرسمية للسجل 🖨️" [ref=f2e219] [cursor=pointer]
+            - button "تصدير CSV 📥" [ref=f2e223] [cursor=pointer]
+            - button "إضافة طالب جديد" [ref=f2e227] [cursor=pointer]
+            - button "استيراد دفعة" [ref=f2e231] [cursor=pointer]
+        - generic [ref=f2e235]:
+          - generic [ref=f2e236]: "السجلات الرسمية:"
+          - button "📋 سجل البيانات الرسمية العام" [ref=f2e239] [cursor=pointer]
+          - button "🏛️ سجل الطلاب حسب الفرع" [ref=f2e240] [cursor=pointer]
+          - button "🎓 سجل الطلاب حسب المرحلة" [ref=f2e241] [cursor=pointer]
+          - button "📑 سجل الطلاب حسب صفة القيد" [ref=f2e242] [cursor=pointer]
+          - button "📅 سجل الطلاب حسب العام الدراسي" [ref=f2e243] [cursor=pointer]
+          - button "📚 سجل الطلاب حسب الشعبة" [ref=f2e244] [cursor=pointer]
+          - button "🚻 سجل الطلاب حسب الجنس" [ref=f2e245] [cursor=pointer]
+          - button "📦 الأرشيف الأكاديمي (المؤرشفون)" [ref=f2e246] [cursor=pointer]
+        - generic [ref=f2e247]:
+          - generic [ref=f2e248]:
+            - generic [ref=f2e249]: بحث متعدد المعايير
+            - textbox "الاسم، رقم القيد..." [ref=f2e251]
+          - generic [ref=f2e254]:
+            - generic [ref=f2e255]: الفرع التعليمي
+            - combobox [ref=f2e256]:
+              - option "كافة الفروع" [selected]
+          - generic [ref=f2e257]:
+            - generic [ref=f2e258]: المرحلة الدراسية
+            - combobox [ref=f2e259]:
+              - option "كافة المراحل" [selected]
+          - generic [ref=f2e260]:
+            - generic [ref=f2e261]: الشعبة / التخصص
+            - combobox [ref=f2e262]:
+              - option "كافة الشُعب" [selected]
+          - generic [ref=f2e263]:
+            - generic [ref=f2e264]: صفة القيد
+            - combobox [ref=f2e265]:
+              - option "الكل (نظامي/انتساب)" [selected]
+              - option "نظامي"
+              - option "انتساب"
+          - generic [ref=f2e266]:
+            - generic [ref=f2e267]: حالة القيد
+            - combobox [ref=f2e268]:
+              - option "كافة الحالات" [selected]
+              - option "مقيد نشط"
+              - option "قيد اعتماد الإدارة"
+              - option "مسودة جديدة"
+              - option "إيقاف قيد"
+              - option "منقول"
+              - option "خريج"
+              - option "مطرود"
+          - generic [ref=f2e269]:
+            - generic [ref=f2e270]: العام الدراسي
+            - combobox [ref=f2e271]:
+              - option "كافة الأعوام" [selected]
+          - generic [ref=f2e272]:
+            - generic [ref=f2e273]: الأرشفة الأكاديمية
+            - combobox [ref=f2e274]:
+              - option "النشطون (غير مؤرشف)" [selected]
+              - option "📦 الأرشيف فقط"
+              - option "الكل (النشط والمؤرشف)"
+        - generic [ref=f2e275]:
+          - generic [ref=f2e276]:
+            - generic [ref=f2e277]: "الإجمالي: 0"
+            - generic [ref=f2e278]: "الذكور: 0"
+            - generic [ref=f2e279]: "الإناث: 0"
+            - generic [ref=f2e280]: "النظامي: 0"
+            - generic [ref=f2e281]: "الانتساب: 0"
+            - generic [ref=f2e282]: "إيقاف القيد: 0"
+            - generic [ref=f2e283]: "المؤرشفون: 0"
+          - generic [ref=f2e284]:
+            - button "إعادة ضبط الفلاتر" [ref=f2e285] [cursor=pointer]
+            - generic [ref=f2e289]:
+              - generic [ref=f2e290]: "عرض:"
+              - combobox [ref=f2e291]:
+                - option "25 طالب"
+                - option "50 طالب (معياري)" [selected]
+                - option "100 طالب"
+                - option "200 طالب"
+        - generic [ref=f2e292]:
+          - generic [ref=f2e293]: جاري استرجاع سجل الطلاب...
+          - table [ref=f2e298]:
+            - rowgroup [ref=f2e299]:
+              - row [ref=f2e300]:
+                - columnheader "#" [ref=f2e301]
+                - columnheader "رقم القيد ⬍" [ref=f2e302] [cursor=pointer]
+                - columnheader "اسم الطالب الرباعي ⬍" [ref=f2e303] [cursor=pointer]
+                - columnheader "الرقم الوطني" [ref=f2e304]
+                - columnheader "الجنس" [ref=f2e305]
+                - columnheader "الميلاد (السن)" [ref=f2e306]
+                - columnheader "الفرع التعليمي" [ref=f2e307]
+                - columnheader "المرحلة الدراسية" [ref=f2e308]
+                - columnheader "الشعبة / القسم" [ref=f2e309]
+                - columnheader "صفة القيد" [ref=f2e310]
+                - columnheader "حالة القيد والاعتماد" [ref=f2e311]
+                - columnheader "العام الدراسي" [ref=f2e312]
+                - columnheader "الهاتف" [ref=f2e313]
+                - columnheader "الإجراءات والخدمات المستندية" [ref=f2e314]
+            - rowgroup
+        - generic [ref=f2e315]:
+          - generic [ref=f2e316]: عرض 0 إلى 0 من إجمالي 0 طالب مقيد (بمعدل 50 طالب/صفحة)
+          - generic [ref=f2e317]:
+            - button "⇤ الأول" [disabled] [ref=f2e318]
+            - button "‹ السابق" [disabled] [ref=f2e319]
+            - generic [ref=f2e320]: صفحة 1 من 1
+            - button "التالي ›" [disabled] [ref=f2e321]
+            - button "الأخير ⇥" [disabled] [ref=f2e322]
+  - button "التبليغ عن خطأ" [ref=f2e323] [cursor=pointer]

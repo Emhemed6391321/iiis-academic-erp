@@ -154,6 +154,30 @@ class AdmissionDocumentsAndModulesTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_general_director_can_permanently_delete_a_student_with_documents(): void
+    {
+        $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
+        $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();
+        $studentId = $this->createStudent($manager, '119912340010');
+
+        $this->actingAs($manager)->post("/api/v1/students/{$studentId}/file/documents", [
+            'document_type' => 'NATIONAL_ID_CARD',
+            'document' => UploadedFile::fake()->createWithContent('id.pdf', self::PDF),
+        ])->assertOk();
+
+        $this->actingAs($manager)->withHeaders(['Accept' => 'application/json'])
+            ->deleteJson("/api/v1/students/{$studentId}")
+            ->assertForbidden();
+
+        $this->actingAs($admin)->withHeaders(['Accept' => 'application/json'])
+            ->deleteJson("/api/v1/students/{$studentId}")
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseMissing('students', ['id' => $studentId]);
+        $this->assertSame(0, StudentDocument::where('student_id', $studentId)->count());
+    }
+
     public function test_dashboard_renders_admission_and_document_controls_for_general_director(): void
     {
         $admin = User::where('email', 'admin@iiis.sch.ly')->firstOrFail();

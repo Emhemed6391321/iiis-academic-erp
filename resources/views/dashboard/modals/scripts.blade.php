@@ -37,6 +37,16 @@
                 // خيارات نموذج القبول الموحد (فروع/شُعب/مراحل/أعوام) — قائمة فروع مستقلة عن لوحة القيادة
                 branchOptions: [],
                 moduleStates: [],
+                // خانات المستندات الرسمية: نفسها في ملف الطالب (تطابق DOCUMENT_TYPES في الخادم)
+                docSlots: [
+                    { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: true },
+                    { key: 'BIRTH_CERT', label: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد', required: true },
+                    { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب', required: true },
+                    { key: 'HEALTH_CERT', label: 'الشهادة الصحية أو الكشف الطبي', required: true },
+                    { key: 'DISABILITY_MEDICAL_REP', label: 'التقرير الطبي الخاص بالإعاقة', required: false, conditional: 'has_disability' },
+                    { key: 'PERSONAL_PHOTO', label: 'صورة شخصية للطالب', required: false },
+                    { key: 'OTHER', label: 'مستندات إضافية', required: false }
+                ],
                 admissionOptions: { branches: [], departments: [], study_years: [], academic_years: [], current_academic_year_id: null, loaded: false },
                 mobileSidebarOpen: false,
                 sidebarOpen: false,
@@ -1633,7 +1643,7 @@
                     this.createStudentModal.activeTab = 'personal';
                     this.createStudentModal.errorMessage = '';
                     this.createStudentModal.submitting = false;
-                    this.createStudentModal.attachedDocs = [];
+                    this.createStudentModal.attachedDocs = []; this.createStudentModal.otherDocTitle = "";
                     this.createStudentModal.form = {
                         first_name: '',
                         father_name: '',
@@ -1760,7 +1770,7 @@
                     this.editStudentModal.errorMessage = '';
                     this.editStudentModal.submitting = false;
                     this.editStudentModal.activeTab = 'personal';
-                    this.editStudentModal.attachedDocs = [];
+                    this.editStudentModal.attachedDocs = []; this.editStudentModal.otherDocTitle = "";
 
                     let cList = [];
                     if (Array.isArray(st.chronic_diseases_list)) {
@@ -2998,22 +3008,28 @@
                                 'X-CSRF-TOKEN': token
                             }
                         });
-                        const data = await res.json();
+                        // قراءة آمنة: قد يرد الخادم بصفحة غير JSON (انتهاء الجلسة أو خطأ خادم)
+                        const raw = await res.text();
+                        let data = {};
+                        try { data = JSON.parse(raw); } catch (e) { data = { message: 'استجابة غير متوقعة من الخادم (' + res.status + ')' }; }
                         if (res.ok && data.success) {
                             this.showToast(data.message || 'تم حذف الطالب نهائياً من المنظومة');
                             this.deleteStudentModal.open = false;
                             if (this.studentFile && this.studentFile.student && this.studentFile.student.id === this.deleteStudentModal.student.id) {
-                                this.studentFileModal.open = false;
+                                // ملف الطالب قسم وليس نافذة: نعود لقائمة الطلاب بعد حذف الطالب المفتوح
+                                this.currentSection = 'students';
+                                this.studentFile.student = null;
                             }
                             if (typeof this.loadRegistry === 'function') {
                                 this.loadRegistry();
                             }
                         } else {
-                            this.showToast(data.message || 'تعذر حذف الطالب (مقتصر على صلاحية المدير العام)');
+                            console.error('Delete student failed:', res.status, data);
+                            this.showToast(data.message || ('تعذر حذف الطالب (رمز ' + res.status + ')'));
                         }
                     } catch (e) {
                         console.error('Delete student error:', e);
-                        this.showToast('حدث خطأ أثناء حذف الطالب');
+                        this.showToast('تعذر الاتصال بالخادم أثناء حذف الطالب: ' + (e.message || ''));
                     } finally {
                         this.deleteStudentModal.loading = false;
                     }
@@ -3330,6 +3346,19 @@ async initApp() {
                     if (!f.current_study_year_id && o.study_years.length) f.current_study_year_id = o.study_years[0].id;
                 },
 
+                // الخانات المعروضة للنموذج: الخانة المشروطة (الإعاقة) تظهر فقط عند تفعيلها
+                docSlotsFor(form) {
+                    return this.docSlots.filter(s => !s.conditional || !!(form && form[s.conditional]));
+                },
+
+                docAttachedCount(modal, key) {
+                    return (modal.attachedDocs || []).filter(d => d.type === key).length;
+                },
+
+                missingRequiredDocs(modal) {
+                    return this.docSlotsFor(modal.form).filter(s => s.required && !this.docAttachedCount(modal, s.key));
+                },
+
                 // حجم الملف الأقصى وصيغه المسموحة — تطابق قيود الخادم
                 validateDocFile(file) {
                     const maxBytes = 10 * 1024 * 1024;
@@ -3382,7 +3411,7 @@ async initApp() {
                         if (dirRes.ok) {
                             const dirData = await dirRes.json();
                             if (dirData.status === 'success' && Array.isArray(dirData.data)) {
-                                this.branchesList = dirData.data;
+                                // branchesList قراءة فقط (getter يقرأ this.branches)، لذا نحدّث المصدر الفعلي
                                 this.branches = dirData.data;
                                 if (this.leafletMap) {
                                     this.renderBranchMarkers();
@@ -3755,7 +3784,10 @@ async initApp() {
                             // بعد حفظ الإحداثيات: تحريك الخريطة إلى الموقع الجديد للفرع ليظهر التغيير فوراً
                             if (data.data && data.data.latitude != null && data.data.longitude != null) {
                                 this.$nextTick(() => {
-                                    if (this.leafletMap) this.panToBranch(data.data);
+                                    if (this.leafletMap) {
+                                        this.renderBranchMarkers();
+                                        this.panToBranch(data.data);
+                                    }
                                 });
                             }
                             if (this.showBranchDetailsModal && this.branchDetailsData && this.branchDetailsData.branch.id === data.data.id) {
@@ -6821,7 +6853,7 @@ async loadBranchOperations() {
                     } else {
                         list.push(item);
                     }
-                    this.showToast(`تم إرفاق: ${item.label}`);
+                    this.showToast(`تم إرفاق: ${item.label}`); if (type === 'OTHER') this.editStudentModal.otherDocTitle = ''; if (type === 'OTHER') this.createStudentModal.otherDocTitle = '';
                 },
 
                 handleMedicalReportUpload(event) {

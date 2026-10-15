@@ -1,0 +1,166 @@
+- generic [active] [ref=f8e1]:
+  - banner [ref=f8e2]:
+    - generic [ref=f8e3]:
+      - generic [ref=f8e4]:
+        - button "تبديل القائمة الجانبية" [expanded] [ref=f8e5] [cursor=pointer]
+        - generic [ref=f8e8] [cursor=pointer]:
+          - img "شعار المعهد" [ref=f8e10]
+          - generic [ref=f8e11]:
+            - generic [ref=f8e12]:
+              - generic [ref=f8e13]: المعهد المتوسط للدراسات الإسلامية
+              - generic [ref=f8e14]: ERP v2.0
+            - generic [ref=f8e15]: إدارة التعليم الأصيل • طرابلس - ليبيا
+      - button "بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات... Ctrl + K" [ref=f8e17] [cursor=pointer]:
+        - generic [ref=f8e18]: بحث شامل في الطلاب، المقررات، الفروع، التذاكر، والشاشات...
+        - generic [ref=f8e22]: Ctrl + K
+      - generic [ref=f8e23]:
+        - combobox [ref=f8e25] [cursor=pointer]:
+          - option "🏢 كافة فروع المعهد (الإدارة العامة)" [selected]
+        - combobox [ref=f8e27] [cursor=pointer]:
+          - option "📅 27 — 2027-2026 🔒 (مقفل)"
+          - option "📅 2027-2028 — 1449?? ??????? 2027/2028? 📝 (مسودة)"
+          - option "📅 2026-2027 — 1448هـ الموافق 2026/2027م ★ (فعال)" [selected]
+        - generic [ref=f8e28]: "العام الدراسي النشط: 1448هـ الموافق 2026/2027م"
+        - button "متصل" [ref=f8e31] [cursor=pointer]
+        - button "12" [ref=f8e35] [cursor=pointer]
+        - button "ا الشيخ الدكتور / المدير العام للمعهد التخصصي المدير العام" [ref=f8e40] [cursor=pointer]:
+          - generic [ref=f8e41]: ا
+          - generic [ref=f8e42]:
+            - generic [ref=f8e43]: الشيخ الدكتور / المدير العام للمعهد التخصصي
+            - generic [ref=f8e44]: المدير العام
+  - generic [ref=f8e47]:
+    - complementary "القائمة الجانبية للنظام" [ref=f8e48]:
+      - generic [ref=f8e49]:
+        - generic [ref=f8e50]: لوحة التنقل السريع
+        - button "طي القائمة الجانبية" [ref=f8e52] [cursor=pointer]
+      - generic [ref=f8e55]:
+        - generic [ref=f8e56]:
+          - generic [ref=f8e57]: الرئيسية والقيادة
+          - button "لوحة المؤشرات العامة" [ref=f8e60] [cursor=pointer]
+        - generic [ref=f8e64]:
+          - generic [ref=f8e65]: التعليم وشؤون الطلاب
+          - generic [ref=f8e66]:
+            - button "سجل الطلاب المركزي" [ref=f8e67] [cursor=pointer]
+            - button "حضور وانصراف الطلاب" [ref=f8e71] [cursor=pointer]
+            - button "المناهج واللوائح الدراسية" [ref=f8e75] [cursor=pointer]
+            - button "المراحل والشُعب والأقسام" [ref=f8e79] [cursor=pointer]
+            - button "جودة البيانات والنواقص" [ref=f8e83] [cursor=pointer]
+            - button "طلبات وسير عمل الطلاب" [ref=f8e87] [cursor=pointer]
+        - generic [ref=f8e91]:
+          - generic [ref=f8e92]: الدراسة والامتحانات والكنترول
+          - generic [ref=f8e93]:
+            - button "قسم الدراسة والامتحانات قريباً" [ref=f8e94] [cursor=pointer]:
+              - generic [ref=f8e95]: قسم الدراسة والامتحانات
+              - generic [ref=f8e99]: قريباً
+            - button "الشهادات والوثائق قريباً" [ref=f8e100] [cursor=pointer]:
+              - generic [ref=f8e101]: الشهادات والوثائق
+              - generic [ref=f8e105]: قريباً
+            - button "الطباعة الرسمية والتصدير قريباً" [ref=f8e106] [cursor=pointer]:
+              - generic [ref=f8e107]: الطباعة الرسمية والتصدير
+              - generic [ref=f8e111]: قريباً
+        - generic [ref=f8e112]:
+          - generic [ref=f8e113]: إدارة الفروع والوكالات
+          - generic [ref=f8e114]:
+            - button "دليل الفروع والوكالات" [ref=f8e115] [cursor=pointer]
+            - button "➕ إضافة مقر جديد" [ref=f8e119] [cursor=pointer]
+            - button "طلبات الصيانة والمقرات" [ref=f8e123] [cursor=pointer]
+            - button "عقود وإيجارات المقرات" [ref=f8e129] [cursor=pointer]
+        - generic [ref=f8e133]:
+          - generic [ref=f8e134]: الإدارة والحوكمة والنظام
+          - generic [ref=f8e135]:
+            - button "إدارة المستخدمين" [ref=f8e136] [cursor=pointer]
+            - button "مصفوفة الصلاحيات" [ref=f8e140] [cursor=pointer]
+            - button "سجل التدقيق والرقابة" [ref=f8e144] [cursor=pointer]
+            - button "تخصيص المظهر والخطوط" [ref=f8e148] [cursor=pointer]
+            - button "الإعدادات الإدارية مركزي" [ref=f8e152] [cursor=pointer]:
+              - generic [ref=f8e156]: الإعدادات الإدارية
+              - generic [ref=f8e157]: مركزي
+            - button "التقويم والسنة الدراسية" [ref=f8e158] [cursor=pointer]
+        - generic [ref=f8e163]:
+          - generic [ref=f8e164]: التوثيق والدليل والمساندة
+          - generic [ref=f8e165]:
+            - button "دليل الإجراءات (SOP) دليل" [ref=f8e166] [cursor=pointer]:
+              - generic [ref=f8e170]: دليل الإجراءات (SOP)
+              - generic [ref=f8e171]: دليل
+            - button "سجل التحديثات v2.4" [ref=f8e172] [cursor=pointer]:
+              - generic [ref=f8e176]: سجل التحديثات
+              - generic [ref=f8e177]: v2.4
+            - button "بلاغات الأخطاء" [ref=f8e178] [cursor=pointer]
+      - generic [ref=f8e184]:
+        - button "ا الشيخ الدكتور / المدير العام للمعهد التخصصي متصل الآن" [ref=f8e185] [cursor=pointer]:
+          - generic [ref=f8e186]: ا
+          - generic [ref=f8e187]:
+            - paragraph [ref=f8e188]: الشيخ الدكتور / المدير العام للمعهد التخصصي
+            - generic [ref=f8e189]: متصل الآن
+        - generic [ref=f8e194]:
+          - button "الملف الشخصي" [ref=f8e195] [cursor=pointer]
+          - button "تسجيل الخروج الآمن وإنهاء الجلسة" [ref=f8e200] [cursor=pointer]
+    - main [ref=f8e203]:
+      - generic [ref=f8e205]:
+        - generic [ref=f8e206]:
+          - generic [ref=f8e211]:
+            - heading "دليل الفروع والمقرات والتقييم الميداني الشامل 0 مقراً بليبيا" [level=3] [ref=f8e212]:
+              - text: دليل الفروع والمقرات والتقييم الميداني الشامل
+              - generic [ref=f8e213]: 0 مقراً بليبيا
+            - paragraph [ref=f8e214]: الرصد الجغرافي الحي، بطاقات التقييم الرقابي الدوري، الطاقة الاستيعابية، والتجهيزات الميدانية
+          - generic [ref=f8e215]:
+            - generic [ref=f8e216]:
+              - button "الخريطة الحية" [ref=f8e217] [cursor=pointer]
+              - button "بطاقات الفروع" [ref=f8e221] [cursor=pointer]
+              - button "جدول التقييم" [ref=f8e225] [cursor=pointer]
+            - button "استيراد فروع من Excel (.xlsx)" [ref=f8e229] [cursor=pointer]
+            - button "إضافة مقر فرع جديد" [ref=f8e233] [cursor=pointer]
+            - button "إجراء تقييم ميداني جديد" [ref=f8e237] [cursor=pointer]
+        - generic [ref=f8e241]:
+          - generic [ref=f8e243]:
+            - text: إجمالي المقرات المعتمدة
+            - generic [ref=f8e244]: "0"
+            - text: ● 0 مقراً تشغيلياً نشطاً
+          - generic [ref=f8e249]:
+            - text: ملكية المباني
+            - generic [ref=f8e250]:
+              - text: 0 مملوك
+              - generic [ref=f8e251]: / 0 مستأجر
+            - text: 0% أصول ومبانٍ تابعة للمعهد
+          - generic [ref=f8e256]:
+            - text: متوسط مؤشر التقييم الميداني
+            - generic [ref=f8e257]: 0% D دون المستوى
+            - text: مبني على تقارير التقييم الرقابية الميدانية
+          - generic [ref=f8e262]:
+            - text: إجمالي الكوادر التشغيلية
+            - generic [ref=f8e263]: 0 عنصر
+            - text: 0 تدريسي • 0 إداري وفني
+        - generic [ref=f8e267]:
+          - textbox "بحث بالاسم، المدينة، الكود، أو المدير..." [ref=f8e269]
+          - combobox [ref=f8e270]:
+            - option "كافة المدن والمناطق (الكل)" [selected]
+          - combobox [ref=f8e271]:
+            - option "نوع المبنى (الكل)" [selected]
+            - option "مبنى مملوك للمعهد"
+            - option "مبنى حكومي مخصص"
+            - option "مبنى مستأجر بعقد رسمي"
+          - combobox [ref=f8e272]:
+            - option "التصنيف الميداني (الكل)" [selected]
+            - option "ممتاز مرتفع (A+)"
+            - option "ممتاز (A)"
+            - option "جيد جداً (B)"
+            - option "يحتاج صيانة (C)"
+          - button "إعادة ضبط" [ref=f8e273] [cursor=pointer]
+        - generic [ref=f8e275]:
+          - generic [ref=f8e277]:
+            - generic [ref=f8e279]:
+              - button "ليبيا بالكامل" [ref=f8e280] [cursor=pointer]
+              - button "طرابلس" [ref=f8e281] [cursor=pointer]
+              - button "بنغازي" [ref=f8e282] [cursor=pointer]
+              - button "مصراتة" [ref=f8e283] [cursor=pointer]
+              - button "سبها" [ref=f8e284] [cursor=pointer]
+              - button "الجبل الأخضر" [ref=f8e285] [cursor=pointer]
+            - generic [ref=f8e286]:
+              - generic [ref=f8e287]: "مؤشر الجاهزية الميدانية:"
+              - generic [ref=f8e288]: ممتاز مرتفع (A+ / A) ≥ 85%
+              - generic [ref=f8e291]: جيد جداً (B) 75 - 84%
+              - generic [ref=f8e294]: يحتاج صيانة (C) 65 - 74%
+          - generic [ref=f8e298]:
+            - generic [ref=f8e299]: فروع المعهد (0)
+            - generic [ref=f8e300]: انقر للتقريب على المقر
+  - button "التبليغ عن خطأ" [ref=f8e302] [cursor=pointer]

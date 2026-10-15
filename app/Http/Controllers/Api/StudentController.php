@@ -1564,33 +1564,48 @@ class StudentController extends Controller
             'department'      => $student->department?->name,
         ];
 
-        DB::transaction(function () use ($student, $snapshot, $user) {
-            // تسجيل الحدث غير القابل للتراجع في سجل التدقيق الأمني الموثق بالسلسلة
-            SystemAuditTrail::log(
-                eventType: 'STUDENT_DELETED_PERMANENTLY',
-                description: "تم حذف ملف الطالب [{$snapshot['full_name']}] (رقم القيد: {$snapshot['academic_number']} / الرقم الوطني: {$snapshot['national_id']}) نهائياً من قاعدة البيانات بقرار من المدير العام [{$user->name}]",
-                payload: $snapshot,
-                userId: $user->id,
-                branchId: $snapshot['branch_id'],
-                modelType: 'Student',
-                modelId: $student->id,
-                oldValues: $snapshot,
-                newValues: [],
-                severity: 'CRITICAL'
-            );
+        try {
+            DB::transaction(function () use ($student, $snapshot, $user) {
+                // تسجيل الحدث غير القابل للتراجع في سجل التدقيق الأمني الموثق بالسلسلة
+                SystemAuditTrail::log(
+                    eventType: 'STUDENT_DELETED_PERMANENTLY',
+                    description: "تم حذف ملف الطالب [{$snapshot['full_name']}] (رقم القيد: {$snapshot['academic_number']} / الرقم الوطني: {$snapshot['national_id']}) نهائياً من قاعدة البيانات بقرار من المدير العام [{$user->name}]",
+                    payload: $snapshot,
+                    userId: $user->id,
+                    branchId: $snapshot['branch_id'],
+                    modelType: 'Student',
+                    modelId: $student->id,
+                    oldValues: $snapshot,
+                    newValues: [],
+                    severity: 'CRITICAL'
+                );
 
-            // تنظيف السجلات التابعة
-            $student->documents()->delete();
-            $student->attendance()->delete();
-            $student->behaviors()->delete();
-            $student->excuses()->delete();
-            $student->enrollmentStatusRequests()->delete();
-            $student->statusHistory()->delete();
-            \App\Models\DocumentVerification::where('student_id', $student->id)->delete();
-            \App\Models\StudentGrade::where('student_id', $student->id)->delete();
+                // تنظيف السجلات التابعة
+                $student->documents()->delete();
+                $student->attendance()->delete();
+                $student->behaviors()->delete();
+                $student->excuses()->delete();
+                $student->enrollmentStatusRequests()->delete();
+                $student->statusHistory()->delete();
+                \App\Models\DocumentVerification::where('student_id', $student->id)->delete();
+                \App\Models\StudentGrade::where('student_id', $student->id)->delete();
 
-            $student->delete();
-        });
+                $student->delete();
+            });
+        } catch (\Throwable $e) {
+            // نُسجِّل السبب الحقيقي ونعيده للمدير العام ليظهر في الواجهة بدلاً من رسالة عامة
+            \Illuminate\Support\Facades\Log::error('Student permanent deletion failed', [
+                'student_id' => $student->id,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'code' => 'STUDENT_DELETE_FAILED',
+                'message' => 'تعذر حذف الطالب: ' . class_basename($e) . ' — ' . \Illuminate\Support\Str::limit($e->getMessage(), 240),
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
