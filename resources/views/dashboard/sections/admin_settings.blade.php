@@ -408,7 +408,13 @@
                                 :class="darkMode ? 'border-slate-800/60' : 'border-slate-100'">
                                 <td class="py-3 px-3 font-mono font-bold text-amber-500" x-text="pos.code"></td>
                                 <td class="py-3 px-3 font-black text-sm"
-                                    :class="darkMode ? 'text-white' : 'text-slate-800'" x-text="pos.title"></td>
+                                    :class="darkMode ? 'text-white' : 'text-slate-800'">
+                                    <span x-text="pos.title"></span>
+                                    <template x-if="pos.role_id">
+                                        <span class="mr-1.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20"
+                                            title="المسمى مرتبط بدور في مصفوفة الصلاحيات ويُعدَّل من هنا أو من المصفوفة">🔗 دور</span>
+                                    </template>
+                                </td>
                                 <td class="py-3 px-3 text-slate-400"
                                     x-text="pos.organizational_unit ? pos.organizational_unit.name : '— عام على مستوى المعهد'">
                                 </td>
@@ -444,7 +450,7 @@
                                             title="تعديل">
                                             ✏️
                                         </button>
-                                        <button @click="deleteAdminJobPosition(pos.id)"
+                                        <button x-show="!pos.role_id" @click="deleteAdminJobPosition(pos.id)"
                                             class="p-1.5 rounded-lg border text-rose-600 hover:bg-rose-500/10 transition-colors"
                                             title="حذف">
                                             🗑️
@@ -490,6 +496,7 @@
                             <th class="py-3 px-3">تاريخ التسكين</th>
                             <th class="py-3 px-3">رقم القرار الإداري</th>
                             <th class="py-3 px-3">حالة التسكين</th>
+                            <th class="py-3 px-3">اسم الموظف في المستندات</th>
                             <th class="py-3 px-3 text-center">الإجراءات</th>
                         </tr>
                     </thead>
@@ -511,6 +518,11 @@
                                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
                                         :class="plc.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'"
                                         x-text="plc.status === 'active' ? 'تسكين حالي نشط' : 'سجل تاريخي سابق'"></span>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                        :class="plc.show_name_on_documents === false ? 'bg-slate-500/20 text-slate-400 border border-slate-500/30' : 'bg-sky-500/20 text-sky-500 border border-sky-500/30'"
+                                        x-text="plc.show_name_on_documents === false ? 'مخفي (الصفة فقط)' : 'يظهر مع الصفة'"></span>
                                 </td>
                                 <td class="py-3 px-3 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
@@ -1047,6 +1059,15 @@
                             :class="darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-300'">
                     </div>
                 </div>
+                <label class="flex items-start gap-3 p-3 rounded-xl border cursor-pointer"
+                    :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'">
+                    <input type="checkbox" x-model="adminSettings.placementForm.show_name_on_documents"
+                        class="mt-0.5 rounded w-4 h-4 text-amber-600 focus:ring-amber-500">
+                    <span>
+                        <span class="block text-xs font-bold">إظهار اسم الموظف مع الصفة في المستندات الرسمية</span>
+                        <span class="block text-[10px] text-slate-400 mt-0.5">تنطبق على كل مستند رسمي يحمل توقيع هذه الصفة، ومنها تعريف الطالب وحسن السيرة والسلوك. عند الإلغاء تظهر الصفة الوظيفية دون الاسم.</span>
+                    </span>
+                </label>
                 <div class="flex justify-end gap-2 pt-3 border-t"
                     :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
                     <button type="button" @click="adminSettings.showPlacementModal = false"

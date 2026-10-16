@@ -26,7 +26,10 @@ class AdminSettingsController extends Controller
         try {
             $profile = AdminSettingsService::getInstituteProfile();
             $allSettings = AdminSettingsService::getAllSettingsMap();
-            
+
+            // كل دور في مصفوفة الصلاحيات يظهر هنا كصفة معتمدة بالمسمى نفسه
+            AdminSettingsService::syncRolePositions();
+
             $orgUnits = OrganizationalUnit::with(['parent', 'children', 'jobPositions'])
                 ->orderBy('sort_order')
                 ->get();
@@ -248,7 +251,16 @@ class AdminSettingsController extends Controller
 
         $userId = auth()->id() ?? 1;
         $id = $request->input('id');
-        $oldValues = $id ? JobPosition::find($id)?->toArray() : null;
+        $existing = $id ? JobPosition::find($id) : null;
+        $oldValues = $existing?->toArray();
+
+        // الصفة المرتبطة بدور مسماها هو مسمى الدور نفسه (حد 100 حرف)
+        if ($existing && $existing->role_id && mb_strlen($validated['title']) > 100) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'المسمى الوظيفي للدور لا يتجاوز 100 حرف.',
+            ], 422);
+        }
 
         $orgUnitId = !empty($validated['organizational_unit_id']) ? (int)$validated['organizational_unit_id'] : null;
 
@@ -263,6 +275,11 @@ class AdminSettingsController extends Controller
                 'description'            => $validated['description'] ?? null,
             ]
         );
+
+        // تعديل مسمى صفة مرتبطة بدور يُحدّث الدور نفسه، فيتطابق المسمى في مصفوفة الصلاحيات
+        if ($pos->role_id && $pos->title !== ($existing?->title)) {
+            \App\Models\Role::where('id', $pos->role_id)->update(['display_name' => $pos->title]);
+        }
 
         AdminSettingsService::recordAudit(
             $id ? 'update_job_position' : 'create_job_position',
@@ -287,6 +304,13 @@ class AdminSettingsController extends Controller
     public function deleteJobPosition($id)
     {
         $pos = JobPosition::findOrFail($id);
+
+        if ($pos->role_id) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'هذه الصفة مرتبطة بدور في مصفوفة الصلاحيات ولا يمكن حذفها. يمكن تعطيلها أو تعديل مسماها فقط.',
+            ], 422);
+        }
 
         if ($pos->employeePlacements()->where('is_current', true)->count() > 0) {
             return response()->json([
@@ -330,6 +354,7 @@ class AdminSettingsController extends Controller
             'end_date'               => 'nullable|date|after_or_equal:start_date',
             'is_current'             => 'nullable|boolean',
             'status'                 => 'required|string|in:active,historic,transferred',
+            'show_name_on_documents' => 'nullable|boolean',
             'decision_number'        => 'nullable|string|max:255',
             'notes'                  => 'nullable|string|max:1000',
         ]);
@@ -360,10 +385,13 @@ class AdminSettingsController extends Controller
                 'end_date'               => $validated['end_date'] ?? null,
                 'is_current'             => $request->boolean('is_current', true),
                 'status'                 => $validated['status'],
+                'show_name_on_documents' => $request->boolean('show_name_on_documents', true),
                 'decision_number'        => $validated['decision_number'] ?? null,
                 'notes'                  => $validated['notes'] ?? null,
             ]
         );
+
+        AdminSettingsService::clearCache();
 
         AdminSettingsService::recordAudit(
             $id ? 'update_placement' : 'create_placement',

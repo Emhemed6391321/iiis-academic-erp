@@ -16,6 +16,7 @@ use App\Models\BranchFacility;
 use App\Models\Student;
 use App\Models\Course;
 use App\Models\SystemAuditTrail;
+use App\Services\BranchStaffService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -51,18 +52,20 @@ class BranchOperationsController extends Controller
             $ownedBranches = ($targetBranch && in_array($targetBranch->building_type, ['owned', 'state'])) ? 1 : 0;
             $rentedBranches = ($targetBranch && $targetBranch->building_type === 'rented') ? 1 : 0;
             $avgScore = $targetBranch ? (float)$targetBranch->latest_score : 0;
-            $totalStaff = $targetBranch ? (int) ($targetBranch->total_staff ?: ($targetBranch->academic_staff + $targetBranch->admin_staff)) : 0;
-            $academicStaff = $targetBranch ? (int) $targetBranch->academic_staff : 0;
-            $adminStaff = $targetBranch ? (int) $targetBranch->admin_staff : 0;
+            $staff = BranchStaffService::forBranch((int) $userBranchId);
+            $totalStaff = $staff['total'];
+            $academicStaff = $staff['academic'];
+            $adminStaff = $staff['admin'];
         } else {
             $totalBranches = Branch::count();
             $activeBranches = Branch::where('is_active', true)->count();
             $ownedBranches = Branch::whereIn('building_type', ['owned', 'state'])->count();
             $rentedBranches = Branch::where('building_type', 'rented')->count();
             $avgScore = round(Branch::avg('latest_score') ?? 0, 1);
-            $totalStaff = (int) (Branch::sum('total_staff') ?: (Branch::sum('academic_staff') + Branch::sum('admin_staff')));
-            $academicStaff = (int) Branch::sum('academic_staff');
-            $adminStaff = (int) Branch::sum('admin_staff');
+            $allCounts = BranchStaffService::countsByBranch();
+            $totalStaff = array_sum(array_column($allCounts, 'total'));
+            $academicStaff = array_sum(array_column($allCounts, 'academic'));
+            $adminStaff = array_sum(array_column($allCounts, 'admin'));
         }
 
         $pendingRequests = (clone $requestsQuery)->whereIn('status', ['pending', 'under_review'])->count();
@@ -109,6 +112,15 @@ class BranchOperationsController extends Controller
         }
 
         $branches = $query->orderBy('id')->get();
+
+        // الكادر يُحسب من الموظفين والتسكينات الفعلية لا من الأرقام اليدوية المخزّنة
+        $staffCounts = BranchStaffService::countsByBranch();
+        $branches->each(function (Branch $branch) use ($staffCounts) {
+            $staff = $staffCounts[$branch->id] ?? ['total' => 0, 'academic' => 0, 'admin' => 0];
+            $branch->total_staff = $staff['total'];
+            $branch->academic_staff = $staff['academic'];
+            $branch->admin_staff = $staff['admin'];
+        });
 
         return response()->json([
             'status' => 'success',
@@ -518,6 +530,11 @@ class BranchOperationsController extends Controller
         if (!$branch) {
             return response()->json(['status' => 'error', 'message' => 'الفرع غير موجود'], 404);
         }
+
+        $staff = BranchStaffService::forBranch((int) $branch->id);
+        $branch->total_staff = $staff['total'];
+        $branch->academic_staff = $staff['academic'];
+        $branch->admin_staff = $staff['admin'];
 
         // Calculate seating capacity stats
         $totalCapacity = $branch->classes->sum('max_capacity');

@@ -54,12 +54,34 @@
                     </div>
 
                     <!-- Roles Cards Summary -->
+                    <!-- المسمى الوظيفي للدور: يُعدَّل هنا وينعكس على الصفات المعتمدة والتسكين والمستندات -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                         <template x-for="role in rolesList" :key="role.id">
                             <div class="p-3 rounded-[14px] border text-center"
                                  :class="darkMode ? 'bg-slate-800/40 border-slate-700/60' : 'bg-slate-50 border-slate-200'">
-                                <div class="font-bold text-xs" x-text="role.display_name || role.name"></div>
-                                <div class="text-[10px] text-slate-400 mt-0.5" x-text="(role.permissions ? role.permissions.length : 0) + ' صلاحية'"></div>
+                                <template x-if="roleTitleEdit.id !== role.id">
+                                    <div class="space-y-1">
+                                        <div class="font-bold text-xs" x-text="role.display_name || role.name"></div>
+                                        <div class="text-[10px] text-slate-400" x-text="(role.permissions ? role.permissions.length : 0) + ' صلاحية'"></div>
+                                        <button type="button" @click="startRoleTitleEdit(role)"
+                                                class="text-[10px] font-bold text-[#2b78a5] hover:underline">✏️ تعديل المسمى</button>
+                                    </div>
+                                </template>
+                                <template x-if="roleTitleEdit.id === role.id">
+                                    <div class="space-y-2">
+                                        <input type="text" x-model="roleTitleEdit.value" maxlength="100"
+                                               @keydown.enter.prevent="saveRoleTitle(role)"
+                                               @keydown.escape="cancelRoleTitleEdit()"
+                                               class="w-full p-1.5 rounded-[8px] text-xs font-bold border outline-none focus:border-[#2b78a5] text-center"
+                                               :class="darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <button type="button" @click="saveRoleTitle(role)" :disabled="roleTitleEdit.saving"
+                                                    class="px-2.5 py-1 rounded-[8px] text-[10px] font-bold bg-[#2b78a5] text-white disabled:opacity-60">حفظ</button>
+                                            <button type="button" @click="cancelRoleTitleEdit()"
+                                                    class="px-2.5 py-1 rounded-[8px] text-[10px] font-bold border">إلغاء</button>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                     </div>

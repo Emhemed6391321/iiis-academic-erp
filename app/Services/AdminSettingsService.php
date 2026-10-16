@@ -125,24 +125,13 @@ class AdminSettingsService
         $result = [];
         foreach ($signatories as $sig) {
             $jobTitle = $sig->custom_title_override ?: ($sig->jobPosition ? $sig->jobPosition->title : 'المسؤول الإداري');
-            $personName = $sig->user ? $sig->user->name : '';
+            $placement = self::resolveSignatoryPlacement($sig, $branchId);
 
-            // If no user directly assigned on the signatory slot, try to find the current employee placed in that job position
-            if (empty($personName) && $sig->job_position_id) {
-                $query = EmployeePlacement::with('user')
-                    ->where('job_position_id', $sig->job_position_id)
-                    ->where('is_current', true)
-                    ->where('status', 'active');
-                
-                if ($branchId) {
-                    $placement = (clone $query)->where('branch_id', $branchId)->first() ?: $query->first();
-                } else {
-                    $placement = $query->first();
-                }
+            $personName = $sig->user ? $sig->user->name : ($placement?->user?->name ?? '');
 
-                if ($placement && $placement->user) {
-                    $personName = $placement->user->name;
-                }
+            // التسكين يتحكم في ظهور اسم الموظف فقط؛ الصفة تبقى ظاهرة في المستند
+            if ($placement && !$placement->show_name_on_documents) {
+                $personName = '';
             }
 
             $result[$sig->slot_key] = [
@@ -154,6 +143,74 @@ class AdminSettingsService
         }
 
         return $result;
+    }
+
+    /**
+     * التسكين الحالي الذي يحدد صاحب الصفة في خانة التوقيع (إن وُجد).
+     */
+    private static function resolveSignatoryPlacement(OfficialDocumentSignatory $sig, ?int $branchId): ?EmployeePlacement
+    {
+        // خانة مسندة لشخص بعينه: تسكينه الحالي (في الصفة نفسها إن وُجد) هو الذي يحكم ظهور اسمه
+        if ($sig->user_id) {
+            $own = EmployeePlacement::with('user')
+                ->where('user_id', $sig->user_id)
+                ->where('is_current', true)
+                ->where('status', 'active');
+
+            $samePosition = $sig->job_position_id
+                ? (clone $own)->where('job_position_id', $sig->job_position_id)->first()
+                : null;
+
+            return $samePosition ?: $own->first();
+        }
+
+        if (!$sig->job_position_id) {
+            return null;
+        }
+
+        $query = EmployeePlacement::with('user')
+            ->where('job_position_id', $sig->job_position_id)
+            ->where('is_current', true)
+            ->where('status', 'active');
+
+        if ($branchId) {
+            return (clone $query)->where('branch_id', $branchId)->first() ?: $query->first();
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * كل دور في مصفوفة الصلاحيات له صفة وظيفية معتمدة مرتبطة به، ومسماها = مسمّى الدور.
+     * آمن للتكرار: ينشئ الصفة الناقصة فقط ويحدّث المسمى إن تغيّر.
+     */
+    public static function syncRolePositions(): void
+    {
+        foreach (\App\Models\Role::all() as $role) {
+            $position = JobPosition::where('role_id', $role->id)->first();
+
+            if ($position) {
+                if ($position->title !== $role->display_name) {
+                    $position->update(['title' => $role->display_name]);
+                }
+                continue;
+            }
+
+            $code = 'ROLE_' . strtoupper($role->name);
+            if (JobPosition::where('code', $code)->exists()) {
+                $code .= '_' . $role->id;
+            }
+
+            JobPosition::create([
+                'code'                   => substr($code, 0, 50),
+                'role_id'                => $role->id,
+                'title'                  => $role->display_name,
+                'organizational_unit_id' => null,
+                'level_order'            => $role->scope_type === 'GLOBAL_SCOPE' ? 1 : 2,
+                'is_active'              => true,
+                'description'            => $role->description,
+            ]);
+        }
     }
 
     /**

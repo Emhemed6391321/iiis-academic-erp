@@ -1235,19 +1235,10 @@
                             :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد الكادر التدريسي
-                            والأكاديمي</label>
-                        <input type="number" min="0" x-model="branchForm.academic_staff" placeholder="18"
-                            class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
-                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد الكادر الإداري والفني</label>
-                        <input type="number" min="0" x-model="branchForm.admin_staff" placeholder="6"
-                            class="w-full p-2.5 rounded-[12px] text-xs font-mono font-bold border outline-none focus:border-[#2b78a5]"
-                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                    <div class="md:col-span-2 p-3 rounded-[12px] border text-xs"
+                        :class="darkMode ? 'bg-slate-800/60 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                        <span class="font-bold">الكادر يُحسب تلقائياً</span>
+                        من الموظفين المرتبطين بالفرع والتسكينات الحالية في الإعدادات الإدارية، ولا يُدخل يدوياً.
                     </div>
 
                     <div>

@@ -51,6 +51,7 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     // 2. Permission Matrix Module
     Route::get('/permissions/matrix', [PermissionMatrixController::class, 'getMatrix'])->middleware('permission:permissions.manage|MANAGE_ROLES');
     Route::post('/permissions/toggle', [PermissionMatrixController::class, 'toggleRolePermission'])->middleware('permission:permissions.manage|MANAGE_ROLES');
+    Route::put('/permissions/roles/{role}/title', [PermissionMatrixController::class, 'updateRoleTitle'])->middleware('permission:permissions.manage|MANAGE_ROLES');
 
     // 2b. Module on/off switches (الوحدات المقفلة "قريباً") — القراءة لكل مستخدم والتعديل للمدير العام
     Route::get('/modules/states', [\App\Http\Controllers\Api\ModuleStateController::class, 'index']);

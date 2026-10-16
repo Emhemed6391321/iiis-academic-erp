@@ -16,12 +16,14 @@ class EmployeePlacement extends Model
         'end_date',
         'is_current',
         'status',
+        'show_name_on_documents',
         'decision_number',
         'notes',
     ];
 
     protected $casts = [
         'is_current' => 'boolean',
+        'show_name_on_documents' => 'boolean',
         'start_date' => 'date',
         'end_date' => 'date',
     ];

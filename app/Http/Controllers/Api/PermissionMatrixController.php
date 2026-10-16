@@ -88,4 +88,58 @@ class PermissionMatrixController extends Controller
             'role'    => $role->fresh('permissions'),
         ]);
     }
+
+    /**
+     * تعديل المسمى الوظيفي (display_name) للدور من مصفوفة الصلاحيات.
+     * المسمى هو المصدر الوحيد: تُحدَّث الصفة المعتمدة المرتبطة به ليظهر نفس المسمى في الإعدادات والمستندات.
+     */
+    public function updateRoleTitle(Request $request, Role $role): JsonResponse
+    {
+        $currentUser = \Illuminate\Support\Facades\Auth::user();
+        if (!$currentUser || !($currentUser->hasPermission('MANAGE_ROLES') || $currentUser->hasPermission('permissions.manage'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'غير مصرح: تعديل مسمى الدور يتطلب صلاحية إدارة الأدوار.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'display_name' => 'required|string|max:100',
+        ]);
+
+        $oldName = $role->display_name;
+        $newName = trim($validated['display_name']);
+
+        if ($newName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'المسمى الوظيفي لا يمكن أن يكون فارغاً.',
+            ], 422);
+        }
+
+        $role->update(['display_name' => $newName]);
+        \App\Services\AdminSettingsService::syncRolePositions();
+
+        try {
+            \App\Models\SystemAuditTrail::create([
+                'user_id'     => \Illuminate\Support\Facades\Auth::id(),
+                'branch_id'   => null,
+                'event_type'  => 'ROLE_TITLE_UPDATED',
+                'description' => "تعديل المسمى الوظيفي للدور [{$role->name}] من [{$oldName}] إلى [{$newName}]",
+                'ip_address'  => $request->ip(),
+                'payload'     => [
+                    'role_id'  => $role->id,
+                    'old_name' => $oldName,
+                    'new_name' => $newName,
+                ],
+                'created_at'  => \Carbon\Carbon::now(),
+            ]);
+        } catch (\Throwable $e) {}
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم تحديث المسمى الوظيفي في المصفوفة والإعدادات المركزية.',
+            'role'    => $role->fresh('permissions'),
+        ]);
+    }
 }

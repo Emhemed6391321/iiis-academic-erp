@@ -941,7 +941,7 @@
                     showPlacementModal: false,
                     orgUnitForm: { id: null, code: '', name: '', type: 'department', parent_id: '', is_active: true, notes: '' },
                     positionForm: { id: null, code: '', title: '', organizational_unit_id: '', level_order: 1, is_active: true, description: '' },
-                    placementForm: { id: null, user_id: '', job_position_id: '', organizational_unit_id: '', branch_id: '', start_date: '2026-09-01', decision_number: '', status: 'active', notes: '' }
+                    placementForm: { id: null, user_id: '', job_position_id: '', organizational_unit_id: '', branch_id: '', start_date: '2026-09-01', decision_number: '', status: 'active', show_name_on_documents: true, notes: '' }
                 },
 
                 studentRegistry: {
@@ -1097,6 +1097,7 @@
                 
                 pendingBatchesList: [],
                 matrixData: [],
+                roleTitleEdit: { id: null, value: '', saving: false },
                 
                 // Libyan Official Academic Control State
                 selectedStudyYearId: 1,
@@ -1187,8 +1188,6 @@
                     address: '',
                     latitude: 32.1167,
                     longitude: 20.0667,
-                    academic_staff: 18,
-                    admin_staff: 6,
                     facebook_url: '',
                     telegram_url: '',
                     whatsapp_number: '',
@@ -2089,18 +2088,26 @@
                     }
                     const title = sig.custom_title_override || (sig.job_position ? sig.job_position.title : (sig.slot_label || defaultLabel));
                     let name = sig.user ? sig.user.name : '';
-                    if (!name && sig.job_position_id && this.adminSettings.placements) {
-                        const placement = this.adminSettings.placements.find(
-                            p => p.job_position_id === sig.job_position_id && p.is_current && p.status === 'active'
-                        );
-                        if (placement && placement.user) {
-                            name = placement.user.name;
-                        }
+                    let nameHidden = false;
+                    const activePlacements = (this.adminSettings.placements || []).filter(p => p.is_current && p.status === 'active');
+                    let placement = null;
+                    if (sig.user_id) {
+                        const own = activePlacements.filter(p => p.user_id === sig.user_id);
+                        placement = own.find(p => p.job_position_id === sig.job_position_id) || own[0] || null;
+                    } else if (sig.job_position_id) {
+                        placement = activePlacements.find(p => p.job_position_id === sig.job_position_id) || null;
+                    }
+                    // تسكين مُعطّل فيه إظهار الاسم: تظهر الصفة فقط دون الاسم
+                    if (placement && placement.show_name_on_documents === false) {
+                        nameHidden = true;
+                        name = '';
+                    } else if (!name && placement && placement.user) {
+                        name = placement.user.name;
                     }
                     return {
                         label: sig.slot_label || defaultLabel || '',
                         title: title || defaultLabel || '',
-                        name: name || defaultName || ''
+                        name: nameHidden ? '' : (name || defaultName || '')
                     };
                 },
 
@@ -3772,8 +3779,6 @@ async initApp() {
                         address: '',
                         latitude: 32.1167,
                         longitude: 20.0667,
-                        academic_staff: 18,
-                        admin_staff: 6,
                         facebook_url: '',
                         telegram_url: '',
                         whatsapp_number: '',
@@ -3805,8 +3810,6 @@ async initApp() {
                         address: branch.address || '',
                         latitude: branch.latitude ?? '',
                         longitude: branch.longitude ?? '',
-                        academic_staff: branch.academic_staff || 0,
-                        admin_staff: branch.admin_staff || 0,
                         facebook_url: branch.facebook_url || '',
                         telegram_url: branch.telegram_url || '',
                         whatsapp_number: branch.whatsapp_number || '',
@@ -5110,6 +5113,53 @@ async loadBranchOperations() {
                         }
                     } catch (e) {
                         console.error(e);
+                    }
+                },
+
+                startRoleTitleEdit(role) {
+                    this.roleTitleEdit = { id: role.id, value: role.display_name || role.name, saving: false };
+                },
+
+                cancelRoleTitleEdit() {
+                    this.roleTitleEdit = { id: null, value: '', saving: false };
+                },
+
+                async saveRoleTitle(role) {
+                    const newName = (this.roleTitleEdit.value || '').trim();
+                    if (!newName) {
+                        this.showToast('المسمى الوظيفي لا يمكن أن يكون فارغاً');
+                        return;
+                    }
+                    if (newName === (role.display_name || '')) {
+                        this.cancelRoleTitleEdit();
+                        return;
+                    }
+                    this.roleTitleEdit.saving = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/permissions/roles/${role.id}/title`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify({ display_name: newName })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.rolesList = this.rolesList.map(r => r.id === role.id ? { ...r, display_name: data.role.display_name } : r);
+                            this.cancelRoleTitleEdit();
+                            this.showToast(data.message || 'تم تحديث المسمى الوظيفي');
+                            // تحديث الصفات المعتمدة حتى يظهر المسمى الجديد هناك مباشرة
+                            if (this.adminSettings && this.adminSettings.positions) {
+                                this.loadAdminSettingsMaster();
+                            }
+                        } else {
+                            const errs = data.errors ? Object.values(data.errors).flat().join(' | ') : null;
+                            this.showToast(errs || data.message || 'تعذر تحديث المسمى الوظيفي');
+                            this.roleTitleEdit.saving = false;
+                        }
+                    } catch (e) {
+                        console.error('Error updating role title:', e);
+                        this.showToast('تعذر تحديث المسمى الوظيفي');
+                        this.roleTitleEdit.saving = false;
                     }
                 },
 
@@ -8082,10 +8132,11 @@ async loadBranchOperations() {
                             start_date: plc.start_date || '2026-09-01',
                             decision_number: plc.decision_number || '',
                             status: plc.status || 'active',
+                            show_name_on_documents: plc.show_name_on_documents !== false,
                             notes: plc.notes || ''
                         };
                     } else {
-                        this.adminSettings.placementForm = { id: null, user_id: '', job_position_id: '', organizational_unit_id: '', branch_id: '', start_date: '2026-09-01', decision_number: '', status: 'active', notes: '' };
+                        this.adminSettings.placementForm = { id: null, user_id: '', job_position_id: '', organizational_unit_id: '', branch_id: '', start_date: '2026-09-01', decision_number: '', status: 'active', show_name_on_documents: true, notes: '' };
                     }
                     this.adminSettings.showPlacementModal = true;
                 },

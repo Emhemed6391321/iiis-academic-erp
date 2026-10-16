@@ -10,6 +10,7 @@ class JobPosition extends Model
 {
     protected $fillable = [
         'code',
+        'role_id',
         'title',
         'organizational_unit_id',
         'level_order',
@@ -25,6 +26,14 @@ class JobPosition extends Model
     public function organizationalUnit(): BelongsTo
     {
         return $this->belongsTo(OrganizationalUnit::class, 'organizational_unit_id');
+    }
+
+    /**
+     * الدور المرتبط: إن وُجد فمسمّى الصفة هو مسمّى الدور في مصفوفة الصلاحيات.
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function employeePlacements(): HasMany
