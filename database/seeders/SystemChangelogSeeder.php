@@ -182,6 +182,19 @@ class SystemChangelogSeeder extends Seeder
                 'requires_migration' => true,
                 'deployed_at' => '2026-10-17 00:00:00',
             ],
+            [
+                'version' => '2.5.1',
+                'title' => 'دليل الإجراءات التشغيلية يشمل إجراءات الإصدار الجديد، ورقم آخر إصدار في القائمة الجانبية',
+                'description' => 'تمت إضافة ثلاثة إجراءات تشغيلية إلى دليل الإجراءات الموحد (SOP): تقديم طلب استثناء رسمي واعتماده، وإدارة قواعد القبول بحسب العمر، وطباعة السجل العام الرسمي مع التوقيعات المعتمدة. وأصبح رقم آخر إصدار منشور يظهر بجانب سجل التحديثات في القائمة الجانبية بدلاً من رقم ثابت.',
+                'type' => 'ui',
+                'impact' => 'low',
+                'author' => 'فريق التطوير',
+                'branch' => 'main',
+                'affected_modules' => ['procedures', 'sidebar', 'students', 'settings'],
+                'tags' => ['دليل الإجراءات', 'SOP', 'سجل التحديثات', 'القائمة الجانبية'],
+                'requires_migration' => false,
+                'deployed_at' => '2026-10-17 12:00:00',
+            ],
         ];
 
         foreach ($entries as $entry) {

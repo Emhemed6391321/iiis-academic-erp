@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Cache;
 
 class SystemChangelog extends Model
 {
@@ -60,5 +61,17 @@ class SystemChangelog extends Model
     public function scopePublished($query)
     {
         return $query->where('is_published', true);
+    }
+
+    /**
+     * Latest published release number, shown next to the updates log in the sidebar.
+     * Cached briefly; a deploy clears the cache anyway.
+     */
+    public static function latestPublishedVersion(): string
+    {
+        return Cache::remember('changelog.latest_version', 300, fn () => static::published()
+            ->orderByDesc('deployed_at')
+            ->orderByDesc('id')
+            ->value('version') ?? '—');
     }
 }

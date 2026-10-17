@@ -6033,6 +6033,18 @@ async loadBranchOperations() {
                 // ==========================================
                 // Official approval requests (طلبات الاستثناء): الفرع يقدّم، والإدارة العامة تقرر
                 // ==========================================
+                // No-argument entry points used by the SOP directory's navigation buttons
+                openOfficialExceptionsTab() {
+                    this.currentSection = 'student_workflow';
+                    this.switchWorkflowTab('exceptions');
+                },
+
+                openAdmissionRulesSettings() {
+                    this.currentSection = 'admin_settings';
+                    this.adminSettings.activeTab = 'admissions';
+                    this.loadAdmissionRules();
+                },
+
                 officialRequestTypeLabel(type) {
                     return { AGE_EXCEPTION: 'استثناء شرط العمر', GRADE_LEVEL_ENROLLMENT: 'التسجيل في صف مقيّد' }[type] || type;
                 },

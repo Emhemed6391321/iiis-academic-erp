@@ -450,7 +450,7 @@
                         </svg>
                     </span>
                     <span x-show="!sidebarCollapsed" class="truncate font-black">سجل التحديثات</span>
-                    <span x-show="!sidebarCollapsed" class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30">v2.4</span>
+                    <span x-show="!sidebarCollapsed" class="mr-auto px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30" title="آخر إصدار منشور">v{{ \App\Models\SystemChangelog::latestPublishedVersion() }}</span>
                 </button>
 
                 <!-- بلاغات الأخطاء (حصري للإدارة المركزية والعامة) -->
