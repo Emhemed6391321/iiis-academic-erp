@@ -67,6 +67,15 @@ class ReleaseVersionAndSopTest extends TestCase
         $this->assertStringNotContainsString('>v2.4<', $html);
     }
 
+    public function test_sop_codes_are_unique_because_the_directory_is_a_keyed_list(): void
+    {
+        $sop = file_get_contents(resource_path('views/dashboard/sections/procedures.blade.php'));
+        preg_match_all("/code: '(SOP-[A-Z0-9-]+)'/", $sop, $codes);
+
+        $duplicates = array_keys(array_filter(array_count_values($codes[1]), fn ($n) => $n > 1));
+        $this->assertSame([], $duplicates, 'Duplicate SOP codes break the keyed list: ' . implode(', ', $duplicates));
+    }
+
     public function test_every_sop_navigation_action_is_defined_by_the_dashboard(): void
     {
         $sop = file_get_contents(resource_path('views/dashboard/sections/procedures.blade.php'));

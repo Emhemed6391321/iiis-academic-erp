@@ -221,6 +221,19 @@ class SystemChangelogSeeder extends Seeder
                 'requires_migration' => false,
                 'deployed_at' => '2026-10-17 18:00:00',
             ],
+            [
+                'version' => '2.5.4',
+                'title' => 'إصلاح خطأ دليل الإجراءات عند تكرار الرمز (SOP-SET-01)',
+                'description' => 'كان إجراء حفظ مسميات التوقيعات يحمل الرمز نفسه لإجراء الهيكل التنظيمي (SOP-SET-01)، فيتعطل دليل الإجراءات التشغيلية ويظهر خطأ في الصفحات. أُعيد ترقيم إجراء التوقيعات إلى SOP-SET-04، وأُضيف اختبار يمنع تكرار رموز الإجراءات.',
+                'type' => 'fix',
+                'impact' => 'high',
+                'author' => 'فريق التطوير',
+                'branch' => 'main',
+                'affected_modules' => ['procedures', 'settings'],
+                'tags' => ['إصلاح', 'دليل الإجراءات', 'SOP'],
+                'requires_migration' => false,
+                'deployed_at' => '2026-10-17 19:00:00',
+            ],
         ];
 
         foreach ($entries as $entry) {
