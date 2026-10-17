@@ -441,7 +441,8 @@ class AdminSettingsController extends Controller
     public function saveDocumentSignatories(Request $request)
     {
         $validated = $request->validate([
-            'signatories'                         => 'required|array',
+            // present, not required: an empty list means nothing to change (e.g. the page had not loaded yet)
+            'signatories'                         => 'present|array',
             'signatories.*.document_code'         => 'required|string',
             'signatories.*.slot_key'              => 'required|string',
             'signatories.*.slot_label'            => 'required|string',

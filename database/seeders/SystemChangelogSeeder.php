@@ -195,6 +195,19 @@ class SystemChangelogSeeder extends Seeder
                 'requires_migration' => false,
                 'deployed_at' => '2026-10-17 12:00:00',
             ],
+            [
+                'version' => '2.5.2',
+                'title' => 'إصلاح حفظ مسميات التوقيعات وظهور رسائل التحقق بالعربية',
+                'description' => 'كان حفظ مسميات التوقيعات يُرفض عندما تكون القائمة فارغة (مثلاً عند عدم تحميل البيانات)، والآن يُقبل ولا يغيّر شيئاً. كما كانت رسائل التحقق تظهر كمفاتيح تقنية مثل (validation.required)، وأُضيفت الرسائل المعيارية للتحقق من البيانات. تمت إضافة إجراء تشغيلي لحفظ مسميات التوقيعات في دليل الإجراءات.',
+                'type' => 'fix',
+                'impact' => 'medium',
+                'author' => 'فريق التطوير',
+                'branch' => 'main',
+                'affected_modules' => ['settings', 'procedures', 'validation'],
+                'tags' => ['إصلاح', 'التوقيعات', 'رسائل التحقق', 'دليل الإجراءات'],
+                'requires_migration' => false,
+                'deployed_at' => '2026-10-17 17:00:00',
+            ],
         ];
 
         foreach ($entries as $entry) {

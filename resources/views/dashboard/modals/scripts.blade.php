@@ -6039,6 +6039,12 @@ async loadBranchOperations() {
                     this.switchWorkflowTab('exceptions');
                 },
 
+                openSignatoriesSettings() {
+                    this.currentSection = 'admin_settings';
+                    this.adminSettings.activeTab = 'signatories';
+                    this.loadAdminSettingsMaster();
+                },
+
                 openAdmissionRulesSettings() {
                     this.currentSection = 'admin_settings';
                     this.adminSettings.activeTab = 'admissions';
