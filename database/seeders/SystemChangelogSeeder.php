@@ -208,6 +208,19 @@ class SystemChangelogSeeder extends Seeder
                 'requires_migration' => false,
                 'deployed_at' => '2026-10-17 17:00:00',
             ],
+            [
+                'version' => '2.5.3',
+                'title' => 'تحديث تلقائي للقوائم المفتوحة (البلاغات والطلبات)',
+                'description' => 'كانت القوائم لا تتحدث إلا عند فتح الشاشة من جديد، فلا تظهر البلاغات والطلبات الجديدة مباشرة. أصبحت قائمة بلاغات الأخطاء وقائمة طلبات الاستثناء وطلبات سير عمل الطلاب تتحدث تلقائياً كل 30 ثانية أثناء فتحها. وأُضيف إجراء تشغيلي (SOP-MON-02) يشرح المتابعة وما يُفعل عند تعذر الاتصال.',
+                'type' => 'performance',
+                'impact' => 'low',
+                'author' => 'فريق التطوير',
+                'branch' => 'main',
+                'affected_modules' => ['bug_reports', 'student_workflow', 'procedures'],
+                'tags' => ['تحديث تلقائي', 'البلاغات', 'الطلبات', 'الأداء'],
+                'requires_migration' => false,
+                'deployed_at' => '2026-10-17 18:00:00',
+            ],
         ];
 
         foreach ($entries as $entry) {

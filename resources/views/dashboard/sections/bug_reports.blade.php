@@ -1,4 +1,5 @@
             <div x-show="currentSection === 'bug-reports' || currentSection === 'bug_reports'"
+                 x-on:live-refresh.window="if ($event.detail === 'bug-reports') loadBugs()"
                  class="space-y-6"
                  x-data="{
                     bugsList: [],

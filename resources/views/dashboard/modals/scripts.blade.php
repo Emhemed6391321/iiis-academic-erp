@@ -3247,8 +3247,26 @@
                     }
                 },
 
+// Live refresh: the open list reloads every 30 seconds, so new records appear without a manual refresh.
+                startLiveRefresh() {
+                    if (this._liveRefreshTimer) return;
+                    this._liveRefreshTimer = setInterval(() => {
+                        if (document.hidden) return;
+                        if (this.currentSection === 'bug-reports' || this.currentSection === 'bug_reports') {
+                            window.dispatchEvent(new CustomEvent('live-refresh', { detail: 'bug-reports' }));
+                        } else if (this.currentSection === 'student_workflow') {
+                            if (this.studentWorkflow.activeTab === 'exceptions') {
+                                this.loadOfficialRequests();
+                            } else {
+                                this.loadWorkflowData();
+                            }
+                        }
+                    }, 30000);
+                },
+
 async initApp() {
                     window._academicApp = this;
+                    this.startLiveRefresh();
                     // منع فتح الأقسام المقفلة من أي مدخل (القائمة، لوحة القيادة، الروابط المباشرة)
                     this.$watch('currentSection', (val) => {
                         if (this.isModuleLocked(val)) {
