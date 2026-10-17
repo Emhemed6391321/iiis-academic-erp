@@ -111,6 +111,15 @@
                       :class="studentWorkflow.activeTab === 'transfer' ? 'bg-white/20 text-white' : 'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400'"
                       x-text="studentWorkflow.counters.transfer_pending_count || 0"></span>
             </button>
+
+            <!-- Tab 4: Official approvals for admission exceptions (age, grade-level enrollment) -->
+            <button @click="switchWorkflowTab('exceptions')"
+                    class="flex items-center space-x-2 space-x-reverse px-5 py-3 rounded-xl text-xs font-black transition-all whitespace-nowrap"
+                    :class="studentWorkflow.activeTab === 'exceptions'
+                        ? 'bg-gradient-to-r from-indigo-600 to-violet-700 text-white shadow-md shadow-indigo-600/20'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                <span>🏛️ طلبات الاستثناء والاعتماد الرسمي</span>
+            </button>
         </div>
 
         <!-- Scope Switcher (Pending vs Completed) -->
@@ -512,6 +521,125 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- ================= TRACK 4: الاعتماد الرسمي للاستثناءات ================= -->
+    <!-- لا يُنشأ أي قيد عن الطلب قبل اعتماده، والقرار المعتمد يُستهلك مرة واحدة فقط -->
+    <div x-show="studentWorkflow.activeTab === 'exceptions'" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+        <!-- نموذج التقديم (الفرع) -->
+        <div x-show="hasPermission('students.create')" class="p-6 rounded-2xl border space-y-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+            <h3 class="font-black text-sm text-slate-900 dark:text-white">تقديم طلب استثناء رسمي</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">يُرفع الطلب إلى الإدارة العامة. بعد صدور قرار بالاعتماد، يُدخل الفرع رقم الطلب المعتمد عند تسجيل الطالب.</p>
+
+            <form @submit.prevent="submitOfficialRequest()" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">نوع الطلب</label>
+                    <select x-model="studentWorkflow.officialRequests.form.request_type" class="w-full p-2 rounded-lg border font-bold bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                        <option value="AGE_EXCEPTION">استثناء شرط العمر</option>
+                        <option value="GRADE_LEVEL_ENROLLMENT">التسجيل في صف مقيّد (السنة الثانية فما فوق)</option>
+                    </select>
+                </div>
+                <div x-show="studentWorkflow.officialRequests.form.request_type === 'GRADE_LEVEL_ENROLLMENT'">
+                    <label class="block font-bold text-slate-500 mb-1">المرحلة الدراسية</label>
+                    <select x-model="studentWorkflow.officialRequests.form.study_year_id" class="w-full p-2 rounded-lg border font-bold bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                        <option value="">— اختر المرحلة —</option>
+                        <template x-for="sy in studyYears" :key="sy.id">
+                            <option :value="sy.id" x-text="sy.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">اسم الطالب الرباعي</label>
+                    <input type="text" maxlength="150" x-model="studentWorkflow.officialRequests.form.subject_name" class="w-full p-2 rounded-lg border font-bold bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold text-slate-500 mb-1">الرقم الوطني</label>
+                        <input type="text" maxlength="20" x-model="studentWorkflow.officialRequests.form.national_id" class="w-full p-2 rounded-lg border font-mono bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-500 mb-1">الرقم الإداري</label>
+                        <input type="text" maxlength="50" x-model="studentWorkflow.officialRequests.form.administrative_number" class="w-full p-2 rounded-lg border font-mono bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">رقم الجواز (لغير الليبيين)</label>
+                    <input type="text" maxlength="50" x-model="studentWorkflow.officialRequests.form.passport_number" class="w-full p-2 rounded-lg border font-mono bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-500 mb-1">المبررات (10 أحرف على الأقل)</label>
+                    <textarea rows="4" maxlength="2000" x-model="studentWorkflow.officialRequests.form.justification" class="w-full p-2 rounded-lg border bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700"></textarea>
+                </div>
+                <button type="submit" :disabled="studentWorkflow.officialRequests.submitting"
+                        class="w-full px-4 py-2.5 rounded-xl font-black text-white bg-gradient-to-r from-indigo-600 to-violet-700 disabled:opacity-50">
+                    <span x-text="studentWorkflow.officialRequests.submitting ? 'جارٍ الإرسال…' : 'إرسال الطلب إلى الإدارة العامة'"></span>
+                </button>
+            </form>
+        </div>
+
+        <!-- قائمة الطلبات: الفرع يرى طلباته، والإدارة العامة ترى الكل ويصدر القرار -->
+        <div class="xl:col-span-2 p-6 rounded-2xl border space-y-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-sm text-slate-900 dark:text-white">سجل الطلبات والقرارات الإدارية</h3>
+                <span class="text-[11px] font-bold text-slate-400" x-show="studentWorkflow.officialRequests.loading">جارٍ التحميل…</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs min-w-[720px]">
+                    <thead>
+                        <tr class="text-right text-slate-400 font-bold">
+                            <th class="p-2">رقم الطلب</th>
+                            <th class="p-2">النوع</th>
+                            <th class="p-2">الطالب</th>
+                            <th class="p-2">الهوية</th>
+                            <th class="p-2">الحالة</th>
+                            <th class="p-2">القرار</th>
+                            <th class="p-2">الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="req in studentWorkflow.officialRequests.requests" :key="req.id">
+                            <tr class="border-t border-slate-100 dark:border-slate-800 align-top">
+                                <td class="p-2 font-mono font-bold" x-text="'#' + req.id"></td>
+                                <td class="p-2" x-text="officialRequestTypeLabel(req.request_type)"></td>
+                                <td class="p-2">
+                                    <div class="font-bold" x-text="req.subject_name"></div>
+                                    <div class="text-[10px] text-slate-400" x-text="req.branch ? req.branch.name : ''"></div>
+                                </td>
+                                <td class="p-2 font-mono" x-text="req.national_id || req.administrative_number || req.passport_number || '—'"></td>
+                                <td class="p-2">
+                                    <span class="px-2 py-0.5 rounded font-bold text-[11px]"
+                                          :class="req.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : (req.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')"
+                                          x-text="officialRequestStatusLabel(req.status)"></span>
+                                    <div x-show="req.status === 'APPROVED' && !req.consumed_at" class="text-[10px] font-bold text-emerald-700 mt-1">
+                                        يُدخل رقم الطلب #<span x-text="req.id"></span> عند تسجيل الطالب
+                                    </div>
+                                    <div x-show="req.consumed_at" class="text-[10px] font-bold text-slate-400 mt-1">مستهلك</div>
+                                </td>
+                                <td class="p-2 font-mono text-[11px]" x-text="req.decision ? req.decision.decision_number : '—'"></td>
+                                <td class="p-2">
+                                    <template x-if="req.can_decide">
+                                        <div class="space-y-2 min-w-[180px]">
+                                            <input type="text" maxlength="2000" placeholder="ملاحظات القرار (إلزامية عند الرفض)"
+                                                   x-model="studentWorkflow.officialRequests.decisionNotes[req.id]"
+                                                   class="w-full p-1.5 rounded-lg border text-[11px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                                            <div class="flex gap-2">
+                                                <button @click="decideOfficialRequest(req.id, 'APPROVED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white">اعتماد</button>
+                                                <button @click="decideOfficialRequest(req.id, 'REJECTED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-rose-600 text-white">رفض</button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <p x-show="!studentWorkflow.officialRequests.loading && studentWorkflow.officialRequests.requests.length === 0" class="text-center text-xs font-bold text-slate-400 py-8">
+                    لا توجد طلبات اعتماد رسمية.
+                </p>
+            </div>
+        </div>
     </div>
 
     <!-- ================= MODALS ================= -->

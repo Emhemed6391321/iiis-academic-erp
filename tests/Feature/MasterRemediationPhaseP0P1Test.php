@@ -140,7 +140,7 @@ class MasterRemediationPhaseP0P1Test extends TestCase
                 'family_name' => 'المبروك',
                 'mother_name' => 'فاطمة',
                 'national_id' => $dupNationalId,
-                'birth_date' => '2005-04-12',
+                'birth_date' => '2009-04-12',
                 'gender' => 'ذكر',
             ],
             [
@@ -150,7 +150,7 @@ class MasterRemediationPhaseP0P1Test extends TestCase
                 'family_name' => 'المبروك',
                 'mother_name' => 'عائشة',
                 'national_id' => $dupNationalId,
-                'birth_date' => '2006-08-20',
+                'birth_date' => '2010-08-20',
                 'gender' => 'ذكر',
             ],
         ];

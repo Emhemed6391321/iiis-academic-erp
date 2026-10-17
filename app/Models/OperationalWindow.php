@@ -12,6 +12,19 @@ class OperationalWindow extends Model
 {
     use HasFactory;
 
+    /**
+     * Every window type the system enforces. S2_COURSEWORK is used by grade entry
+     * for the second semester's coursework.
+     */
+    public const WINDOW_TYPES = [
+        'REGISTRATION',
+        'S1_COURSEWORK',
+        'S2_COURSEWORK',
+        'S1_FINAL',
+        'S2_FINAL',
+        'SECOND_ROUND',
+    ];
+
     protected $fillable = [
         'academic_year_id',
         'window_type',
@@ -41,6 +54,42 @@ class OperationalWindow extends Model
     public function exceptions(): HasMany
     {
         return $this->hasMany(OperationalWindowException::class, 'window_id');
+    }
+
+    /**
+     * Explicitly provision the missing window types for an academic year.
+     *
+     * Created windows are DISABLED with an empty time range, so provisioning never opens
+     * a window on its own; HQ must set the real dates and enable it. Existing windows are
+     * never modified.
+     *
+     * @return string[] the window types that were created
+     */
+    public static function provisionMissingForYear(int $academicYearId, ?int $createdBy = null): array
+    {
+        $existing = static::where('academic_year_id', $academicYearId)->pluck('window_type')->all();
+        $created = [];
+
+        foreach (self::WINDOW_TYPES as $windowType) {
+            if (in_array($windowType, $existing, true)) {
+                continue;
+            }
+
+            $now = Carbon::now();
+            static::create([
+                'academic_year_id' => $academicYearId,
+                'window_type' => $windowType,
+                'title' => 'فترة ' . $windowType . ' - بانتظار ضبط الإدارة العامة',
+                'start_at' => $now,
+                'end_at' => $now,
+                'is_active' => false,
+                'created_by' => $createdBy,
+            ]);
+
+            $created[] = $windowType;
+        }
+
+        return $created;
     }
 
     /**

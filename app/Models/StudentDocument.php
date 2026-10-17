@@ -38,6 +38,8 @@ class StudentDocument extends Model
         'HEALTH_CERT'            => 'الشهادة الصحية أو الكشف الطبي',
         'DISABILITY_MEDICAL_REP' => 'التقرير الطبي الخاص بالإعاقة',
         'PERSONAL_PHOTO'         => 'صورة شخصية للطالب',
+        'PASSPORT_COPY'          => 'صورة ملونة من جواز السفر',
+        'RESIDENCE_PERMIT'       => 'إقامة سارية',
         'OTHER'                  => 'مستندات إضافية',
     ];
 

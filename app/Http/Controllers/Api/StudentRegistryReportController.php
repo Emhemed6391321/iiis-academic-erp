@@ -26,6 +26,9 @@ use App\Models\SystemAuditTrail;
 
 class StudentRegistryReportController extends Controller
 {
+    /** Most rows one printed official registry carries; larger sets go through the CSV export. */
+    private const OFFICIAL_PRINT_LIMIT = 500;
+
     /**
      * Space-joined concatenation that works on SQLite/PostgreSQL (||) and MySQL/MariaDB (CONCAT_WS).
      */
@@ -45,6 +48,15 @@ class StudentRegistryReportController extends Controller
     private function buildRegistryQuery(Request $request): array
     {
         $query = Student::withoutGlobalScopes()
+            ->select([
+                'id', 'academic_number', 'national_id', 'branch_id', 'department_id',
+                'current_study_year_id', 'enrolled_academic_year_id',
+                'first_name', 'father_name', 'grandfather_name', 'family_name', 'mother_name',
+                'gender', 'birth_date', 'birth_place', 'nationality',
+                'phone', 'guardian_phone', 'study_type', 'academic_status',
+                'is_archived', 'is_special_needs', 'has_disability',
+                'profile_photo_path', 'approved_by', 'approved_at', 'data_verified_at', 'created_at'
+            ])
             ->with([
                 'branch:id,name,gender',
                 'department:id,name,code',
@@ -180,11 +192,13 @@ class StudentRegistryReportController extends Controller
             $query->orderBy('id', 'desc');
         }
 
-        // 11. الترقيم والتجزئة (50 سجل في الصفحة كمعيار أساسي)
+        // 11. الترقيم والتجزئة السريعة دون إعادة استعلام العد الإضافي (Zero redundant count)
         $perPage = min(200, max(1, (int) $request->get('per_page', 50)));
         if ($perPage <= 0) {
             $perPage = 50;
         }
+
+        $page = max(1, (int) $request->get('page', 1));
 
         if ($request->get('all') === 'true' || $perPage > 500) {
             $students = $query->get();
@@ -197,17 +211,37 @@ class StudentRegistryReportController extends Controller
                 'to'           => $students->count(),
             ];
         } else {
-            $paginator = $query->paginate($perPage);
-            $students = $paginator->items();
+            $students = $query->forPage($page, $perPage)->get();
+            $lastPage = max(1, (int) ceil($totalCount / $perPage));
+            $from = $totalCount > 0 ? (($page - 1) * $perPage) + 1 : 0;
+            $to = min($totalCount, $page * $perPage);
             $paginationMeta = [
-                'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
-                'from'         => $paginator->firstItem(),
-                'to'           => $paginator->lastItem(),
+                'current_page' => $page,
+                'per_page'     => $perPage,
+                'total'        => $totalCount,
+                'last_page'    => $lastPage,
+                'from'         => $from,
+                'to'           => $to,
             ];
         }
+
+        // تخزين بيانات الفلاتر الثابتة في الذاكرة المؤقتة لتسريع الانتقال بين الصفحات
+        $userBranchId = ($user && $user->branch_id && !$user->hasGlobalAccessScope()) ? $user->branch_id : 'global';
+        $filtersData = \Illuminate\Support\Facades\Cache::remember("student_registry_filters_meta_{$userBranchId}", 600, function () use ($user) {
+            return [
+                'branches'       => (function () use ($user) {
+                    $bq = Branch::where('is_active', true)
+                        ->whereNotIn('branch_status', ['CLOSED', 'SUSPENDED', 'CANCELED']);
+                    if ($user && $user->branch_id && !$user->hasGlobalAccessScope()) {
+                        $bq->where('id', $user->branch_id);
+                    }
+                    return $bq->orderBy('name')->get(['id', 'name', 'code', 'gender']);
+                })(),
+                'study_years'    => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
+                'departments'    => Department::where('is_active', true)->get(['id', 'name', 'code']),
+                'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name', 'code', 'is_current']),
+            ];
+        });
 
         return response()->json([
             'success' => true,
@@ -225,19 +259,9 @@ class StudentRegistryReportController extends Controller
                 'graduated'   => $graduatedCount,
                 'archived'    => $archivedCount,
             ],
-            'filters_data' => [
-                'branches'       => (function() use ($user) {
-                    $bq = Branch::where('is_active', true)
-                        ->whereNotIn('branch_status', ['CLOSED', 'SUSPENDED', 'CANCELED']);
-                    if ($user && $user->branch_id && !$user->hasGlobalAccessScope()) {
-                        $bq->where('id', $user->branch_id);
-                    }
-                    return $bq->orderBy('name')->get(['id', 'name', 'code', 'gender']);
-                })(),
-                'study_years'    => StudyYear::orderBy('level_order')->get(['id', 'name', 'level_order']),
-                'departments'    => Department::where('is_active', true)->get(['id', 'name', 'code']),
-                'academic_years' => AcademicYear::orderBy('id', 'desc')->get(['id', 'name', 'code', 'is_current']),
-            ],
+            'filters_data' => $filtersData,
+            // Not cached with the filters: placements can change, and the printed extractor must follow them.
+            'signatories' => \App\Services\AdminSettingsService::getSignatoriesFor('student_registry', $user?->branch_id),
             'current_user' => [
                 'name' => $user?->name ?? 'مسؤول المنظومة',
                 'role' => $user?->role ?? 'مسجل عام',
@@ -689,6 +713,55 @@ class StudentRegistryReportController extends Controller
             'success' => true,
             'report' => $reportPayload,
             'data' => $reportPayload,
+        ]);
+    }
+
+    /**
+     * بيانات السجل العام الرسمي للطباعة: الطلاب المطابقون للفلاتر، مع التوقيعات المعتمدة مركزياً (student_registry).
+     * الطباعة تعرض حداً أقصى ثابتاً، ويُعلَم الرد عند تجاوزه، والتصدير الكامل يبقى في ملف CSV.
+     */
+    public function officialRegistry(Request $request): JsonResponse
+    {
+        [$query] = $this->buildRegistryQuery($request);
+        $total = (clone $query)->count();
+
+        $rows = (clone $query)
+            ->orderBy('id')
+            ->limit(self::OFFICIAL_PRINT_LIMIT)
+            ->get()
+            ->map(fn (Student $student) => [
+                'academic_number' => $student->academic_number,
+                'full_name' => $student->full_name,
+                'national_id' => $student->national_id ?: ($student->administrative_number ?: $student->passport_number),
+                'branch' => $student->branch?->name,
+                'stage' => $student->currentStudyYear?->name,
+                'section' => $student->department?->name,
+                'study_type' => $student->study_type_label,
+                'status' => $student->status_label,
+            ])
+            ->values();
+
+        $user = Auth::user();
+        SystemAuditTrail::log(
+            eventType: 'STUDENT_REGISTRY_PRINTED',
+            modelType: Student::class,
+            description: "طباعة السجل العام الرسمي للطلاب (" . $rows->count() . " من أصل " . $total . " سجل).",
+            branchId: $user?->branch_id,
+            newValues: ['count' => $total, 'printed' => $rows->count()],
+            severity: 'WARNING',
+            request: $request
+        );
+
+        return response()->json([
+            'success' => true,
+            'rows' => $rows,
+            'total' => $total,
+            'limit' => self::OFFICIAL_PRINT_LIMIT,
+            'truncated' => $total > $rows->count(),
+            'signatories' => \App\Services\AdminSettingsService::getSignatoriesFor('student_registry', $user?->branch_id),
+            'institute' => \App\Services\AdminSettingsService::getInstituteProfile(),
+            'printed_by' => $user?->name,
+            'printed_at' => Carbon::now()->format('Y-m-d H:i'),
         ]);
     }
 

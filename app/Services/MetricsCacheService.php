@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 
 class MetricsCacheService
 {
-    const CACHE_TTL_SECONDS = 60; // 1 minute TTL so changes reflect immediately
+    const CACHE_TTL_SECONDS = 300; // 5 minutes TTL for ultra-fast response with immediate invalidation on mutations
     const HQ_SUMMARY_KEY_PREFIX = 'iiis_metrics_hq_summary_';
     const BRANCH_METRICS_KEY_PREFIX = 'iiis_metrics_branch_';
 
@@ -50,22 +50,49 @@ class MetricsCacheService
                 $verificationQuery->whereHas('student', fn($q) => $q->where('branch_id', $branchId));
             }
 
-            $totalStudents        = (clone $studentQuery)->count();
-            $enrolledStudents     = (clone $studentQuery)->where('academic_status', 'ENROLLED_ACTIVE')->count();
-            $pendingStudents      = (clone $studentQuery)->where('academic_status', 'PENDING_HQ')->count();
-            $draftStudents        = (clone $studentQuery)->where('academic_status', 'NEW_DRAFT')->count();
+            // تجميع إحصائيات الطلاب في استعلام واحد عالي الكفاءة
+            $studentCounts = (clone $studentQuery)->toBase()->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN academic_status = 'ENROLLED_ACTIVE' THEN 1 ELSE 0 END) as enrolled,
+                SUM(CASE WHEN academic_status = 'PENDING_HQ' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN academic_status = 'NEW_DRAFT' THEN 1 ELSE 0 END) as draft
+            ")->first();
 
-            $pendingGradeBatches  = (clone $batchQuery)->where('status', 'SUBMITTED_TO_HQ')->count();
-            $approvedGradeBatches = (clone $batchQuery)->where('status', 'HQ_APPROVED')->count();
+            $totalStudents        = (int) ($studentCounts->total ?? 0);
+            $enrolledStudents     = (int) ($studentCounts->enrolled ?? 0);
+            $pendingStudents      = (int) ($studentCounts->pending ?? 0);
+            $draftStudents        = (int) ($studentCounts->draft ?? 0);
+
+            // تجميع دفاتر الدرجات في استعلام واحد
+            $batchCounts = (clone $batchQuery)->toBase()->selectRaw("
+                SUM(CASE WHEN status = 'SUBMITTED_TO_HQ' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'HQ_APPROVED' THEN 1 ELSE 0 END) as approved
+            ")->first();
+
+            $pendingGradeBatches  = (int) ($batchCounts->pending ?? 0);
+            $approvedGradeBatches = (int) ($batchCounts->approved ?? 0);
 
             // Properties & Contracts KPIs
             $totalProperties    = (clone $propertyQuery)->count();
-            $activeContracts    = (clone $contractQuery)->where('status', 'ACTIVE')->count();
-            $expiringContracts  = (clone $contractQuery)->where('status', 'ACTIVE')
-                ->whereBetween('end_date', [Carbon::today(), Carbon::today()->addDays(30)])
-                ->count();
-            $totalPaidInstallments = (float) (clone $installmentQuery)->where('status', 'PAID')->sum('amount');
-            $totalDueInstallments  = (float) (clone $installmentQuery)->where('status', '!=', 'PAID')->sum('amount');
+
+            $today = Carbon::today()->toDateString();
+            $today30 = Carbon::today()->addDays(30)->toDateString();
+
+            $contractCounts = (clone $contractQuery)->toBase()->selectRaw("
+                SUM(CASE WHEN status = 'ACTIVE' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status = 'ACTIVE' AND end_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as expiring
+            ", [$today, $today30])->first();
+
+            $activeContracts    = (int) ($contractCounts->active ?? 0);
+            $expiringContracts  = (int) ($contractCounts->expiring ?? 0);
+
+            $installmentStats = (clone $installmentQuery)->toBase()->selectRaw("
+                SUM(CASE WHEN payment_status = 'PAID' THEN amount ELSE 0 END) as total_paid,
+                SUM(CASE WHEN payment_status != 'PAID' OR payment_status IS NULL THEN amount ELSE 0 END) as total_due
+            ")->first();
+
+            $totalPaidInstallments = (float) ($installmentStats->total_paid ?? 0);
+            $totalDueInstallments  = (float) ($installmentStats->total_due ?? 0);
 
             // Attendance & Document Verification KPIs
             $todayAttendance     = (clone $attendanceQuery)->count();

@@ -14,6 +14,7 @@ use App\Models\Permission;
 use App\Models\SystemAuditTrail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class UserController extends Controller
@@ -130,7 +131,8 @@ class UserController extends Controller
             'password'           => ['required', 'string', 'min:8'],
             'role_id'            => 'required|exists:roles,id',
             'branch_id'          => 'nullable|exists:branches,id',
-            'job_position_id'    => 'nullable|exists:job_positions,id',
+            // Only active, approved positions can be assigned; a deactivated position keeps its history but is not assignable.
+            'job_position_id'    => ['nullable', Rule::exists('job_positions', 'id')->where('is_active', true)],
             'two_factor_enabled' => 'boolean',
             'is_active'          => 'boolean',
         ]);
@@ -209,7 +211,8 @@ class UserController extends Controller
             'national_id'        => 'nullable|string|size:12|unique:users,national_id,' . $user->id,
             'role_id'            => 'required|exists:roles,id',
             'branch_id'          => 'nullable|exists:branches,id',
-            'job_position_id'    => 'nullable|exists:job_positions,id',
+            // Only active, approved positions can be assigned; a deactivated position keeps its history but is not assignable.
+            'job_position_id'    => ['nullable', Rule::exists('job_positions', 'id')->where('is_active', true)],
             'two_factor_enabled' => 'boolean',
             'is_active'          => 'boolean',
             'password'           => ['nullable', 'string', 'min:8'],

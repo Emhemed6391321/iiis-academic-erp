@@ -52,6 +52,42 @@ class StudentDocumentService
     }
 
     /**
+     * المستندات الإلزامية بحسب تصنيف جنسية الطالب (الخادم هو المرجع).
+     * - ليبي / ليبي بدون رقم وطني: شهادة الميلاد، والشهادة الإعدادية، والبطاقة أو إثبات الهوية.
+     * - أخرى: شهادة الميلاد الملونة، وصورة الجواز الملونة، والإقامة السارية.
+     * - الشهادة الصحية مطلوبة لجميع الطلاب وفق الإجراء القائم.
+     *
+     * @return string[] مفاتيح DOCUMENT_TYPES
+     */
+    public function requiredTypesFor(Student $student): array
+    {
+        $common = ['HEALTH_CERT'];
+
+        $byCategory = match ($student->nationality_category) {
+            'OTHER' => ['BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
+            default => ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
+        };
+
+        if ($student->has_disability) {
+            $common[] = 'DISABILITY_MEDICAL_REP';
+        }
+
+        return array_values(array_unique(array_merge($byCategory, $common)));
+    }
+
+    /**
+     * المستندات الإلزامية التي لم تُرفع بعد. قائمة فارغة تعني أن الملف مكتمل.
+     *
+     * @return string[]
+     */
+    public function missingRequiredTypes(Student $student): array
+    {
+        $uploaded = StudentDocument::where('student_id', $student->id)->pluck('document_type')->all();
+
+        return array_values(array_diff($this->requiredTypesFor($student), $uploaded));
+    }
+
+    /**
      * يحفظ المستند في الخزنة ثم يربطه بالطالب.
      * عند وجود مستند من النوع نفسه يُستبدل، ولا يُحذف القديم إلا بعد نجاح حفظ الجديد.
      *
@@ -73,8 +109,7 @@ class StudentDocumentService
             ? $input->getSize()
             : (int) (strlen((string) $input) * 0.75);
 
-        $isRequired = in_array($documentType, ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'HEALTH_CERT'], true)
-            || ($documentType === 'DISABILITY_MEDICAL_REP' && $student->has_disability);
+        $isRequired = in_array($documentType, $this->requiredTypesFor($student), true);
 
         $document = StudentDocument::create([
             'student_id' => $student->id,

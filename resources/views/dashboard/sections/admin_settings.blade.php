@@ -87,6 +87,13 @@
                 <span>مسميات التوقيعات والاعتمادات</span>
             </button>
 
+            <button @click="adminSettings.activeTab = 'admissions'; loadAdmissionRules()"
+                class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
+                :class="adminSettings.activeTab === 'admissions' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
+                <span>🎓</span>
+                <span>قواعد القبول بحسب العمر</span>
+            </button>
+
             <button @click="adminSettings.activeTab = 'audit'"
                 class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
                 :class="adminSettings.activeTab === 'audit' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
@@ -615,6 +622,100 @@
     </div>
 
     <!-- TAB 6: AUDIT TRAIL & LOGS -->
+    <!-- TAB 6: قواعد القبول بحسب العمر (تُحفظ مركزياً، ويطبقها الخادم والواجهة معاً) -->
+    <div x-show="adminSettings.activeTab === 'admissions'" class="space-y-6">
+        <div class="p-6 rounded-[20px] border space-y-6"
+            :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4"
+                :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                <div>
+                    <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-slate-800'">🎓 قواعد القبول بحسب العمر</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">كل قاعدة تطابق صفة القيد والجنس ونطاق المدينة، ويُحسب العمر حتى التاريخ المرجعي. الطالب الذي لا تطابقه قاعدة لا يُقبل.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button @click="addAdmissionRule()"
+                        class="px-4 py-2.5 rounded-[12px] text-xs font-black border transition-all"
+                        :class="darkMode ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-100'">
+                        ➕ إضافة قاعدة
+                    </button>
+                    <button @click="saveAdmissionRules()" :disabled="adminSettings.admissionRules.saving"
+                        class="px-6 py-2.5 rounded-[12px] text-xs font-black bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-900/20 transition-all disabled:opacity-50">
+                        <span x-text="adminSettings.admissionRules.saving ? 'جارٍ الحفظ…' : '💾 حفظ القواعد مركزياً'"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div x-show="adminSettings.admissionRules.loading" class="text-xs font-bold text-slate-400">جارٍ تحميل القواعد…</div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs min-w-[880px]">
+                    <thead>
+                        <tr class="text-right text-slate-400 font-bold">
+                            <th class="p-2">الوصف</th>
+                            <th class="p-2">صفة القيد</th>
+                            <th class="p-2">الجنس</th>
+                            <th class="p-2">نطاق المدينة</th>
+                            <th class="p-2">الحد الأدنى للعمر</th>
+                            <th class="p-2">الحد الأعلى (فارغ = بلا حد)</th>
+                            <th class="p-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(rule, idx) in adminSettings.admissionRules.rules" :key="idx">
+                            <tr class="border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                <td class="p-2"><input type="text" x-model="rule.label" class="w-full p-2 rounded-lg text-xs font-bold border outline-none focus:border-amber-500" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'"></td>
+                                <td class="p-2">
+                                    <select x-model="rule.study_type" class="w-full p-2 rounded-lg text-xs font-bold border outline-none" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
+                                        <option value="REGULAR">نظامي</option>
+                                        <option value="INTISAB">انتساب</option>
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select x-model="rule.gender" class="w-full p-2 rounded-lg text-xs font-bold border outline-none" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
+                                        <option value="">الكل</option>
+                                        <option value="MALE">ذكور</option>
+                                        <option value="FEMALE">إناث</option>
+                                    </select>
+                                </td>
+                                <td class="p-2">
+                                    <select x-model="rule.city_scope" class="w-full p-2 rounded-lg text-xs font-bold border outline-none" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
+                                        <option value="ANY">كل المدن</option>
+                                        <option value="WITH_FEMALE_REGULAR_INSTITUTE">مدن فيها معهد نظامي للبنات</option>
+                                        <option value="WITHOUT_FEMALE_REGULAR_INSTITUTE">مدن بلا معهد نظامي للبنات</option>
+                                    </select>
+                                </td>
+                                <td class="p-2"><input type="number" min="0" max="120" x-model.number="rule.min_age" class="w-24 p-2 rounded-lg text-xs font-bold border outline-none" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'"></td>
+                                <td class="p-2"><input type="number" min="0" max="120" x-model="rule.max_age" class="w-24 p-2 rounded-lg text-xs font-bold border outline-none" :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'"></td>
+                                <td class="p-2">
+                                    <button @click="removeAdmissionRule(idx)" class="px-3 py-1.5 rounded-lg text-[11px] font-black text-rose-600 hover:bg-rose-50">حذف</button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <p x-show="adminSettings.admissionRules.loaded && adminSettings.admissionRules.rules.length === 0" class="text-xs font-bold text-rose-600 mt-3">
+                    لا توجد قواعد محفوظة: لن يُقبل أي طالب حتى تُضاف قاعدة تطابقه.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 mb-1">المدن التي يتوفر فيها معهد نظامي للبنات (واحدة في كل سطر)</label>
+                    <textarea x-model="adminSettings.admissionRules.cities" rows="4"
+                        class="w-full p-2 rounded-lg text-xs font-bold border outline-none focus:border-amber-500"
+                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'"></textarea>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 mb-1">التاريخ المرجعي لحساب العمر (فارغ = بداية العام الدراسي الحالي)</label>
+                    <input type="date" x-model="adminSettings.admissionRules.referenceDate"
+                        class="w-full p-2 rounded-lg text-xs font-bold border outline-none focus:border-amber-500"
+                        :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div x-show="adminSettings.activeTab === 'audit'" class="space-y-6">
         <div class="p-6 rounded-[20px] border space-y-6"
             :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">

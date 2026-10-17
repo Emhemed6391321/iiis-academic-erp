@@ -2774,7 +2774,8 @@
                                 x-text="attendance.warningModal.issuedNotice.signatories?.officer_name"></div>
                         </div>
                         <div class="space-y-12">
-                            <div class="font-bold text-xs">مدير فرع المعهد المتوسط للدراسات الإسلامية</div>
+                            <div class="font-bold text-xs" x-text="attendance.warningModal.issuedNotice.signatories?.director_title || 'مدير فرع المعهد'"></div>
+                            <div class="font-bold text-xs" x-text="attendance.warningModal.issuedNotice.signatories?.director_name"></div>
                             <div class="font-mono text-xs text-slate-400">
                                 ................................................</div>
                         </div>

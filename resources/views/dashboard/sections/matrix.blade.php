@@ -99,13 +99,14 @@
                                     <template x-for="perm in perms" :key="perm.id">
                                         <div class="p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
                                              :class="darkMode ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50/60'">
-                                            <div>
+                                            <!-- The name keeps its width; only the role columns scroll horizontally -->
+                                            <div class="md:w-72 md:shrink-0">
                                                 <div class="font-bold" x-text="perm.display_name || perm.name"></div>
                                                 <div class="text-[10px] text-slate-400 font-mono" x-text="perm.name"></div>
                                             </div>
-                                            <div class="flex items-center gap-3">
+                                            <div class="flex items-center gap-3 md:flex-1 min-w-0 max-w-full overflow-x-auto pb-1">
                                                 <template x-for="role in rolesList" :key="role.id">
-                                                    <label class="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-[8px]"
+                                                    <label class="flex shrink-0 items-center gap-1.5 whitespace-nowrap cursor-pointer px-2 py-1 rounded-[8px]"
                                                            :class="darkMode ? 'hover:bg-slate-800' : 'hover:bg-slate-200/50'">
                                                         <input type="checkbox"
                                                                :checked="role.permissions && role.permissions.some(p => p.id === perm.id)"

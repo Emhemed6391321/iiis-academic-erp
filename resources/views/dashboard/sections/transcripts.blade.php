@@ -158,18 +158,13 @@
 
                         <!-- Official Signatures Footer -->
                         <div class="grid grid-cols-3 gap-6 text-center text-xs pt-6 border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
-                            <div>
-                                <span class="text-slate-400 block mb-8">مسجل شؤون الطلاب والامتحانات</span>
-                                <span class="font-bold">مسجل عام المعهد</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block mb-8">مدير الكنترول والامتحانات</span>
-                                <span class="font-bold">رئيس لجنة الكنترول المركزي</span>
-                            </div>
-                            <div>
-                                <span class="text-slate-400 block mb-8">الاعتماد الرسمي / مدير المعهد</span>
-                                <span class="font-bold">إدارة المعهد التخصصي</span>
-                            </div>
+                            <!-- الصفات والأسماء من إعدادات التوقيعات المركزية (كشف الدرجات) -->
+                            <template x-for="slot in ['prepared_by', 'verified_by', 'approved_by']" :key="slot">
+                                <div>
+                                    <span class="text-slate-400 block mb-8" x-text="getSignatoryInfo('transcript', slot, '', '', transcriptData?.signatories).label"></span>
+                                    <span class="font-bold" x-text="getSignatoryInfo('transcript', slot, '', '', transcriptData?.signatories).name || getSignatoryInfo('transcript', slot, '', '', transcriptData?.signatories).title"></span>
+                                </div>
+                            </template>
                         </div>
 
                     </div>

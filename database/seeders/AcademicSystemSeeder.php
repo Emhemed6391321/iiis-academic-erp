@@ -489,6 +489,9 @@ class AcademicSystemSeeder extends Seeder
             ]
         );
 
+        // Remaining window types are provisioned disabled; they are never opened by seeding.
+        OperationalWindow::provisionMissingForYear($currentYear->id, $createdUsers[0]->id);
+
         // 8. Enrolled Students across Study Years
         $studentsData = [
             // السنة الأولى

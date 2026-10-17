@@ -67,6 +67,7 @@ class MinimumAdmissionAgeTest extends TestCase
         $validBirthDate = '2010-01-01';
 
         $response = $this->actingAs($admin)->postJson('/api/v1/students', [
+            'nationality_category' => 'LIBYAN',
             'national_id' => '120100000088',
             'first_name' => 'عبد الله',
             'father_name' => 'سالم',
@@ -87,6 +88,7 @@ class MinimumAdmissionAgeTest extends TestCase
         $response->assertStatus(201);
         $response->assertJsonPath('success', true);
         $this->assertDatabaseHas('students', [
+            'nationality_category' => 'LIBYAN',
             'national_id' => '120100000088',
             'academic_status' => 'ENROLLED_ACTIVE',
         ]);

@@ -13,6 +13,27 @@ class Student extends Model
 {
     use HasFactory, BelongsToBranch;
 
+    /**
+     * توافق الحالات الداخلية المخزّنة مع حالات القيد المعتمدة. القيم المخزنة لا تتغير.
+     * - حالات سير الطلب (مسودة، بانتظار الاعتماد، مرفوض للتعديل) ليست حالة قيد.
+     * - «معيد» و«سنة استثنائية» و«منقطع» لا تُشتق من الحالات الحالية، وتحتاج سجلاً أكاديمياً يُضاف لاحقاً.
+     */
+    public const ENROLLMENT_STATUS_LABELS = [
+        'NEW_DRAFT' => 'طلب قيد الإعداد (غير مقيد)',
+        'PENDING_HQ' => 'طلب بانتظار اعتماد الإدارة العامة (غير مقيد)',
+        'REJECTED_REVISION' => 'طلب مرفوض للتعديل (غير مقيد)',
+        'ENROLLED_ACTIVE' => 'مستجد',
+        'SUSPENDED' => 'موقوف',
+        'GRADUATED' => 'خريج',
+        'TRANSFERRED' => 'منقول',
+        'EXPELLED' => 'مفصول',
+    ];
+
+    public function getEnrollmentStatusLabelAttribute(): string
+    {
+        return self::ENROLLMENT_STATUS_LABELS[$this->academic_status] ?? (string) $this->academic_status;
+    }
+
     protected $fillable = [
         'academic_number',
         'national_id',
@@ -28,6 +49,8 @@ class Student extends Model
         'birth_date',
         'birth_place',
         'nationality',
+        'nationality_category',
+        'administrative_number',
         'phone',
         'guardian_phone',
         'study_type',

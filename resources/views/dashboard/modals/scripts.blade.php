@@ -560,6 +560,14 @@
                     loading: false,
                     requests: [],
                     activeTab: 'status',
+                    // Official approval path for admission exceptions (AGE_EXCEPTION, GRADE_LEVEL_ENROLLMENT)
+                    officialRequests: {
+                        loading: false,
+                        submitting: false,
+                        requests: [],
+                        decisionNotes: {},
+                        form: { request_type: 'AGE_EXCEPTION', subject_name: '', national_id: '', administrative_number: '', passport_number: '', study_year_id: '', justification: '' }
+                    },
                     counters: {
                         status_pending_count: 0,
                         system_pending_count: 0,
@@ -932,6 +940,7 @@
                     users: [],
                     branches: [],
                     auditLogs: [],
+                    admissionRules: { loading: false, saving: false, loaded: false, rules: [], cities: '', referenceDate: '', defaults: [] },
                     backupsList: [],
                     backupsSummary: {},
                     isLoadingBackups: false,
@@ -1013,7 +1022,16 @@
                     title: 'سجل البيانات الرسمية للطلاب المقيدين',
                     academicYear: '2026/2027',
                     branchName: 'كافة الفروع التعليمية',
-                    extractedBy: ''
+                    extractedBy: '',
+                    loading: false,
+                    rows: [],
+                    total: 0,
+                    limit: 0,
+                    truncated: false,
+                    signatories: {},
+                    institute: {},
+                    printedBy: '',
+                    printedAt: ''
                 },
                 enrollmentCertModal: {
                     open: false,
@@ -1711,7 +1729,11 @@
                         grandfather_name: '',
                         family_name: '',
                         mother_name: '',
+                        nationality_category: 'LIBYAN',
                         national_id: '',
+                        administrative_number: '',
+                        admission_request_id: '',
+                        passport_number: '',
                         ministry_student_id: '',
                         gender: 'MALE',
                         birth_date: '2006-01-01',
@@ -1747,16 +1769,20 @@
 
                     const f = this.createStudentModal.form;
 
-                    // 1. Validation for Personal Info tab
-                    if (!f.first_name || !f.father_name || !f.grandfather_name || !f.family_name || !f.mother_name || !f.national_id) {
+                    // 1. Validation for Personal Info tab (the identifier required depends on the nationality category)
+                    const category = f.nationality_category || 'LIBYAN';
+                    const identityMissing = (category === 'LIBYAN' && !f.national_id)
+                        || (category === 'LIBYAN_NO_NATIONAL_ID' && !f.administrative_number)
+                        || (category === 'OTHER' && !f.passport_number);
+                    if (!f.first_name || !f.father_name || !f.grandfather_name || !f.family_name || !f.mother_name || identityMissing) {
                         this.createStudentModal.activeTab = 'personal';
-                        this.createStudentModal.errorMessage = 'يرجى استكمال الحقول الإلزامية في البيانات الشخصية (الاسم الرباعي، اسم الأم، والرقم الوطني).';
+                        this.createStudentModal.errorMessage = 'يرجى استكمال الحقول الإلزامية في البيانات الشخصية (الاسم الرباعي، اسم الأم، والهوية المطلوبة وفق تصنيف الجنسية).';
                         this.createStudentModal.submitting = false;
                         this.showToast('يرجى استكمال البيانات الشخصية الإلزامية أولاً');
                         return;
                     }
 
-                    if (f.national_id && String(f.national_id).trim().length !== 12) {
+                    if (category === 'LIBYAN' && String(f.national_id).trim().length !== 12) {
                         this.createStudentModal.activeTab = 'personal';
                         this.createStudentModal.errorMessage = 'الرقم الوطني يجب أن يتكون من 12 رقماً تماماً.';
                         this.createStudentModal.submitting = false;
@@ -1987,6 +2013,7 @@
                                 this.studentRegistry.meta.departments = data.filters_data.departments || [];
                                 this.studentRegistry.meta.academic_years = data.filters_data.academic_years || [];
                             }
+                            this.studentRegistry.signatories = data.signatories || {};
                             if (data.current_user && data.current_user.name) {
                                 this.officialRegistryPrintModal.extractedBy = data.current_user.name + ' (' + (data.current_user.role || 'مسجل عام') + ')';
                             }
@@ -2076,7 +2103,13 @@
                     };
                 },
 
-                getSignatoryInfo(docCode, slotKey, defaultLabel, defaultName) {
+                // resolved: the signatories the server already resolved for this document (slot => {slot_label, title, name}).
+                // Printed forms pass it, so names and titles come from the central settings for every user, not only admins.
+                getSignatoryInfo(docCode, slotKey, defaultLabel, defaultName, resolved = null) {
+                    if (resolved && resolved[slotKey]) {
+                        const r = resolved[slotKey];
+                        return { label: r.slot_label || defaultLabel || '', title: r.title || defaultLabel || '', name: r.name || '' };
+                    }
                     if (!this.adminSettings || !this.adminSettings.signatories || !this.adminSettings.signatories.length) {
                         return { label: defaultLabel || '', title: defaultLabel || '', name: defaultName || '' };
                     }
@@ -2111,19 +2144,60 @@
                     };
                 },
 
-                openOfficialRegistryPrint() {
+                async openOfficialRegistryPrint() {
                     const activeBranch = this.studentRegistry.meta.branches.find(b => String(b.id) === String(this.studentRegistry.filters.branch_id));
                     this.officialRegistryPrintModal.branchName = activeBranch ? activeBranch.name : 'كافة الفروع التعليمية';
-                    
+
                     const activeYear = this.studentRegistry.meta.academic_years.find(y => String(y.id) === String(this.studentRegistry.filters.academic_year_id));
                     if (activeYear) {
                         this.officialRegistryPrintModal.academicYear = activeYear.name;
                     }
-                    
+
                     if (!this.officialRegistryPrintModal.extractedBy) {
-                        this.officialRegistryPrintModal.extractedBy = 'مسؤول شؤون الطلاب والامتحانات';
+                        this.officialRegistryPrintModal.extractedBy = this.getSignatoryInfo('student_registry', 'prepared_by', 'مسؤول شؤون الطلاب والامتحانات', '', this.studentRegistry.signatories).title;
                     }
+
+                    // The printed rows and signatures come from the server for the filters on screen.
+                    const f = this.studentRegistry.filters;
+                    const query = new URLSearchParams({
+                        search: f.search || '',
+                        branch_id: f.branch_id || 'all',
+                        study_year_id: f.study_year_id || 'all',
+                        department_id: f.department_id || 'all',
+                        study_type: f.study_type || 'all',
+                        academic_status: f.academic_status || 'all',
+                        academic_year_id: f.academic_year_id || 'all',
+                        gender: f.gender || 'all'
+                    });
+
+                    this.officialRegistryPrintModal.rows = [];
+                    this.officialRegistryPrintModal.loading = true;
                     this.officialRegistryPrintModal.open = true;
+                    try {
+                        const res = await fetch(`/api/v1/students/registry/official?${query.toString()}`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            Object.assign(this.officialRegistryPrintModal, {
+                                rows: data.rows || [],
+                                total: data.total || 0,
+                                limit: data.limit || 0,
+                                truncated: !!data.truncated,
+                                signatories: data.signatories || {},
+                                institute: data.institute || {},
+                                printedBy: data.printed_by || '',
+                                printedAt: data.printed_at || ''
+                            });
+                        } else {
+                            this.showToast(data.message || 'تعذر تجهيز السجل الرسمي للطباعة');
+                        }
+                    } catch (e) {
+                        console.error('Error loading official registry:', e);
+                        this.showToast('تعذر الاتصال بالخادم لتجهيز السجل الرسمي');
+                    } finally {
+                        this.officialRegistryPrintModal.loading = false;
+                    }
                 },
 
                 printOfficialRegistryDoc() {
@@ -2910,8 +2984,10 @@
                     iframe.style.position = 'fixed';
                     iframe.style.top = '-9999px';
                     iframe.style.left = '-9999px';
-                    iframe.style.width = '0';
-                    iframe.style.height = '0';
+                    // A zero-size frame is laid out at 0 width, which can clip or blank the printed page.
+                    // Keep it off-screen but at A4 size so the document lays out as it prints.
+                    iframe.style.width = '210mm';
+                    iframe.style.height = '297mm';
                     iframe.style.border = 'none';
                     iframe.style.opacity = '0';
                     iframe.style.pointerEvents = 'none';
@@ -5947,7 +6023,102 @@ async loadBranchOperations() {
                     this.studentWorkflow.activeTab = tabName;
                     window.location.hash = tabName;
                     localStorage.setItem('iiis_active_workflow_tab', tabName);
+                    if (tabName === 'exceptions') {
+                        this.loadOfficialRequests();
+                        return;
+                    }
                     this.loadWorkflowData();
+                },
+
+                // ==========================================
+                // Official approval requests (طلبات الاستثناء): الفرع يقدّم، والإدارة العامة تقرر
+                // ==========================================
+                officialRequestTypeLabel(type) {
+                    return { AGE_EXCEPTION: 'استثناء شرط العمر', GRADE_LEVEL_ENROLLMENT: 'التسجيل في صف مقيّد' }[type] || type;
+                },
+
+                officialRequestStatusLabel(status) {
+                    return { PENDING_HQ: 'بانتظار الإدارة العامة', APPROVED: 'معتمد', REJECTED: 'مرفوض' }[status] || status;
+                },
+
+                async loadOfficialRequests() {
+                    const or = this.studentWorkflow.officialRequests;
+                    or.loading = true;
+                    try {
+                        const res = await fetch('/api/v1/admin-requests', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            or.requests = data.requests || [];
+                        } else {
+                            this.showToast(data.message || 'تعذر تحميل طلبات الاعتماد الرسمية');
+                        }
+                    } catch (e) {
+                        console.error('Error loading official requests:', e);
+                        this.showToast('تعذر الاتصال بالخادم لتحميل طلبات الاعتماد');
+                    } finally {
+                        or.loading = false;
+                    }
+                },
+
+                async submitOfficialRequest() {
+                    const or = this.studentWorkflow.officialRequests;
+                    or.submitting = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const body = { ...or.form };
+                        body.study_year_id = body.request_type === 'GRADE_LEVEL_ENROLLMENT' && body.study_year_id ? Number(body.study_year_id) : null;
+                        const res = await fetch('/api/v1/admin-requests', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify(body)
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم تقديم الطلب');
+                            or.form = { request_type: or.form.request_type, subject_name: '', national_id: '', administrative_number: '', passport_number: '', study_year_id: '', justification: '' };
+                            await this.loadOfficialRequests();
+                        } else {
+                            const errs = data.errors ? Object.values(data.errors).flat().join(' | ') : null;
+                            this.showToast(errs || data.message || 'تعذر تقديم الطلب');
+                        }
+                    } catch (e) {
+                        console.error('Error submitting official request:', e);
+                        this.showToast('تعذر تقديم الطلب');
+                    } finally {
+                        or.submitting = false;
+                    }
+                },
+
+                async decideOfficialRequest(id, outcome) {
+                    const or = this.studentWorkflow.officialRequests;
+                    const notes = (or.decisionNotes[id] || '').trim();
+                    if (outcome === 'REJECTED' && !notes) {
+                        this.showToast('اذكر سبب الرفض قبل إصدار القرار');
+                        return;
+                    }
+                    if (!window.confirm('إصدار القرار نهائي ولا يُعدَّل. هل تتابع؟')) {
+                        return;
+                    }
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/admin-requests/${id}/decide`, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify({ outcome, notes: notes || null })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم إصدار القرار');
+                            delete or.decisionNotes[id];
+                            await this.loadOfficialRequests();
+                        } else {
+                            const errs = data.errors ? Object.values(data.errors).flat().join(' | ') : null;
+                            this.showToast(errs || data.message || 'تعذر إصدار القرار');
+                        }
+                    } catch (e) {
+                        console.error('Error deciding official request:', e);
+                        this.showToast('تعذر إصدار القرار');
+                    }
                 },
 
                 openWorkflowDecisionModal(req, type) {
@@ -7911,6 +8082,81 @@ async loadBranchOperations() {
                 // ============================================================
                 // 16. CENTRAL ADMINISTRATIVE SETTINGS METHODS
                 // ============================================================
+                // ==========================================
+                // Admission age rules (قواعد القبول بحسب العمر): مصدرها الإعدادات المركزية
+                // ==========================================
+                async loadAdmissionRules() {
+                    const ar = this.adminSettings.admissionRules;
+                    ar.loading = true;
+                    try {
+                        const res = await fetch('/api/v1/admin/settings/admission-rules', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            ar.rules = (data.rules || []).map(r => ({ ...r, gender: r.gender || '', max_age: r.max_age ?? '' }));
+                            ar.cities = (data.cities_with_female_regular_institute || []).join('\n');
+                            ar.referenceDate = data.reference_date || '';
+                            ar.defaults = data.defaults || [];
+                            ar.loaded = true;
+                        } else {
+                            this.showToast(data.message || 'تعذر تحميل قواعد القبول');
+                        }
+                    } catch (e) {
+                        console.error('Error loading admission rules:', e);
+                        this.showToast('تعذر الاتصال بالخادم لتحميل قواعد القبول');
+                    } finally {
+                        ar.loading = false;
+                    }
+                },
+
+                addAdmissionRule() {
+                    this.adminSettings.admissionRules.rules.push({ label: '', study_type: 'REGULAR', gender: '', city_scope: 'ANY', min_age: 15, max_age: '' });
+                },
+
+                removeAdmissionRule(index) {
+                    this.adminSettings.admissionRules.rules.splice(index, 1);
+                },
+
+                async saveAdmissionRules() {
+                    const ar = this.adminSettings.admissionRules;
+                    ar.saving = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/admin/settings/admission-rules', {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrf
+                            },
+                            body: JSON.stringify({
+                                rules: ar.rules.map(r => ({
+                                    label: r.label,
+                                    study_type: r.study_type,
+                                    gender: r.gender || null,
+                                    city_scope: r.city_scope,
+                                    min_age: r.min_age,
+                                    max_age: r.max_age === '' ? null : r.max_age
+                                })),
+                                cities_with_female_regular_institute: ar.cities.split(/\n|,/).map(c => c.trim()).filter(Boolean),
+                                reference_date: ar.referenceDate || ''
+                            })
+                        });
+                        const json = await res.json();
+                        if (res.ok && json.success) {
+                            this.showToast(json.message || 'تم حفظ قواعد القبول');
+                            await this.loadAdmissionRules();
+                        } else {
+                            const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
+                            this.showToast(errs || json.message || 'تعذر حفظ قواعد القبول');
+                        }
+                    } catch (e) {
+                        console.error('Error saving admission rules:', e);
+                        this.showToast('تعذر حفظ قواعد القبول');
+                    } finally {
+                        ar.saving = false;
+                    }
+                },
+
                 async loadAdminSettingsMaster() {
                     this.adminSettings.isLoading = true;
                     try {

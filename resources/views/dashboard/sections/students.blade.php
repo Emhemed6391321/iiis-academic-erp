@@ -302,54 +302,22 @@
                         <table class="w-full text-right text-xs">
                             <thead :class="darkMode ? 'bg-slate-800/90 text-slate-300' : 'bg-[#f6f7fb] text-slate-700'">
                                 <tr>
-                                    <template x-if="studentRegistry.columns.seq">
-                                        <th class="p-3 font-black text-center w-12">#</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.academic_number">
-                                        <th class="p-3 font-bold cursor-pointer hover:text-[#2b78a5]" @click="studentRegistry.filters.sort_by = 'academic_number'; loadRegistry()">رقم القيد ⬍</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.full_name">
-                                        <th class="p-3 font-bold cursor-pointer hover:text-[#2b78a5]" @click="studentRegistry.filters.sort_by = 'first_name'; loadRegistry()">اسم الطالب الرباعي ⬍</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.national_id">
-                                        <th class="p-3 font-bold">الرقم الوطني</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.gender">
-                                        <th class="p-3 font-bold">الجنس</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.birth_date">
-                                        <th class="p-3 font-bold">الميلاد (السن)</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.birth_place">
-                                        <th class="p-3 font-bold">مكان الميلاد</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.nationality">
-                                        <th class="p-3 font-bold">الجنسية</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.branch">
-                                        <th class="p-3 font-bold">الفرع التعليمي</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.stage">
-                                        <th class="p-3 font-bold">المرحلة الدراسية</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.section">
-                                        <th class="p-3 font-bold">الشعبة / القسم</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.study_type">
-                                        <th class="p-3 font-bold">صفة القيد</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.academic_status">
-                                        <th class="p-3 font-bold">حالة القيد والاعتماد</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.academic_year">
-                                        <th class="p-3 font-bold">العام الدراسي</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.phone">
-                                        <th class="p-3 font-bold">الهاتف</th>
-                                    </template>
-                                    <template x-if="studentRegistry.columns.guardian_phone">
-                                        <th class="p-3 font-bold">ولي الأمر</th>
-                                    </template>
+                                    <th x-show="studentRegistry.columns.seq" class="p-3 font-black text-center w-12">#</th>
+                                    <th x-show="studentRegistry.columns.academic_number" class="p-3 font-bold cursor-pointer hover:text-[#2b78a5]" @click="studentRegistry.filters.sort_by = 'academic_number'; loadRegistry()">رقم القيد ⬍</th>
+                                    <th x-show="studentRegistry.columns.full_name" class="p-3 font-bold cursor-pointer hover:text-[#2b78a5]" @click="studentRegistry.filters.sort_by = 'first_name'; loadRegistry()">اسم الطالب الرباعي ⬍</th>
+                                    <th x-show="studentRegistry.columns.national_id" class="p-3 font-bold">الرقم الوطني</th>
+                                    <th x-show="studentRegistry.columns.gender" class="p-3 font-bold">الجنس</th>
+                                    <th x-show="studentRegistry.columns.birth_date" class="p-3 font-bold">الميلاد (السن)</th>
+                                    <th x-show="studentRegistry.columns.birth_place" class="p-3 font-bold">مكان الميلاد</th>
+                                    <th x-show="studentRegistry.columns.nationality" class="p-3 font-bold">الجنسية</th>
+                                    <th x-show="studentRegistry.columns.branch" class="p-3 font-bold">الفرع التعليمي</th>
+                                    <th x-show="studentRegistry.columns.stage" class="p-3 font-bold">المرحلة الدراسية</th>
+                                    <th x-show="studentRegistry.columns.section" class="p-3 font-bold">الشعبة / القسم</th>
+                                    <th x-show="studentRegistry.columns.study_type" class="p-3 font-bold">صفة القيد</th>
+                                    <th x-show="studentRegistry.columns.academic_status" class="p-3 font-bold">حالة القيد والاعتماد</th>
+                                    <th x-show="studentRegistry.columns.academic_year" class="p-3 font-bold">العام الدراسي</th>
+                                    <th x-show="studentRegistry.columns.phone" class="p-3 font-bold">الهاتف</th>
+                                    <th x-show="studentRegistry.columns.guardian_phone" class="p-3 font-bold">ولي الأمر</th>
                                     <th class="p-3 font-bold text-center sticky left-0 z-10" :class="darkMode ? 'bg-slate-800' : 'bg-[#f6f7fb]'">الإجراءات والخدمات المستندية</th>
                                 </tr>
                             </thead>
@@ -369,114 +337,82 @@
                                 <template x-for="(st, idx) in studentsList" :key="st.id">
                                     <tr class="hover:bg-blue-50/40 dark:hover:bg-slate-800/50 transition-colors">
                                         <!-- التسلسل -->
-                                        <template x-if="studentRegistry.columns.seq">
-                                            <td class="p-3 font-mono text-center text-slate-400" x-text="((studentRegistry.pagination.current_page - 1) * studentRegistry.pagination.per_page) + idx + 1"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.seq" class="p-3 font-mono text-center text-slate-400" x-text="((studentRegistry.pagination.current_page - 1) * studentRegistry.pagination.per_page) + idx + 1"></td>
 
                                         <!-- رقم القيد -->
-                                        <template x-if="studentRegistry.columns.academic_number">
-                                            <td class="p-3 font-mono font-bold text-[#2b78a5] dark:text-blue-400 whitespace-nowrap" x-text="st.academic_number || ('قيد الإصدار ' + st.id)"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.academic_number" class="p-3 font-mono font-bold text-[#2b78a5] dark:text-blue-400 whitespace-nowrap" x-text="st.academic_number || ('قيد الإصدار ' + st.id)"></td>
 
                                         <!-- اسم الطالب -->
-                                        <template x-if="studentRegistry.columns.full_name">
-                                            <td class="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                                                <div class="flex items-center gap-2">
-                                                    <span x-text="st.full_name"></span>
-                                                    <span x-show="st.is_special_needs || st.has_disability" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">رعاية خاصة</span>
-                                                </div>
-                                            </td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.full_name" class="p-3 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                                            <div class="flex items-center gap-2">
+                                                <span x-text="st.full_name"></span>
+                                                <span x-show="st.is_special_needs || st.has_disability" class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">رعاية خاصة</span>
+                                            </div>
+                                        </td>
 
                                         <!-- الرقم الوطني -->
-                                        <template x-if="studentRegistry.columns.national_id">
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.national_id"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.national_id" class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.national_id"></td>
 
                                         <!-- الجنس -->
-                                        <template x-if="studentRegistry.columns.gender">
-                                            <td class="p-3">
-                                                <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold"
-                                                      :class="st.gender === 'MALE' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'"
-                                                      x-text="st.gender === 'MALE' ? 'ذكر' : 'أنثى'"></span>
-                                            </td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.gender" class="p-3">
+                                            <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold"
+                                                  :class="st.gender === 'MALE' ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400'"
+                                                  x-text="st.gender === 'MALE' ? 'ذكر' : 'أنثى'"></span>
+                                        </td>
 
                                         <!-- الميلاد (السن) -->
-                                        <template x-if="studentRegistry.columns.birth_date">
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap" x-text="(st.birth_date_formatted || st.birth_date || '—') + ' (السن: ' + (st.age !== null && st.age !== undefined ? st.age + ' سنة' : '—') + ')'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.birth_date" class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap" x-text="(st.birth_date_formatted || st.birth_date || '—') + ' (السن: ' + (st.age !== null && st.age !== undefined ? st.age + ' سنة' : '—') + ')'"></td>
 
                                         <!-- مكان الميلاد -->
-                                        <template x-if="studentRegistry.columns.birth_place">
-                                            <td class="p-3 text-slate-600 dark:text-slate-300" x-text="st.birth_place || '—'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.birth_place" class="p-3 text-slate-600 dark:text-slate-300" x-text="st.birth_place || '—'"></td>
 
                                         <!-- الجنسية -->
-                                        <template x-if="studentRegistry.columns.nationality">
-                                            <td class="p-3 text-slate-600 dark:text-slate-300" x-text="st.nationality || 'ليبي'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.nationality" class="p-3 text-slate-600 dark:text-slate-300" x-text="st.nationality || 'ليبي'"></td>
 
                                         <!-- الفرع -->
-                                        <template x-if="studentRegistry.columns.branch">
-                                            <td class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.branch ? st.branch.name : 'الفرع الرئيسي'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.branch" class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.branch ? st.branch.name : 'الفرع الرئيسي'"></td>
 
                                         <!-- المرحلة -->
-                                        <template x-if="studentRegistry.columns.stage">
-                                            <td class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.current_study_year ? st.current_study_year.name : 'السنة الأولى'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.stage" class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.current_study_year ? st.current_study_year.name : 'السنة الأولى'"></td>
 
                                         <!-- الشعبة -->
-                                        <template x-if="studentRegistry.columns.section">
-                                            <td class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.department ? st.department.name : 'شعبة الدراسات الإسلامية'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.section" class="p-3 text-slate-700 dark:text-slate-300 whitespace-nowrap" x-text="st.department ? st.department.name : 'شعبة الدراسات الإسلامية'"></td>
 
                                         <!-- صفة القيد -->
-                                        <template x-if="studentRegistry.columns.study_type">
-                                            <td class="p-3">
-                                                <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold border"
-                                                      :class="st.study_type === 'INTISAB' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'"
-                                                      x-text="st.study_type === 'INTISAB' ? 'انتساب' : 'نظامي'"></span>
-                                            </td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.study_type" class="p-3">
+                                            <span class="px-2 py-0.5 rounded-[6px] text-[10px] font-bold border"
+                                                  :class="st.study_type === 'INTISAB' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20' : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20'"
+                                                  x-text="st.study_type === 'INTISAB' ? 'انتساب' : 'نظامي'"></span>
+                                        </td>
 
                                         <!-- حالة القيد والأرشفة -->
-                                        <template x-if="studentRegistry.columns.academic_status">
-                                            <td class="p-3 whitespace-nowrap">
-                                                <div class="flex items-center gap-1">
-                                                    <span class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold border inline-block"
-                                                          :class="{
-                                                              'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': ['ENROLLED_ACTIVE','ACTIVE'].includes(st.academic_status),
-                                                              'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20': st.academic_status === 'PENDING_HQ',
-                                                              'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20': st.academic_status === 'NEW_DRAFT',
-                                                              'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20': ['EXPELLED','REJECTED_REVISION'].includes(st.academic_status),
-                                                              'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/20': ['SUSPENDED','TRANSFERRED'].includes(st.academic_status),
-                                                              'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20': st.academic_status === 'GRADUATED'
-                                                          }"
-                                                          x-text="st.status_label || st.academic_status">
-                                                    </span>
-                                                    <span x-show="st.is_archived" class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">
-                                                        📦 مؤرشف
-                                                    </span>
-                                                </div>
-                                            </td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.academic_status" class="p-3 whitespace-nowrap">
+                                            <div class="flex items-center gap-1">
+                                                <span class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold border inline-block"
+                                                      :class="{
+                                                          'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': ['ENROLLED_ACTIVE','ACTIVE'].includes(st.academic_status),
+                                                          'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20': st.academic_status === 'PENDING_HQ',
+                                                          'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20': st.academic_status === 'NEW_DRAFT',
+                                                          'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/20': ['EXPELLED','REJECTED_REVISION'].includes(st.academic_status),
+                                                          'bg-gray-500/15 text-gray-600 dark:text-gray-400 border-gray-500/20': ['SUSPENDED','TRANSFERRED'].includes(st.academic_status),
+                                                          'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20': st.academic_status === 'GRADUATED'
+                                                      }"
+                                                      x-text="st.status_label || st.academic_status">
+                                                </span>
+                                                <span x-show="st.is_archived" class="px-2 py-0.5 rounded-[8px] text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25">
+                                                    📦 مؤرشف
+                                                </span>
+                                            </div>
+                                        </td>
 
                                         <!-- العام الدراسي -->
-                                        <template x-if="studentRegistry.columns.academic_year">
-                                            <td class="p-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" x-text="st.enrolled_academic_year ? st.enrolled_academic_year.name : '—'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.academic_year" class="p-3 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap" x-text="st.enrolled_academic_year ? st.enrolled_academic_year.name : '—'"></td>
 
                                         <!-- الهاتف -->
-                                        <template x-if="studentRegistry.columns.phone">
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.phone || '—'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.phone" class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.phone || '—'"></td>
 
                                         <!-- ولي الأمر -->
-                                        <template x-if="studentRegistry.columns.guardian_phone">
-                                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.guardian_phone || '—'"></td>
-                                        </template>
+                                        <td x-show="studentRegistry.columns.guardian_phone" class="p-3 font-mono text-slate-600 dark:text-slate-300" x-text="st.guardian_phone || '—'"></td>
 
                                         <!-- الإجراءات والخدمات المستندية الرسمية -->
                                         <td class="p-3 text-center sticky left-0 z-10 whitespace-nowrap" :class="darkMode ? 'bg-slate-900' : 'bg-white'">
@@ -759,9 +695,38 @@
                         
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                             <div>
+                                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">تصنيف الجنسية <span class="text-rose-500">*</span></label>
+                                <select x-model="createStudentModal.form.nationality_category"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                                    <option value="LIBYAN">ليبي</option>
+                                    <option value="LIBYAN_NO_NATIONAL_ID">ليبي بدون رقم وطني</option>
+                                    <option value="OTHER">أخرى (باقي الجنسيات)</option>
+                                </select>
+                            </div>
+
+                            <!-- الحقل المطلوب يتبع تصنيف الجنسية؛ والتحقق النهائي على الخادم -->
+                            <div x-show="createStudentModal.form.nationality_category === 'LIBYAN'">
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الوطني (12 خانة) <span class="text-rose-500">*</span></label>
-                                <input type="text" x-model="createStudentModal.form.national_id" maxlength="12" minlength="12" required placeholder="119950000000"
+                                <input type="text" x-model="createStudentModal.form.national_id" maxlength="12" inputmode="numeric" placeholder="119950000000"
                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                            </div>
+                            <div x-show="createStudentModal.form.nationality_category === 'LIBYAN_NO_NATIONAL_ID'">
+                                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الإداري <span class="text-rose-500">*</span></label>
+                                <input type="text" x-model="createStudentModal.form.administrative_number" maxlength="50"
+                                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                            </div>
+                            <div x-show="createStudentModal.form.nationality_category === 'OTHER'">
+                                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">رقم جواز السفر <span class="text-rose-500">*</span></label>
+                                <input type="text" x-model="createStudentModal.form.passport_number" maxlength="50"
+                                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                            </div>
+
+                            <!-- طلب استثناء معتمد من الإدارة العامة (شرط العمر أو صف مقيّد): يُدخل رقمه فقط بعد صدور القرار بالاعتماد -->
+                            <div>
+                                <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">رقم طلب الاعتماد المعتمد (إن وُجد)</label>
+                                <input type="number" min="1" x-model="createStudentModal.form.admission_request_id" placeholder="يُكتب بعد اعتماد الطلب"
+                                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                                <p class="text-[10px] text-slate-400 mt-1">يظهر رقم الطلب في سجل الطلبات والقرارات بعد اعتماده من الإدارة العامة.</p>
                             </div>
 
                             <!-- حقل رقم قيد وزارة التعليم المستقل -->
@@ -1349,7 +1314,7 @@
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الوطني (12 خانة) <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="editStudentModal.form.national_id" required maxlength="12" minlength="12"
+                            <input type="text" x-model="editStudentModal.form.national_id" maxlength="12"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-amber-500 outline-none">
                         </div>
                         <div>
@@ -1917,6 +1882,77 @@
                 </div>
             </div>
 
+            <div x-show="officialRegistryPrintModal.loading" class="text-center py-8 text-slate-400 font-bold no-print">جارٍ تجهيز السجل الرسمي…</div>
+
+            <!-- وثيقة السجل الرسمي المطبوعة: الصفوف والتوقيعات من الخادم، والنص يُعرض بـ x-text فقط -->
+            <div id="printableOfficialRegistry" x-show="!officialRegistryPrintModal.loading" class="bg-white text-slate-900 p-4 rounded-xl border border-slate-200 space-y-4" dir="rtl">
+                <div class="flex items-start justify-between gap-4 border-b-2 border-slate-900 pb-3">
+                    <div>
+                        <div class="font-black text-sm" x-text="officialRegistryPrintModal.institute?.institute_name || 'المعهد التخصصي للعلوم الشرعية'"></div>
+                        <div class="text-[11px] font-bold text-slate-500" x-text="officialRegistryPrintModal.institute?.supervising_body || ''"></div>
+                    </div>
+                    <div class="text-left text-[11px] font-bold space-y-0.5">
+                        <div><strong>الفرع:</strong> <span x-text="officialRegistryPrintModal.branchName"></span></div>
+                        <div><strong>العام الدراسي:</strong> <span x-text="officialRegistryPrintModal.academicYear"></span></div>
+                        <div><strong>تاريخ الطباعة:</strong> <span x-text="officialRegistryPrintModal.printedAt"></span></div>
+                    </div>
+                </div>
+
+                <h2 class="text-center font-black text-base underline underline-offset-8" x-text="officialRegistryPrintModal.title"></h2>
+
+                <p x-show="officialRegistryPrintModal.truncated" class="text-[11px] font-bold text-rose-700">
+                    يعرض هذا الكشف أول <span x-text="officialRegistryPrintModal.limit"></span> طالب من أصل <span x-text="officialRegistryPrintModal.total"></span>. للسجل الكامل استخدم تصدير CSV.
+                </p>
+                <p x-show="!officialRegistryPrintModal.truncated" class="text-[11px] font-bold text-slate-500">
+                    عدد الطلاب في الكشف: <span x-text="officialRegistryPrintModal.total"></span>
+                </p>
+
+                <table class="w-full text-[10px] border-collapse">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="border border-slate-300 p-1.5">#</th>
+                            <th class="border border-slate-300 p-1.5">رقم القيد</th>
+                            <th class="border border-slate-300 p-1.5">اسم الطالب الرباعي</th>
+                            <th class="border border-slate-300 p-1.5">الهوية</th>
+                            <th class="border border-slate-300 p-1.5">الفرع</th>
+                            <th class="border border-slate-300 p-1.5">المرحلة</th>
+                            <th class="border border-slate-300 p-1.5">الشعبة</th>
+                            <th class="border border-slate-300 p-1.5">نوع القيد</th>
+                            <th class="border border-slate-300 p-1.5">الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(row, idx) in officialRegistryPrintModal.rows" :key="idx">
+                            <tr>
+                                <td class="border border-slate-300 p-1.5 text-center" x-text="idx + 1"></td>
+                                <td class="border border-slate-300 p-1.5 font-mono" x-text="row.academic_number || '—'"></td>
+                                <td class="border border-slate-300 p-1.5 font-bold" x-text="row.full_name"></td>
+                                <td class="border border-slate-300 p-1.5 font-mono" x-text="row.national_id || '—'"></td>
+                                <td class="border border-slate-300 p-1.5" x-text="row.branch || '—'"></td>
+                                <td class="border border-slate-300 p-1.5" x-text="row.stage || '—'"></td>
+                                <td class="border border-slate-300 p-1.5" x-text="row.section || '—'"></td>
+                                <td class="border border-slate-300 p-1.5" x-text="row.study_type || '—'"></td>
+                                <td class="border border-slate-300 p-1.5" x-text="row.status || '—'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+
+                <!-- التوقيعات والاعتماد: الصفة والاسم من إعدادات التوقيعات المركزية -->
+                <div class="grid grid-cols-3 gap-6 text-center text-xs font-bold pt-4 border-t-2 border-slate-900">
+                    <template x-for="slot in ['prepared_by', 'verified_by', 'approved_by']" :key="slot">
+                        <div class="space-y-6">
+                            <div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).name || getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).title"></div>
+                            </div>
+                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
+                        </div>
+                    </template>
+                </div>
+                <p class="text-[9px] text-slate-400 text-left" x-text="'طُبع بواسطة: ' + (officialRegistryPrintModal.printedBy || '—')"></p>
+            </div>
+
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 no-print">
                 <button @click="officialRegistryPrintModal.open = false" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600">إغلاق</button>
             </div>
@@ -2084,8 +2120,8 @@
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).label">مسجل شؤون الطلاب:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).title">أ. مسجل عام المعهد</div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
@@ -2098,8 +2134,8 @@
                                      alt="الختم الرسمي">
                             </template>
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').name || getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية').title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).label">يعتمد مدير عام المعهد:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم المعتمد: ............................</div>
                         </div>
@@ -2225,8 +2261,8 @@
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').name || getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد').title">أ. مسجل عام المعهد</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).label">مسجل شؤون الطلاب:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).title">أ. مسجل عام المعهد</div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
@@ -2239,8 +2275,8 @@
                                      alt="الختم الرسمي">
                             </template>
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').name || getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية').title">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).label">يعتمد مدير عام المعهد:</div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).title">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
                         </div>
@@ -2483,6 +2519,7 @@
                         </div>
 
                     </div>
+                    </div>
 
                     <!-- التذييل الأمني والتوقيعات والاعتماد الرسمي -->
                     <div class="mt-8 pt-4 border-t-2 border-rose-900 grid grid-cols-3 gap-6 text-center text-xs font-bold relative z-10">
@@ -2498,16 +2535,16 @@
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]">مسجل عام شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1">أ. مسجل عام المعهد</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]">اعتماد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم السري: ............................</div>
                         </div>

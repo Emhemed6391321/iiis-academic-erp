@@ -60,6 +60,7 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     // 3. Central Student Registry & Official Documentation Engine (سجل الطلاب العام والخدمات المستندية الرسمية)
     Route::get('/students/registry', [StudentRegistryReportController::class, 'index'])->middleware('permission:students.view');
     Route::get('/students/registry/export', [StudentRegistryReportController::class, 'exportRegistry'])->middleware('permission:students.view');
+    Route::get('/students/registry/official', [StudentRegistryReportController::class, 'officialRegistry'])->middleware('permission:students.view');
     // يجب أن يسبق مسار {student} أدناه لئلا يُفسَّر "form-options" كمعرّف طالب
     Route::get('/students/form-options', [StudentController::class, 'formOptions'])->middleware('permission:students.view|students.create');
     Route::get('/students/{student}/confidential-report', [StudentRegistryReportController::class, 'getConfidentialReport'])->middleware('permission:reports.print_official');
@@ -288,7 +289,14 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
         Route::post('/placement/save', [\App\Http\Controllers\Api\AdminSettingsController::class, 'saveEmployeePlacement'])->middleware('permission:admin_settings.manage');
         Route::delete('/placement/{id}', [\App\Http\Controllers\Api\AdminSettingsController::class, 'deleteEmployeePlacement'])->middleware('permission:admin_settings.manage');
         Route::post('/signatories/save', [\App\Http\Controllers\Api\AdminSettingsController::class, 'saveDocumentSignatories'])->middleware('permission:admin_settings.manage');
+        Route::get('/admission-rules', [\App\Http\Controllers\Api\AdmissionRulesController::class, 'show'])->middleware('permission:admin_settings.view|admin_settings.manage');
+        Route::post('/admission-rules', [\App\Http\Controllers\Api\AdmissionRulesController::class, 'save'])->middleware('permission:admin_settings.manage');
     });
+
+    // Official approval path: branches submit, HQ decides (the controller also enforces HQ-only decisions).
+    Route::get('/admin-requests', [\App\Http\Controllers\Api\AdministrativeRequestController::class, 'index'])->middleware('permission:students.view');
+    Route::post('/admin-requests', [\App\Http\Controllers\Api\AdministrativeRequestController::class, 'store'])->middleware('permission:students.create');
+    Route::post('/admin-requests/{id}/decide', [\App\Http\Controllers\Api\AdministrativeRequestController::class, 'decide'])->middleware('permission:students.approve_hq');
 
     // =========================================================================
     // 17. Academic Structure, Stages, Departments & Classes (الهيكل الأكاديمي والمراحل والشعب)

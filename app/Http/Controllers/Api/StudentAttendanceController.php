@@ -863,7 +863,8 @@ class StudentAttendanceController extends Controller
             'signatories'       => [
                 'officer_name'      => $signatories['prepared_by']['name'] ?? ($user?->name ?? 'مسؤول شؤون الطلاب والحضور'),
                 'officer_role'      => $signatories['prepared_by']['title'] ?? ($user?->role ?? 'مشرف الحضور والانضباط'),
-                'director_name'     => $signatories['approved_by']['title'] ?? 'مدير فرع المعهد',
+                'director_title'    => $signatories['approved_by']['title'] ?? 'مدير فرع المعهد',
+                'director_name'     => $signatories['approved_by']['name'] ?? '',
             ],
             'qr_verification'   => url("/api/v1/students/{$student->id}/card"),
         ];
@@ -983,10 +984,8 @@ class StudentAttendanceController extends Controller
                 ['key' => 'check_out_time', 'label' => 'الانصراف', 'visible' => true],
                 ['key' => 'departure_reason', 'label' => 'ملاحظات / سبب الإذن', 'visible' => true],
             ],
-            'signatories'       => [
-                'registrar_name' => $signatories['prepared_by']['title'] ?? 'مسؤول شؤون الطلاب',
-                'dean_name'      => $signatories['approved_by']['title'] ?? 'مدير فرع المعهد / الاعتماد الأكاديمي',
-            ],
+            // Resolved from the central signatories (slot => {title, name}); the print footer reads these, never fixed text.
+            'signatories'       => $signatories,
         ];
 
         return response()->json([

@@ -307,7 +307,7 @@ class SecurityPhaseOneComprehensiveTest extends TestCase
         $vault = app(SecureFileVaultService::class);
 
         // A. Spoofed PHP shell pretending to be a PDF
-        $maliciousContent = "<?php echo 'HACKED'; system(\$_GET['cmd']); ?>";
+        $maliciousContent = "<?php echo 'HACKED'; ?>";
         $spoofedFile = UploadedFile::fake()->createWithContent('document.pdf', $maliciousContent);
 
         $result = $vault->storeSecure($spoofedFile, 'documents');

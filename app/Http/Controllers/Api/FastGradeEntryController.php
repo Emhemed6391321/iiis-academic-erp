@@ -240,16 +240,24 @@ class FastGradeEntryController extends Controller
                     $windowType = ((int)$batch->semester === 2) ? 'S2_FINAL' : 'S1_FINAL';
                 }
 
+                // A missing or disabled window closes grade entry; it never leaves it open.
                 $activeYear = \App\Models\AcademicYear::where('is_current', true)->first();
-                if ($activeYear) {
-                    $window = \App\Models\OperationalWindow::where('academic_year_id', $activeYear->id)
+                $window = $activeYear
+                    ? \App\Models\OperationalWindow::where('academic_year_id', $activeYear->id)
                         ->where('window_type', $windowType)
-                        ->where('is_active', true)
-                        ->first();
+                        ->first()
+                    : null;
 
-                    if ($window && !$window->isOpenForBranch($batch->branch_id)) {
-                        throw new \Exception("❌ عفواً، انتهت الفترة المحددة نظاماً لرصد الدرجات ({$window->title}) وتم إغلاق النظام آلياً لهذا الفرع.");
-                    }
+                if (!$window) {
+                    throw new \Exception("❌ الفترة التشغيلية لرصد الدرجات ({$windowType}) غير مهيأة. يجب أن تضبطها الإدارة العامة قبل الرصد.");
+                }
+
+                if (!$window->is_active) {
+                    throw new \Exception("❌ الفترة التشغيلية لرصد الدرجات ({$window->title}) موقوفة من الإدارة العامة.");
+                }
+
+                if (!$window->isOpenForBranch($batch->branch_id)) {
+                    throw new \Exception("❌ عفواً، انتهت الفترة المحددة نظاماً لرصد الدرجات ({$window->title}). بانقضاء الموعد المحدد، لا يُسمح للمعهد بإدخال الدرجات، ويتحمل مدير المعهد المسؤولية عن ذلك، وفق اللوائح والتعليمات المعتمدة.");
                 }
             }
 

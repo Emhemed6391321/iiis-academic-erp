@@ -11,8 +11,130 @@
                     bugsSearch: '',
                     bugsUpdatingId: null,
                     bugDetail: null,
-                    openBugDetail(bug) { this.bugDetail = bug; },
+                    openBugDetail(bug) {
+                        this.bugDetail = bug;
+                        this.logBugToConsole(bug);
+                    },
                     closeBugDetail() { this.bugDetail = null; },
+                    logBugToConsole(bug) {
+                        const b = bug || this.bugDetail;
+                        if (!b) return;
+                        const diag = b.diagnostics || {};
+                        console.group('%c🚨 [Academic ERP] بلاغ خطأ #' + b.id + ': ' + (b.title || 'بلاغ بدون عنوان'), 'background: #be123c; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 13px;');
+                        console.log('%c📌 ملخص البلاغ:', 'font-weight: bold; color: #2563eb;', {
+                            'معرّف البلاغ': b.id,
+                            'العنوان': b.title,
+                            'الوصف': b.description,
+                            'القسم / الصفحة': b.section_name,
+                            'التصنيف': this.getCatLabel(b.category),
+                            'الحالة': this.getStatusLabel(b.status),
+                            'التقييم': b.rating + '/5',
+                            'المُبلّغ': b.reporter?.name || 'مجهول',
+                            'تاريخ الإرسال': b.created_at
+                        });
+                        if (diag.page) {
+                            console.log('%c🌐 معلومات الصفحة والعميل:', 'font-weight: bold; color: #0891b2;', diag.page, diag.client);
+                        }
+                        if (diag.jsErrors && diag.jsErrors.length) {
+                            console.group('%c❌ أخطاء JavaScript (' + diag.jsErrors.length + '):', 'color: #dc2626; font-weight: bold;');
+                            diag.jsErrors.forEach((err, idx) => {
+                                console.error(`[خطأ ${idx + 1}] ${err.message}`, err);
+                                if (err.stack) console.log(err.stack);
+                            });
+                            console.groupEnd();
+                        } else {
+                            console.log('ℹ️ لم تُسجل أخطاء JavaScript في هذه الجلسة');
+                        }
+                        if (diag.failedRequests && diag.failedRequests.length) {
+                            console.group('%c⚠️ طلبات الخادم الفاشلة (' + diag.failedRequests.length + '):', 'color: #d97706; font-weight: bold;');
+                            console.table(diag.failedRequests);
+                            console.groupEnd();
+                        }
+                        if (diag.consoleLogs && diag.consoleLogs.length) {
+                            console.groupCollapsed('📝 سجلات الكونسول السابقة (' + diag.consoleLogs.length + ')');
+                            diag.consoleLogs.forEach(l => console.log(`[${l.level}] ${l.at}:`, l.message));
+                            console.groupEnd();
+                        }
+                        console.groupEnd();
+                        if (window.showToast) window.showToast('تم رصد وطباعة تفاصيل الخطأ في الكونسول (F12)');
+                    },
+                    getFormattedFullError(bug) {
+                        const b = bug || this.bugDetail;
+                        if (!b) return '';
+                        const diag = b.diagnostics || {};
+                        let text = `=========================================\n`;
+                        text += `   تقرير خطأ منظومة المعهد التخصصي\n`;
+                        text += `=========================================\n`;
+                        text += `معرف البلاغ: #${b.id}\n`;
+                        text += `العنوان: ${b.title || 'بدون عنوان'}\n`;
+                        text += `القسم / الصفحة: ${b.section_name || 'عام'}\n`;
+                        text += `التصنيف: ${this.getCatLabel(b.category)}\n`;
+                        text += `الحالة: ${this.getStatusLabel(b.status)}\n`;
+                        text += `التقييم: ${b.rating}/5\n`;
+                        text += `المُرسل: ${b.reporter?.name || 'مجهول'}\n`;
+                        text += `التاريخ: ${b.created_at || ''}\n\n`;
+                        text += `وصف المشكلة:\n${b.description || 'لا يوجد وصف'}\n\n`;
+
+                        if (diag.page) {
+                            text += `-----------------------------------------\n`;
+                            text += `بيانات الصفحة والعميل:\n`;
+                            text += `الرابط: ${diag.page.url || '—'}\n`;
+                            text += `القسم: ${diag.page.section || '—'} (التبويب: ${diag.page.activeTab || '—'})\n`;
+                            text += `المتصفح: ${diag.client?.userAgent || '—'}\n`;
+                            text += `الشاشة: ${diag.client?.viewport ? diag.client.viewport.w + 'x' + diag.client.viewport.h : '—'}\n`;
+                            text += `حالة الاتصال: ${diag.client?.online ? 'متصل' : 'غير متصل'}\n`;
+                            text += `المنطقة الزمنية: ${diag.client?.timezone || '—'}\n\n`;
+                        }
+
+                        if (diag.jsErrors && diag.jsErrors.length) {
+                            text += `-----------------------------------------\n`;
+                            text += `أخطاء JavaScript (${diag.jsErrors.length}):\n`;
+                            diag.jsErrors.forEach((e, idx) => {
+                                text += `\n[${idx + 1}] وقت الحدوث: ${e.at || ''}\n`;
+                                text += `رسالة الخطأ: ${e.message}\n`;
+                                if (e.source) text += `المصدر: ${e.source}\n`;
+                                if (e.stack) text += `مسار الخطأ (Stack Trace):\n${e.stack}\n`;
+                            });
+                            text += `\n`;
+                        }
+
+                        if (diag.failedRequests && diag.failedRequests.length) {
+                            text += `-----------------------------------------\n`;
+                            text += `طلبات الخادم الفاشلة (${diag.failedRequests.length}):\n`;
+                            diag.failedRequests.forEach((r, idx) => {
+                                text += `\n[${idx + 1}] ${r.method} ${r.url} [الحالة: ${r.status}] (${r.ms}ms)\n`;
+                                if (r.response) text += `استجابة الخادم:\n${r.response}\n`;
+                            });
+                            text += `\n`;
+                        }
+
+                        if (diag.consoleLogs && diag.consoleLogs.length) {
+                            text += `-----------------------------------------\n`;
+                            text += `سجل وحدة التحكم (${diag.consoleLogs.length}):\n`;
+                            diag.consoleLogs.slice(-15).forEach(l => {
+                                text += `[${l.level}] ${l.at}: ${l.message}\n`;
+                            });
+                        }
+
+                        return text;
+                    },
+                    async copyFullError(bug) {
+                        try {
+                            const text = this.getFormattedFullError(bug || this.bugDetail);
+                            await navigator.clipboard.writeText(text);
+                            window.showToast ? window.showToast('تم نسخ تقرير الخطأ كاملاً مع المسار والتشخيص') : alert('تم نسخ تقرير الخطأ كاملاً');
+                        } catch (e) {
+                            alert('تعذر النسخ: ' + (e.message || e));
+                        }
+                    },
+                    async copySingleError(errText) {
+                        try {
+                            await navigator.clipboard.writeText(typeof errText === 'object' ? JSON.stringify(errText, null, 2) : String(errText));
+                            window.showToast ? window.showToast('تم نسخ تفاصيل الخطأ إلى الحافظة') : alert('تم النسخ');
+                        } catch(e) {
+                            alert('تعذر النسخ: ' + e);
+                        }
+                    },
                     bugDetailJson() {
                         if (!this.bugDetail) return '';
                         return JSON.stringify({
@@ -225,12 +347,24 @@
                                                   x-text="getStatusLabel(bug.status)"></span>
                                         </td>
                                         <td class="px-4 py-4 whitespace-nowrap">
-                                            <button @click="openBugDetail(bug)" type="button"
-                                                    class="mb-2 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-all"
-                                                    :class="darkMode ? 'border-rose-800 text-rose-300 hover:bg-rose-950/40' : 'border-rose-200 text-rose-600 hover:bg-rose-50'">
-                                                🔍 التفاصيل
-                                                <span x-show="bug.diagnostics" class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="يتضمن تشخيصاً تلقائياً"></span>
-                                            </button>
+                                            <div class="flex items-center gap-1.5 mb-2">
+                                                <button @click="openBugDetail(bug)" type="button"
+                                                        class="px-2.5 py-1.5 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-all"
+                                                        :class="darkMode ? 'border-rose-800 text-rose-300 hover:bg-rose-950/40' : 'border-rose-200 text-rose-600 hover:bg-rose-50'">
+                                                    🔍 التفاصيل
+                                                    <span x-show="bug.diagnostics" class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="يتضمن تشخيصاً تلقائياً"></span>
+                                                </button>
+                                                <button @click="copyFullError(bug)" type="button" title="نسخ الخطأ والتشخيص كاملاً"
+                                                        class="px-2 py-1.5 rounded-lg border text-[11px] font-bold transition-all"
+                                                        :class="darkMode ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'">
+                                                    📋 نسخ
+                                                </button>
+                                                <button @click="logBugToConsole(bug)" type="button" title="رصد وطباعة في الكونسول (F12)"
+                                                        class="px-2 py-1.5 rounded-lg border text-[11px] font-bold transition-all text-amber-500 hover:bg-amber-500/10"
+                                                        :class="darkMode ? 'border-slate-700' : 'border-slate-200'">
+                                                    🖥️
+                                                </button>
+                                            </div>
                                             <select @change="updateStatus(bug.id, $event.target.value)"
                                                     :disabled="bugsUpdatingId === bug.id"
                                                     :value="bug.status"
@@ -259,7 +393,8 @@
                                     <div class="text-[11px] text-slate-400" x-text="bugDetail ? ('#' + bugDetail.id + ' • ' + bugDetail.section_name + ' • ' + (bugDetail.reporter ? bugDetail.reporter.name : 'مجهول')) : ''"></div>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    <button @click="copyBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#2b78a5] hover:bg-[#24658d] text-white">📋 نسخ التفاصيل</button>
+                                    <button @click="copyFullError()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm flex items-center gap-1">📋 نسخ الخطأ كاملاً</button>
+                                    <button @click="logBugToConsole(bugDetail)" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-500 text-amber-500 hover:bg-amber-500/10 flex items-center gap-1">🖥️ رصد في الكونسول</button>
                                     <button @click="downloadBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold border" :class="darkMode ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'">⬇️ تنزيل JSON</button>
                                     <button @click="closeBugDetail()" type="button" class="px-3 py-1.5 rounded-lg text-xs font-bold border" :class="darkMode ? 'border-slate-700 text-slate-200' : 'border-slate-200 text-slate-700'">✕ إغلاق</button>
                                 </div>
@@ -292,10 +427,16 @@
                                         <div>
                                             <div class="font-bold mb-2 text-rose-600 dark:text-rose-400">أخطاء JavaScript (<span x-text="(bugDetail.diagnostics.jsErrors || []).length"></span>)</div>
                                             <template x-for="(e, i) in (bugDetail.diagnostics.jsErrors || [])" :key="'je' + i">
-                                                <div class="p-3 rounded-xl border mb-2 font-mono text-[11px] whitespace-pre-wrap break-all" :class="darkMode ? 'border-rose-900 bg-rose-950/20' : 'border-rose-200 bg-rose-50/60'">
-                                                    <div class="font-bold" x-text="e.at + ' — ' + e.message"></div>
+                                                <div class="p-3 rounded-xl border mb-2 font-mono text-[11px] whitespace-pre-wrap break-all relative group" :class="darkMode ? 'border-rose-900 bg-rose-950/20' : 'border-rose-200 bg-rose-50/60'">
+                                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                                        <div class="font-bold text-rose-600 dark:text-rose-400" x-text="e.at + ' — ' + e.message"></div>
+                                                        <button @click="copySingleError((e.message || '') + '\n' + (e.stack || ''))" type="button"
+                                                                class="px-2 py-0.5 rounded text-[10px] font-bold border border-rose-300 dark:border-rose-700 hover:bg-rose-100 dark:hover:bg-rose-900/50">
+                                                            📋 نسخ
+                                                        </button>
+                                                    </div>
                                                     <div class="opacity-70" x-show="e.source" x-text="'المصدر: ' + e.source"></div>
-                                                    <div class="opacity-70" x-show="e.stack" x-text="e.stack"></div>
+                                                    <div class="opacity-70 mt-1" x-show="e.stack" x-text="e.stack"></div>
                                                 </div>
                                             </template>
                                             <div x-show="!(bugDetail.diagnostics.jsErrors || []).length" class="text-slate-400">لا توجد أخطاء JavaScript مسجّلة في هذه الجلسة.</div>
@@ -305,9 +446,15 @@
                                             <div class="font-bold mb-2 text-amber-600 dark:text-amber-400">طلبات فاشلة إلى الخادم (<span x-text="(bugDetail.diagnostics.failedRequests || []).length"></span>)</div>
                                             <template x-for="(r, i) in (bugDetail.diagnostics.failedRequests || [])" :key="'fr' + i">
                                                 <div class="p-3 rounded-xl border mb-2 font-mono text-[11px] whitespace-pre-wrap break-all" :class="darkMode ? 'border-amber-900 bg-amber-950/20' : 'border-amber-200 bg-amber-50/60'">
-                                                    <div class="font-bold" x-text="r.at + ' — ' + r.method + ' ' + r.status + ' (' + r.ms + ' ms)'"></div>
+                                                    <div class="flex items-center justify-between gap-2 mb-1">
+                                                        <div class="font-bold text-amber-600 dark:text-amber-400" x-text="r.at + ' — ' + r.method + ' ' + r.status + ' (' + r.ms + ' ms)'"></div>
+                                                        <button @click="copySingleError(r.method + ' ' + r.url + ' [' + r.status + ']\n' + (r.response || ''))" type="button"
+                                                                class="px-2 py-0.5 rounded text-[10px] font-bold border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50">
+                                                            📋 نسخ
+                                                        </button>
+                                                    </div>
                                                     <div class="break-all" x-text="r.url"></div>
-                                                    <div class="opacity-80" x-show="r.response" x-text="r.response"></div>
+                                                    <div class="opacity-80 mt-1" x-show="r.response" x-text="r.response"></div>
                                                 </div>
                                             </template>
                                             <div x-show="!(bugDetail.diagnostics.failedRequests || []).length" class="text-slate-400">لا توجد طلبات فاشلة في هذه الجلسة.</div>

@@ -772,14 +772,13 @@
 
                             <!-- التوقيعات والاعتماد الرسمي -->
                             <div class="grid grid-cols-2 gap-8 pt-8 mt-12 border-t-2 border-slate-900 text-center">
-                                <div class="space-y-12">
-                                    <div class="font-bold text-xs">مسؤول شؤون الطلاب والحضور بالمعهد</div>
-                                    <div class="font-mono text-xs text-slate-400">................................................</div>
-                                </div>
-                                <div class="space-y-12">
-                                    <div class="font-bold text-xs">يعتمد / مدير فرع المعهد المتوسط للدراسات الإسلامية</div>
-                                    <div class="font-mono text-xs text-slate-400">................................................</div>
-                                </div>
+                                <template x-for="slot in ['prepared_by', 'approved_by']" :key="slot">
+                                    <div class="space-y-12">
+                                        <div class="font-bold text-xs" x-text="getSignatoryInfo('attendance_sheet', slot, '', '', attendance.reports.payload?.signatories).label"></div>
+                                        <div class="font-bold text-xs" x-text="getSignatoryInfo('attendance_sheet', slot, '', '', attendance.reports.payload?.signatories).name || getSignatoryInfo('attendance_sheet', slot, '', '', attendance.reports.payload?.signatories).title"></div>
+                                        <div class="font-mono text-xs text-slate-400">................................................</div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </template>

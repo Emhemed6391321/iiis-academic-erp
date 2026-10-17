@@ -11,13 +11,18 @@ use App\Models\AcademicYear;
 use App\Models\Branch;
 use App\Models\Department;
 use App\Models\StudyYear;
+use App\Models\AdministrativeRequest;
 use App\Models\SystemAuditTrail;
-use App\Rules\MinimumAdmissionAgeRule;
+use App\Rules\AdmissionAgeRule;
 use App\Services\AcademicNumberGeneratorService;
+use App\Services\AdministrativeRequestService;
 use App\Services\StudentDocumentService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
 class StudentController extends Controller
@@ -129,15 +134,22 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
+        // Approved HQ requests that may waive a rule. Each one is only honoured for the identity it was issued for.
+        $ageExemption = $this->approvedExceptionFor($request, AdministrativeRequest::TYPE_AGE_EXCEPTION, null);
+
         $validated = $request->validate([
-            'national_id' => 'required|string|size:12|unique:students,national_id',
+            'admission_request_id' => 'nullable|integer',
+            'nationality_category' => 'required|in:LIBYAN,LIBYAN_NO_NATIONAL_ID,OTHER',
+            'national_id' => 'nullable|string|max:20',
+            'administrative_number' => 'nullable|string|max:50',
+            'passport_number' => 'nullable|string|max:50',
             'first_name' => 'required|string|max:50',
             'father_name' => 'required|string|max:50',
             'grandfather_name' => 'required|string|max:50',
             'family_name' => 'required|string|max:50',
             'mother_name' => 'required|string|max:100',
             'gender' => 'required|in:MALE,FEMALE',
-            'birth_date' => ['required', 'date', new MinimumAdmissionAgeRule()],
+            'birth_date' => ['required', 'date', new AdmissionAgeRule($request->input('study_type'), $request->input('gender'), $this->ruleBranchId($request, $user), $ageExemption !== null)],
             'birth_place' => 'required|string|max:100',
             'nationality' => 'nullable|string|max:50',
             'phone' => 'required|string|max:30',
@@ -161,6 +173,22 @@ class StudentController extends Controller
             'signature_base64' => 'nullable|string',
             'medical_report_base64' => 'nullable|string',
         ]);
+
+        $validated = array_merge($validated, $this->validatedIdentity($request, $validated['nationality_category'], null));
+
+        // Entering the second or third year needs an approved HQ enrollment request for that study year.
+        $entryStudyYear = StudyYear::find($validated['current_study_year_id']);
+        $gradeExemption = null;
+        if ($entryStudyYear && (int) $entryStudyYear->level_order >= 2) {
+            $gradeExemption = $this->approvedExceptionFor($request, AdministrativeRequest::TYPE_GRADE_LEVEL, (int) $entryStudyYear->id);
+
+            if (!$gradeExemption) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'التسجيل في هذا الصف يتطلب اعتماداً مسبقاً من الإدارة العامة. يُرفع طلب التسجيل أولاً، ولا يُنشأ القيد قبل صدور القرار.',
+                ], 422);
+            }
+        }
 
         $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
         $validated['enrolled_academic_year_id'] = $currentYear ? $currentYear->id : 1;
@@ -212,19 +240,37 @@ class StudentController extends Controller
         }
 
         // 4. Create Student and Auto-Generate Enrollment Number in Transaction
-        $student = DB::transaction(function () use ($validated, $currentYear) {
-            // Instantiate temporary model to calculate number
-            $tempStudent = new Student($validated);
-            if ($currentYear) {
-                $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
-            }
-            
-            // Auto generate sequential number: [Gender(1)][Year(26)][Seq(0001)]
-            $academicNumber = $this->numberGenerator->generate($tempStudent);
-            $validated['academic_number'] = $academicNumber;
+        try {
+            $student = DB::transaction(function () use ($validated, $currentYear, $ageExemption, $gradeExemption) {
+                // Each approved request is spent exactly once, in the same transaction as the enrollment.
+                $service = app(AdministrativeRequestService::class);
+                foreach (array_filter([$ageExemption, $gradeExemption]) as $approvedRequest) {
+                    if (!$service->consume($approvedRequest)) {
+                        throw ValidationException::withMessages([
+                            'admission_request_id' => 'الطلب المعتمد مستهلك أو لم يعد صالحاً لهذا القيد.',
+                        ]);
+                    }
+                }
 
-            return Student::create($validated);
-        });
+                // Instantiate temporary model to calculate number
+                $tempStudent = new Student($validated);
+                if ($currentYear) {
+                    $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
+                }
+
+                // Auto generate sequential number: [Gender(1)][Year(26)][Seq(0001)]
+                $academicNumber = $this->numberGenerator->generate($tempStudent);
+                $validated['academic_number'] = $academicNumber;
+
+                return Student::create($validated);
+            });
+        } catch (QueryException $e) {
+            // The unique indexes are the final guard against two concurrent registrations of one identity.
+            if ($this->isUniqueViolation($e)) {
+                return $this->duplicateIdentityResponse();
+            }
+            throw $e;
+        }
 
         // 5. Save Attached Documents if any
         $this->handleAttachedDocuments($request, $student, $user);
@@ -254,7 +300,10 @@ class StudentController extends Controller
 
         // 2. Validation
         $rules = [
-            'national_id' => 'required|string|size:12|unique:students,national_id,' . $student->id,
+            'nationality_category' => 'nullable|in:LIBYAN,LIBYAN_NO_NATIONAL_ID,OTHER',
+            'national_id' => 'nullable|string|max:20',
+            'administrative_number' => 'nullable|string|max:50',
+            'passport_number' => 'nullable|string|max:50',
             'first_name' => 'required|string|max:50',
             'father_name' => 'required|string|max:50',
             'grandfather_name' => 'required|string|max:50',
@@ -265,7 +314,6 @@ class StudentController extends Controller
             'birth_place' => 'required|string|max:100',
             'nationality' => 'nullable|string|max:50',
             'religion' => 'nullable|string|max:50',
-            'passport_number' => 'nullable|string|max:50',
             'phone' => 'required|string|max:30',
             'guardian_phone' => 'required|string|max:30',
             'guardian_name' => 'nullable|string|max:100',
@@ -297,9 +345,14 @@ class StudentController extends Controller
             'medical_report_base64' => 'nullable|string',
         ];
 
-        // If birth date is updated, validate minimum age
+        // If birth date is updated, validate the admission age rules.
+        // Study-type and gender changes are governed by the HQ approval workflow, not by this check.
         if ($request->filled('birth_date') && $request->birth_date !== ($student->birth_date ? $student->birth_date->format('Y-m-d') : null)) {
-            $rules['birth_date'][] = new MinimumAdmissionAgeRule();
+            $rules['birth_date'][] = new AdmissionAgeRule(
+                $request->input('study_type', $student->study_type),
+                $request->input('gender', $student->gender),
+                $student->branch_id
+            );
         }
 
         // HQ-only field rules
@@ -310,6 +363,11 @@ class StudentController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $validated = array_merge($validated, $this->validatedIdentity(
+            $request,
+            $request->input('nationality_category', $student->nationality_category ?: 'LIBYAN'),
+            $student->id
+        ));
 
         // 3. Permission Guarding: Filter out HQ-only fields if not authorized
         if (!$user || !$user->hasGlobalAccessScope()) {
@@ -764,13 +822,22 @@ class StudentController extends Controller
                 continue;
             }
 
-            $age = Carbon::parse($birthDate)->age;
-            if ($age < 15) {
+            // Same central admission rules as the registration form
+            $admissionRules = app(\App\Services\AdmissionRulesService::class);
+            $admissionCity = Branch::whereKey($branchId ?: $user?->branch_id)->value('city');
+            $admissionCheck = $admissionRules->evaluate(
+                $studyType,
+                $gender,
+                $admissionCity,
+                Carbon::parse($birthDate)->startOfDay(),
+                $admissionRules->referenceDate()
+            );
+            if (!$admissionCheck['allowed']) {
                 $errors[] = [
                     'row' => $rowNum,
                     'national_id' => $nationalId,
                     'name' => "{$firstName} {$familyName}",
-                    'error' => "عمر الطالب ({$age} سنة) أقل من السن القانوني للقبول (15 سنة على الأقل).",
+                    'error' => $admissionCheck['message'],
                 ];
                 continue;
             }
@@ -813,7 +880,9 @@ class StudentController extends Controller
                     'health_status' => $healthStatus,
                     'chronic_diseases' => $chronicDiseases ?: null,
                     'email' => trim((string)($row['email'] ?? '')),
-                    'passport_number' => trim((string)($row['passport_number'] ?? '')),
+                    // Empty identifiers are stored as NULL so the unique indexes accept many rows without one.
+                    'nationality_category' => strlen($nationalId) === 12 ? 'LIBYAN' : 'OTHER',
+                    'passport_number' => ($passportNumber = strtoupper(trim((string)($row['passport_number'] ?? '')))) !== '' ? $passportNumber : null,
                     'approved_by' => $user?->id,
                     'approved_at' => Carbon::now(),
                     'notes' => $notes ?: 'تم القيد وتوليد رقم القيد الرسمي عبر استيراد إكسل للدفعة',
@@ -1306,6 +1375,18 @@ class StudentController extends Controller
             ], 403);
         }
 
+        // Final approval is refused while a mandatory document for the student's nationality category is missing.
+        $missing = app(\App\Services\StudentDocumentService::class)->missingRequiredTypes($student);
+        if (!empty($missing)) {
+            $labels = array_map(fn ($type) => \App\Models\StudentDocument::DOCUMENT_TYPES[$type] ?? $type, $missing);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يُعتمد الطالب نهائياً قبل استكمال المستندات الإلزامية: ' . implode('، ', $labels) . '.',
+                'missing_documents' => $missing,
+            ], 422);
+        }
+
         DB::transaction(function () use ($student, $user) {
             if (empty($student->academic_number)) {
                 $academicNumber = $this->numberGenerator->generate($student);
@@ -1355,6 +1436,124 @@ class StudentController extends Controller
             'message' => 'تمت إعادة الملف للفرع للتصحيح واستيفاء النواقص.',
             'student' => $student,
         ]);
+    }
+
+    /**
+     * الطلب المعتمد الذي يقدمه الفرع مع القيد، إن كان معتمداً وغير مستهلك ويطابق هوية الطالب المدخلة.
+     */
+    private function approvedExceptionFor(Request $request, string $type, ?int $studyYearId): ?AdministrativeRequest
+    {
+        if (!$request->filled('admission_request_id')) {
+            return null;
+        }
+
+        $service = app(AdministrativeRequestService::class);
+        $identity = AdministrativeRequestService::normalizeIdentity($request->all());
+        $found = $service->findApproved($type, $identity, $studyYearId);
+
+        return $found && (int) $found->id === (int) $request->input('admission_request_id') ? $found : null;
+    }
+
+    /**
+     * يطبّق قواعد الهوية وفق تصنيف الجنسية، ويطبّع القيم، ويعيد الحقول المسموح حفظها.
+     * الخادم هو المرجع: إخفاء الحقول في الواجهة لا يُغني عن هذا التحقق.
+     */
+    private function validatedIdentity(Request $request, string $category, ?int $ignoreStudentId): array
+    {
+        $national = preg_replace('/\s+/', '', (string) $request->input('national_id', ''));
+        $administrative = trim((string) $request->input('administrative_number', ''));
+        $passport = strtoupper(trim((string) $request->input('passport_number', '')));
+
+        $ignore = $ignoreStudentId ? ',' . $ignoreStudentId : '';
+
+        // Any identifier that is provided must be well-formed and unique; the category decides which one is required.
+        $rules = ['national_id' => [], 'administrative_number' => [], 'passport_number' => []];
+
+        if ($national !== '') {
+            $rules['national_id'][] = 'regex:/^[0-9]{12}$/';
+        }
+        if ($administrative !== '') {
+            $rules['administrative_number'][] = 'max:50';
+            $rules['administrative_number'][] = 'regex:/^[A-Za-z0-9\/\-]+$/';
+        }
+        if ($passport !== '') {
+            $rules['passport_number'][] = 'max:50';
+            $rules['passport_number'][] = 'regex:/^[A-Z0-9]+$/';
+        }
+
+        match ($category) {
+            'LIBYAN' => $rules['national_id'][] = 'required',
+            'LIBYAN_NO_NATIONAL_ID' => $rules['administrative_number'][] = 'required',
+            default => $rules['passport_number'][] = 'required',
+        };
+
+        foreach (['national_id' => $national, 'administrative_number' => $administrative, 'passport_number' => $passport] as $field => $value) {
+            if ($value !== '') {
+                $rules[$field][] = 'unique:students,' . $field . $ignore;
+            }
+        }
+
+        $validator = Validator::make([
+            'national_id' => $national,
+            'administrative_number' => $administrative,
+            'passport_number' => $passport,
+        ], array_filter($rules), [
+            'national_id.required' => 'الرقم الوطني إلزامي للطالب الليبي.',
+            'national_id.regex' => 'الرقم الوطني يجب أن يتكون من 12 رقماً بالضبط.',
+            'national_id.unique' => 'الرقم الوطني مسجل لطالب آخر.',
+            'administrative_number.required' => 'الرقم الإداري إلزامي للطالب الليبي بدون رقم وطني.',
+            'administrative_number.regex' => 'الرقم الإداري يجب أن يحتوي على أحرف لاتينية وأرقام و(-) أو (/) فقط.',
+            'administrative_number.unique' => 'الرقم الإداري مسجل لطالب آخر.',
+            'passport_number.required' => 'رقم جواز السفر إلزامي لباقي الجنسيات.',
+            'passport_number.regex' => 'رقم الجواز يجب أن يحتوي على أحرف لاتينية وأرقام فقط.',
+            'passport_number.unique' => 'رقم الجواز مسجل لطالب آخر.',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        return [
+            'nationality_category' => $category,
+            'national_id' => $national !== '' ? $national : null,
+            'administrative_number' => $administrative !== '' ? $administrative : null,
+            'passport_number' => $passport !== '' ? $passport : null,
+        ];
+    }
+
+    /**
+     * الفرع الذي سيُحفظ القيد تحته، لتطبيق شروط العمر على المدينة الصحيحة.
+     */
+    private function ruleBranchId(Request $request, $user): ?int
+    {
+        $requested = $request->input('branch_id');
+
+        if ($user && $user->hasGlobalAccessScope() && !empty($requested)) {
+            return (int) $requested;
+        }
+
+        if ($user) {
+            return $user->branch_id ?? 1;
+        }
+
+        return (int) ($requested ?: 1);
+    }
+
+    /**
+     * يتعرف على خطأ التفرد في قاعدة البيانات (SQLite وMySQL).
+     */
+    private function isUniqueViolation(QueryException $e): bool
+    {
+        return str_contains($e->getMessage(), 'UNIQUE constraint failed')
+            || str_contains($e->getMessage(), 'Duplicate entry');
+    }
+
+    private function duplicateIdentityResponse(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'يوجد قيد سابق لطالب بالهوية نفسها (الرقم الوطني أو الإداري أو الجواز)، ولا يُسمح بتكرار القيد.',
+        ], 422);
     }
 
     /**

@@ -227,9 +227,10 @@ class AdmissionDocumentsAndModulesTest extends TestCase
     private function admissionPayload(?int $branchId, string $nationalId): array
     {
         return [
+            'nationality_category' => 'LIBYAN',
             'first_name' => 'اختبار', 'father_name' => 'أب', 'grandfather_name' => 'جد', 'family_name' => 'عائلة',
             'mother_name' => 'أم', 'national_id' => $nationalId, 'ministry_student_id' => '',
-            'gender' => 'MALE', 'birth_date' => '2006-01-01', 'birth_place' => 'بنغازي', 'nationality' => 'ليبي',
+            'gender' => 'MALE', 'birth_date' => '2009-01-01', 'birth_place' => 'بنغازي', 'nationality' => 'ليبي',
             'phone' => '0910000000', 'guardian_phone' => '0920000000', 'branch_id' => $branchId,
             'department_id' => Department::firstOrFail()->id,
             'current_study_year_id' => StudyYear::orderBy('level_order')->value('id'),
