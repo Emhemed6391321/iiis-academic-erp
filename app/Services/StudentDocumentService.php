@@ -55,7 +55,7 @@ class StudentDocumentService
     /**
      * المستندات الإلزامية بحسب تصنيف جنسية الطالب (الخادم هو المرجع).
      * - ليبي / ليبي بدون رقم وطني: شهادة الميلاد، والشهادة الإعدادية، والبطاقة أو إثبات الهوية.
-     * - غير الليبي: شهادة ميلاد لغير الليبيين، وصورة الجواز الملونة، والإقامة السارية.
+     * - غير الليبي: شهادة ميلاد لغير الليبيين، والشهادة الإعدادية أو معادلتها، وصورة الجواز الملونة، والإقامة السارية.
      * - الشهادة الصحية مطلوبة لجميع الطلاب وفق الإجراء القائم.
      *
      * @return string[] مفاتيح DOCUMENT_TYPES
@@ -65,7 +65,7 @@ class StudentDocumentService
         $common = ['HEALTH_CERT'];
 
         $byCategory = match ($student->nationality_category) {
-            'OTHER' => ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
+            'OTHER' => ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
             default => ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
         };
 

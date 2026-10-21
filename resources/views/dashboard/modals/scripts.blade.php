@@ -94,6 +94,8 @@
                 ],
 
                 sidebarCollapsed: localStorage.getItem('institute_sidebar_collapsed') === '1',
+                // إشعارات الفرع: نتائج القرارات على ملفات الفرع، تُقرأ من الخادم حسب فرع المستخدم
+                branchNotices: { list: [], unread: 0, loaded: false },
                 // أقسام الدراسة والامتحانات والكنترول: مقفلة لبقية المستخدمين (قريباً) — يفعّلها المدير العام من مصفوفة الصلاحيات
                 lockedSections: ['study_and_exams', 'grading', 'transcripts', 'batch_print'],
                 // خيارات نموذج القبول الموحد (فروع/شُعب/مراحل/أعوام) — قائمة فروع مستقلة عن لوحة القيادة
@@ -105,7 +107,7 @@
                 docSlots: [
                     { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: true, nationality: 'LIBYAN' },
                     { key: 'BIRTH_CERT', label: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد', required: true, nationality: 'LIBYAN' },
-                    { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب', required: true, nationality: 'LIBYAN' },
+                    { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب (أو الشهادة الإعدادية أو معادلتها)', required: true },
                     { key: 'FOREIGN_BIRTH_CERT', label: 'شهادة ميلاد لغير الليبيين', required: true, nationality: 'OTHER' },
                     { key: 'PASSPORT_COPY', label: 'صورة ملونة من جواز السفر', required: true, nationality: 'OTHER' },
                     { key: 'RESIDENCE_PERMIT', label: 'إقامة سارية', required: true, nationality: 'OTHER' },
@@ -565,6 +567,8 @@
                     loading: false,
                     requests: [],
                     activeTab: 'status',
+                    // Non-Libyan enrollment files: the branch submits, HQ approves (issues the number) or rejects (purges the file)
+                    nonLibyan: { loading: false, loaded: false, students: [], decisionNotes: {}, decidingId: null },
                     // Official approval path for admission exceptions (AGE_EXCEPTION, GRADE_LEVEL_ENROLLMENT)
                     officialRequests: {
                         loading: false,
@@ -946,6 +950,7 @@
                     branches: [],
                     auditLogs: [],
                     admissionRules: { loading: false, saving: false, loaded: false, rules: [], cities: '', referenceDate: '', defaults: [] },
+                    nationalities: { loading: false, saving: false, loaded: false, list: [], newName: '' },
                     backupsList: [],
                     backupsSummary: {},
                     isLoadingBackups: false,
@@ -1864,10 +1869,15 @@
                             const docFailures = newStudent ? await this.uploadAdmissionDocuments(newStudent.id, this.createStudentModal.attachedDocs) : [];
                             this.createStudentModal.open = false;
                             this.stopCamera();
+                            // غير الليبي: يُرفع الملف للاعتماد المركزي بعد إرفاق مستنداته، ولا يصدر رقم القيد إلا بالاعتماد
+                            let message = 'تم تسجيل الطالب وتوليد رقم القيد الرسمي (' + (newStudent?.academic_number || '') + ') بنجاح!';
+                            if (category === 'OTHER' && newStudent) {
+                                message = await this.submitNonLibyanRequest(newStudent.id);
+                            }
                             if (docFailures.length) {
                                 this.showToast('تم قيد الطالب، لكن تعذر رفع بعض المستندات: ' + docFailures.join(' | '));
                             } else {
-                                this.showToast('تم تسجيل الطالب وتوليد رقم القيد الرسمي (' + (newStudent?.academic_number || '') + ') بنجاح!');
+                                this.showToast(message);
                             }
                             await this.loadRegistry(1);
                             
@@ -6120,6 +6130,10 @@ async loadBranchOperations() {
                         this.loadOfficialRequests();
                         return;
                     }
+                    if (tabName === 'nonlibyan') {
+                        this.loadNonLibyanPending();
+                        return;
+                    }
                     this.loadWorkflowData();
                 },
 
@@ -6136,6 +6150,61 @@ async loadBranchOperations() {
                     this.currentSection = 'admin_settings';
                     this.adminSettings.activeTab = 'signatories';
                     this.loadAdminSettingsMaster();
+                },
+
+                // Entry points used by the SOP directory's navigation buttons
+                openNationalitiesSettings() {
+                    this.currentSection = 'admin_settings';
+                    this.adminSettings.activeTab = 'nationalities';
+                    this.loadNationalities();
+                },
+
+                openNonLibyanReviewTab() {
+                    this.currentSection = 'student_workflow';
+                    this.switchWorkflowTab('nonlibyan');
+                },
+
+                async loadBranchNotices() {
+                    try {
+                        const res = await fetch('/api/v1/notices', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.branchNotices.list = data.notices || [];
+                            this.branchNotices.unread = data.unread_count || 0;
+                            this.branchNotices.loaded = true;
+                        }
+                    } catch (e) {
+                        console.error('Error loading branch notices:', e);
+                    }
+                },
+
+                async markBranchNoticeRead(notice) {
+                    if (notice.read) {
+                        return;
+                    }
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        await fetch('/api/v1/notices/' + notice.id + '/read', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                        });
+                    } catch (e) {
+                        console.error('Error marking notice read:', e);
+                    }
+                    await this.loadBranchNotices();
+                },
+
+                async markAllBranchNoticesRead() {
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        await fetch('/api/v1/notices/read-all', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                        });
+                    } catch (e) {
+                        console.error('Error marking notices read:', e);
+                    }
+                    await this.loadBranchNotices();
                 },
 
                 openAdmissionRulesSettings() {
@@ -8200,6 +8269,170 @@ async loadBranchOperations() {
                 // ==========================================
                 // Admission age rules (قواعد القبول بحسب العمر): مصدرها الإعدادات المركزية
                 // ==========================================
+                // ==========================================
+                // Non-Libyan enrollment: submit from the branch, central review by HQ
+                // ==========================================
+                async submitNonLibyanRequest(studentId) {
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/students/' + studentId + '/submit-hq', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            return data.message || 'تم رفع طلب تسجيل الطالب غير الليبي للاعتماد.';
+                        }
+                        return data.message || 'تعذر رفع طلب تسجيل الطالب غير الليبي.';
+                    } catch (e) {
+                        console.error('Error submitting non-libyan request:', e);
+                        return 'تعذر الاتصال بالخادم لرفع طلب تسجيل الطالب غير الليبي.';
+                    }
+                },
+
+                async loadNonLibyanPending() {
+                    const nl = this.studentWorkflow.nonLibyan;
+                    nl.loading = true;
+                    try {
+                        const res = await fetch('/api/v1/students/non-libyan/pending', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            nl.students = data.students || [];
+                            nl.loaded = true;
+                        } else {
+                            this.showToast(data.message || 'تعذر تحميل ملفات غير الليبيين');
+                        }
+                    } catch (e) {
+                        console.error('Error loading non-libyan requests:', e);
+                        this.showToast('تعذر الاتصال بالخادم لتحميل ملفات غير الليبيين');
+                    } finally {
+                        nl.loading = false;
+                    }
+                },
+
+                async approveNonLibyan(studentId) {
+                    if (!window.confirm('الاعتماد يصدر رقم القيد الرسمي للطالب. هل تتابع؟')) {
+                        return;
+                    }
+                    await this.decideNonLibyan(studentId, 'approve-hq', null);
+                },
+
+                async rejectNonLibyan(studentId) {
+                    const reason = (this.studentWorkflow.nonLibyan.decisionNotes[studentId] || '').trim();
+                    if (reason.length < 5) {
+                        this.showToast('اكتب سبب الرفض (5 أحرف على الأقل) قبل الرفض');
+                        return;
+                    }
+                    if (!window.confirm('الرفض يحذف بيانات الطالب ومستنداته نهائياً ولا يمكن التراجع. هل تتابع؟')) {
+                        return;
+                    }
+                    await this.decideNonLibyan(studentId, 'reject-hq', reason);
+                },
+
+                async decideNonLibyan(studentId, action, reason) {
+                    const nl = this.studentWorkflow.nonLibyan;
+                    nl.decidingId = studentId;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/students/' + studentId + '/' + action, {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify(reason === null ? {} : { rejection_reason: reason })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم تنفيذ القرار');
+                            delete nl.decisionNotes[studentId];
+                            await this.loadNonLibyanPending();
+                        } else {
+                            this.showToast(data.message || 'تعذر تنفيذ القرار');
+                        }
+                    } catch (e) {
+                        console.error('Error deciding non-libyan request:', e);
+                        this.showToast('تعذر تنفيذ القرار');
+                    } finally {
+                        nl.decidingId = null;
+                    }
+                },
+
+                // ==========================================
+                // Nationalities managed by HQ (the registration dropdown reads the active ones)
+                // ==========================================
+                async loadNationalities() {
+                    const nat = this.adminSettings.nationalities;
+                    nat.loading = true;
+                    try {
+                        const res = await fetch('/api/v1/admin/settings/nationalities', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            nat.list = data.nationalities || [];
+                            nat.loaded = true;
+                        } else {
+                            this.showToast(data.message || 'تعذر تحميل الجنسيات');
+                        }
+                    } catch (e) {
+                        console.error('Error loading nationalities:', e);
+                        this.showToast('تعذر الاتصال بالخادم لتحميل الجنسيات');
+                    } finally {
+                        nat.loading = false;
+                    }
+                },
+
+                async addNationality() {
+                    const nat = this.adminSettings.nationalities;
+                    const name = (nat.newName || '').trim();
+                    if (!name) {
+                        this.showToast('اكتب اسم الجنسية أولاً');
+                        return;
+                    }
+                    nat.saving = true;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/admin/settings/nationalities', {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify({ name })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تمت إضافة الجنسية');
+                            nat.newName = '';
+                            await this.loadNationalities();
+                        } else {
+                            const errs = data.errors ? Object.values(data.errors).flat().join(' | ') : null;
+                            this.showToast(errs || data.message || 'تعذر إضافة الجنسية');
+                        }
+                    } catch (e) {
+                        console.error('Error adding nationality:', e);
+                        this.showToast('تعذر إضافة الجنسية');
+                    } finally {
+                        nat.saving = false;
+                    }
+                },
+
+                async saveNationality(item) {
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch('/api/v1/admin/settings/nationalities/' + item.id, {
+                            method: 'PUT',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify({ name: (item.name || '').trim(), is_active: !!item.is_active })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم حفظ الجنسية');
+                        } else {
+                            const errs = data.errors ? Object.values(data.errors).flat().join(' | ') : null;
+                            this.showToast(errs || data.message || 'تعذر حفظ الجنسية');
+                        }
+                    } catch (e) {
+                        console.error('Error saving nationality:', e);
+                        this.showToast('تعذر حفظ الجنسية');
+                    } finally {
+                        await this.loadNationalities();
+                    }
+                },
+
                 async loadAdmissionRules() {
                     const ar = this.adminSettings.admissionRules;
                     ar.loading = true;

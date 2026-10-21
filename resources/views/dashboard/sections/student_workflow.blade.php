@@ -120,6 +120,15 @@
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
                 <span>🏛️ طلبات الاستثناء والاعتماد الرسمي</span>
             </button>
+
+            <!-- Tab 5: Non-Libyan enrollment files awaiting central review (approve issues the number; reject purges the file) -->
+            <button @click="switchWorkflowTab('nonlibyan')"
+                    class="flex items-center space-x-2 space-x-reverse px-5 py-3 rounded-xl text-xs font-black transition-all whitespace-nowrap"
+                    :class="studentWorkflow.activeTab === 'nonlibyan'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-600/20'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
+                <span>🌍 تسجيل غير الليبيين للاعتماد</span>
+            </button>
         </div>
 
         <!-- Scope Switcher (Pending vs Completed) -->
@@ -533,6 +542,61 @@
 
     <!-- ================= TRACK 4: الاعتماد الرسمي للاستثناءات ================= -->
     <!-- لا يُنشأ أي قيد عن الطلب قبل اعتماده، والقرار المعتمد يُستهلك مرة واحدة فقط -->
+    <!-- Non-Libyan files: the branch submitted them with all documents; HQ checks the documents and decides -->
+    <div x-show="studentWorkflow.activeTab === 'nonlibyan'" class="space-y-4">
+        <div class="p-6 rounded-2xl border space-y-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="flex items-center justify-between">
+                <h3 class="font-black text-sm text-slate-900 dark:text-white">ملفات الطلاب غير الليبيين بانتظار الاعتماد</h3>
+                <span class="text-[11px] font-bold text-slate-400" x-show="studentWorkflow.nonLibyan.loading">جارٍ التحميل…</span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">الاعتماد يصدر رقم القيد الرسمي. الرفض يحذف بيانات الطالب ومستنداته نهائياً، ويبقى المرجع وسبب الرفض في سجل التدقيق.</p>
+        </div>
+
+        <p x-show="studentWorkflow.nonLibyan.loaded && studentWorkflow.nonLibyan.students.length === 0"
+           class="text-xs font-bold text-slate-400 p-6">لا توجد ملفات بانتظار القرار.</p>
+
+        <template x-for="ns in studentWorkflow.nonLibyan.students" :key="ns.id">
+            <div class="p-6 rounded-2xl border space-y-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+                <div class="text-xs space-y-1">
+                    <div class="font-black text-sm text-slate-900 dark:text-white" x-text="ns.full_name"></div>
+                    <div class="text-slate-500 dark:text-slate-400">
+                        <span x-text="'الجنسية: ' + ns.nationality"></span>
+                        · <span x-text="'رقم الجواز: ' + (ns.passport_number || '—')"></span>
+                        · <span x-text="'الفرع: ' + (ns.branch || '—')"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-[11px] font-bold text-slate-500 mb-2">المستندات المرفقة للمعاينة</div>
+                    <ul class="space-y-1 text-xs">
+                        <template x-for="doc in ns.documents" :key="doc.id">
+                            <li class="flex items-center justify-between gap-3">
+                                <span x-text="doc.label"></span>
+                                <a :href="doc.file_url" target="_blank" rel="noopener" class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">معاينة</a>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+
+                <div x-show="hasPermission('students.approve_hq')" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">سبب الرفض (مطلوب عند الرفض)</label>
+                        <input type="text" maxlength="500" x-model="studentWorkflow.nonLibyan.decisionNotes[ns.id]"
+                               class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
+                    </div>
+                    <button @click="rejectNonLibyan(ns.id)" :disabled="studentWorkflow.nonLibyan.decidingId === ns.id"
+                            class="px-4 py-2.5 rounded-xl font-black text-xs text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950 disabled:opacity-50">
+                        رفض وحذف الملف نهائياً
+                    </button>
+                    <button @click="approveNonLibyan(ns.id)" :disabled="studentWorkflow.nonLibyan.decidingId === ns.id"
+                            class="px-4 py-2.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-700 disabled:opacity-50">
+                        اعتماد وتوليد رقم القيد
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+
     <div x-show="studentWorkflow.activeTab === 'exceptions'" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         <!-- نموذج التقديم (الفرع) -->

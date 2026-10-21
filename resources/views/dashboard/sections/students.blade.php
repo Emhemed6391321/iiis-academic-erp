@@ -770,7 +770,7 @@
                                         :disabled="isLibyanNationalityCategory(createStudentModal.form.nationality_category)"
                                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none disabled:opacity-70">
                                     <option value="" disabled>اختر الجنسية</option>
-                                    @foreach (\App\Models\Student::NATIONALITIES as $nationalityOption)
+                                    @foreach (array_merge([\App\Models\Student::LIBYAN_NATIONALITY], \App\Models\Nationality::activeNames()) as $nationalityOption)
                                         @if ($nationalityOption === \App\Models\Student::LIBYAN_NATIONALITY)
                                             <option value="{{ $nationalityOption }}" :disabled="!isLibyanNationalityCategory(createStudentModal.form.nationality_category)">{{ $nationalityOption }}</option>
                                         @else
@@ -1207,7 +1207,7 @@
                         <button type="submit" :disabled="createStudentModal.submitting"
                                 class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white font-black shadow-lg shadow-blue-900/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer">
                             <svg x-show="createStudentModal.submitting" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            <span x-text="createStudentModal.submitting ? 'جاري تسجيل وقيد الطالب وتوليد الرقم...' : '💾 اعتماد التسجيل وتوليد رقم القيد'"></span>
+                            <span x-text="createStudentModal.submitting ? 'جاري الحفظ...' : (createStudentModal.form.nationality_category === 'OTHER' ? '📨 حفظ الطالب ورفع طلب التسجيل للإدارة العامة' : '💾 اعتماد التسجيل وتوليد رقم القيد')"></span>
                         </button>
                     </div>
                 </div>
@@ -1383,12 +1383,10 @@
                                     :disabled="isLibyanNationalityCategory(editStudentModal.form.nationality_category)"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-70">
                                 <option value="" disabled>اختر الجنسية</option>
-                                @foreach (\App\Models\Student::NATIONALITIES as $nationalityOption)
-                                    @if ($nationalityOption === \App\Models\Student::LIBYAN_NATIONALITY)
-                                        <option value="{{ $nationalityOption }}" :disabled="!isLibyanNationalityCategory(editStudentModal.form.nationality_category)">{{ $nationalityOption }}</option>
-                                    @else
-                                        <option value="{{ $nationalityOption }}">{{ $nationalityOption }}</option>
-                                    @endif
+                                <option value="{{ \App\Models\Student::LIBYAN_NATIONALITY }}" :disabled="!isLibyanNationalityCategory(editStudentModal.form.nationality_category)">{{ \App\Models\Student::LIBYAN_NATIONALITY }}</option>
+                                {{-- A deactivated nationality stays listed but disabled, so a file that already has it keeps its value and no new choice can pick it. --}}
+                                @foreach (\App\Models\Nationality::query()->orderBy('sort_order')->orderBy('name')->get() as $nationalityRow)
+                                    <option value="{{ $nationalityRow->name }}" @if (! $nationalityRow->is_active) :disabled='editStudentModal.form.nationality !== @js($nationalityRow->name)' @endif>{{ $nationalityRow->name }}{{ $nationalityRow->is_active ? '' : ' (موقوفة)' }}</option>
                                 @endforeach
                             </select>
                         </div>

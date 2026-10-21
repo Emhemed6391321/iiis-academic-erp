@@ -94,6 +94,13 @@
                 <span>قواعد القبول بحسب العمر</span>
             </button>
 
+            <button @click="adminSettings.activeTab = 'nationalities'; loadNationalities()"
+                class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
+                :class="adminSettings.activeTab === 'nationalities' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
+                <span>🌍</span>
+                <span>الجنسيات المعتمدة للتسجيل</span>
+            </button>
+
             <button @click="adminSettings.activeTab = 'audit'"
                 class="px-4 py-2.5 rounded-[12px] text-xs font-extrabold transition-all flex items-center gap-2 whitespace-nowrap"
                 :class="adminSettings.activeTab === 'audit' ? (darkMode ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20' : 'bg-amber-600 text-white shadow-md shadow-amber-600/20') : (darkMode ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-amber-100/60 text-slate-700')">
@@ -634,6 +641,60 @@
     </div>
 
     <!-- TAB 6: AUDIT TRAIL & LOGS -->
+    <!-- TAB: الجنسيات المعتمدة للتسجيل (تديرها الإدارة العامة، وتظهر في قائمة الطالب غير الليبي) -->
+    <div x-show="adminSettings.activeTab === 'nationalities'" class="space-y-6">
+        <div class="p-6 rounded-[20px] border space-y-6"
+            :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
+
+            <div class="border-b pb-4" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-slate-800'">🌍 الجنسيات المعتمدة للتسجيل</h3>
+                <p class="text-xs text-slate-400 mt-0.5">تظهر الجنسيات المعتمدة في قائمة اختيار الجنسية عند تسجيل الطالب غير الليبي. الجنسية الموقوفة لا تظهر للتسجيل الجديد، ويحتفظ بها الطلاب المسجلون بها. الجنسية «ليبي» ثابتة للطالب الليبي ولا تُدار هنا.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="text" maxlength="100" x-model="adminSettings.nationalities.newName" placeholder="اسم الجنسية، مثل: إريتري"
+                    class="flex-1 px-4 py-2.5 rounded-[12px] text-xs border"
+                    :class="darkMode ? 'bg-slate-950 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-800'">
+                <button @click="addNationality()" :disabled="adminSettings.nationalities.saving"
+                    class="px-6 py-2.5 rounded-[12px] text-xs font-black bg-amber-600 hover:bg-amber-500 text-white shadow-md shadow-amber-900/20 transition-all disabled:opacity-50">
+                    ➕ إضافة الجنسية
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs min-w-[480px]">
+                    <thead>
+                        <tr class="text-right font-bold" :class="darkMode ? 'text-slate-400' : 'text-slate-500'">
+                            <th class="p-2">اسم الجنسية</th>
+                            <th class="p-2">الحالة</th>
+                            <th class="p-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="nat in adminSettings.nationalities.list" :key="nat.id">
+                            <tr class="border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                                <td class="p-2">
+                                    <input type="text" maxlength="100" x-model="nat.name" @change="saveNationality(nat)"
+                                        class="w-full px-3 py-1.5 rounded-lg border text-xs"
+                                        :class="darkMode ? 'bg-slate-950 border-slate-700 text-slate-100' : 'bg-white border-slate-300 text-slate-800'">
+                                </td>
+                                <td class="p-2 font-bold" :class="nat.is_active ? 'text-emerald-600' : 'text-rose-600'"
+                                    x-text="nat.is_active ? 'معتمدة' : 'موقوفة'"></td>
+                                <td class="p-2 text-left">
+                                    <button @click="nat.is_active = !nat.is_active; saveNationality(nat)"
+                                        class="px-3 py-1.5 rounded-lg font-bold border"
+                                        :class="darkMode ? 'border-slate-700 text-slate-200 hover:bg-slate-800' : 'border-slate-300 text-slate-700 hover:bg-slate-100'"
+                                        x-text="nat.is_active ? 'إيقاف' : 'تفعيل'"></button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+                <p x-show="adminSettings.nationalities.loaded && adminSettings.nationalities.list.length === 0" class="text-xs font-bold text-rose-600 mt-3">لا توجد جنسيات مسجلة.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- TAB 6: قواعد القبول بحسب العمر (تُحفظ مركزياً، ويطبقها الخادم والواجهة معاً) -->
     <div x-show="adminSettings.activeTab === 'admissions'" class="space-y-6">
         <div class="p-6 rounded-[20px] border space-y-6"

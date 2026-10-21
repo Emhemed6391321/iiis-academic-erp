@@ -97,6 +97,13 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::get('/students', [StudentController::class, 'index'])->middleware('permission:students.view');
     Route::post('/students', [StudentController::class, 'store'])->middleware(['academic.year.active', 'check.window:REGISTRATION', 'permission:students.create']);
     Route::post('/students/import-batch', [StudentController::class, 'importBatch'])->middleware(['academic.year.active', 'permission:students.create']);
+    // Declared before /students/{student} so the literal path is not read as a student id.
+    Route::get('/students/non-libyan/pending', [StudentController::class, 'nonLibyanPending'])->middleware('permission:students.approve_hq');
+
+    // Branch notices: outcomes of HQ decisions on the branch's files. Each user sees only its own branch's notices.
+    Route::get('/notices', [\App\Http\Controllers\Api\BranchNoticeController::class, 'index']);
+    Route::post('/notices/read-all', [\App\Http\Controllers\Api\BranchNoticeController::class, 'markAllRead']);
+    Route::post('/notices/{notice}/read', [\App\Http\Controllers\Api\BranchNoticeController::class, 'markRead'])->whereNumber('notice');
     Route::get('/students/{student}', [StudentController::class, 'show'])->middleware('permission:students.view');
     Route::match(['put', 'patch', 'post'], '/students/{student}', [StudentController::class, 'update'])->middleware('permission:students.create');
     Route::get('/students/{student}/card', [StudentController::class, 'getCard'])->middleware('permission:students.view');
@@ -291,6 +298,9 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
         Route::post('/signatories/save', [\App\Http\Controllers\Api\AdminSettingsController::class, 'saveDocumentSignatories'])->middleware('permission:admin_settings.manage');
         Route::get('/admission-rules', [\App\Http\Controllers\Api\AdmissionRulesController::class, 'show'])->middleware('permission:admin_settings.view|admin_settings.manage');
         Route::post('/admission-rules', [\App\Http\Controllers\Api\AdmissionRulesController::class, 'save'])->middleware('permission:admin_settings.manage');
+        Route::get('/nationalities', [\App\Http\Controllers\Api\NationalityController::class, 'index'])->middleware('permission:admin_settings.view|admin_settings.manage');
+        Route::post('/nationalities', [\App\Http\Controllers\Api\NationalityController::class, 'store'])->middleware('permission:admin_settings.manage');
+        Route::put('/nationalities/{nationality}', [\App\Http\Controllers\Api\NationalityController::class, 'update'])->middleware('permission:admin_settings.manage');
     });
 
     // Official approval path: branches submit, HQ decides (the controller also enforces HQ-only decisions).

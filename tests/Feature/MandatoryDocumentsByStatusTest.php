@@ -88,7 +88,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
         $service = app(StudentDocumentService::class);
 
         $this->assertEqualsCanonicalizing(
-            ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'],
+            ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'],
             $service->missingRequiredTypes($student)
         );
     }
@@ -96,7 +96,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
     public function test_non_libyan_final_approval_waits_for_the_foreign_birth_certificate(): void
     {
         $student = $this->createStudent('OTHER');
-        $required = ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'];
+        $required = ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'];
 
         $refused = $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq");
         $refused->assertStatus(422);

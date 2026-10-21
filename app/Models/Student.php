@@ -35,39 +35,6 @@ class Student extends Model
     /** تصنيفات الجنسية التي تعني أن الطالب ليبي. */
     public const LIBYAN_CATEGORIES = ['LIBYAN', 'LIBYAN_NO_NATIONAL_ID'];
 
-    /**
-     * قائمة الجنسيات الثابتة التي تُختار منها عند إضافة الطالب (الواجهة والخادم معاً).
-     * تضم ليبيا ودول الجوار والدول الإسلامية.
-     */
-    public const NATIONALITIES = [
-        'ليبي',
-        'تونسي',
-        'جزائري',
-        'مغربي',
-        'مصري',
-        'سوداني',
-        'تشادي',
-        'نيجري',
-        'موريتاني',
-        'مالي',
-        'نيجيري',
-        'صومالي',
-        'سوري',
-        'فلسطيني',
-        'يمني',
-        'عراقي',
-        'أردني',
-        'بنغلاديشي',
-        'باكستاني',
-        'إندونيسي',
-    ];
-
-    /** الجنسيات الأجنبية فقط (بدون ليبيا)، وهي الخيارات المتاحة لغير الليبيين. */
-    public static function foreignNationalities(): array
-    {
-        return array_values(array_diff(self::NATIONALITIES, [self::LIBYAN_NATIONALITY]));
-    }
-
     public function getEnrollmentStatusLabelAttribute(): string
     {
         return self::ENROLLMENT_STATUS_LABELS[$this->academic_status] ?? (string) $this->academic_status;

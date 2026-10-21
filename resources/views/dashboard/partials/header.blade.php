@@ -130,6 +130,46 @@
                     </svg>
                 </button>
 
+                <!-- إشعارات الفرع: نتيجة قرار الإدارة العامة على ملفات الفرع (اعتماد أو رفض) -->
+                <div class="relative" x-data="{ open: false }" x-init="loadBranchNotices()">
+                    <button @click="open = !open; if (open) loadBranchNotices()"
+                            class="p-2 rounded-xl relative transition-colors border cursor-pointer text-base leading-none"
+                            :class="darkMode ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-slate-100 border-[#e8ebf2] hover:bg-slate-200 text-slate-700'"
+                            title="إشعارات الفرع">
+                        <span>📨</span>
+                        <span x-show="branchNotices.unread > 0"
+                              class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-600 text-white text-[10px] font-black flex items-center justify-center"
+                              x-text="branchNotices.unread"></span>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false"
+                         class="absolute left-0 mt-2 w-80 rounded-[22px] shadow-2xl border py-3 z-50 text-xs"
+                         :class="darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-[#e8ebf2] text-slate-800'"
+                         x-cloak>
+                        <div class="px-4 pb-2.5 border-b flex items-center justify-between"
+                             :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
+                            <span class="font-black text-sm">📨 إشعارات الفرع</span>
+                            <button @click="markAllBranchNoticesRead()" x-show="branchNotices.unread > 0"
+                                    class="text-[11px] font-bold text-emerald-600 hover:underline">تعليم الكل مقروءاً</button>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            <template x-for="notice in branchNotices.list" :key="notice.id">
+                                <button @click="markBranchNoticeRead(notice)"
+                                        class="w-full text-right px-4 py-3 border-b last:border-0 transition-colors"
+                                        :class="darkMode ? 'border-slate-800 hover:bg-slate-800' : 'border-slate-100 hover:bg-slate-50'">
+                                    <div class="flex items-center gap-2">
+                                        <span x-show="!notice.read" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        <span class="font-bold" x-text="notice.title"></span>
+                                    </div>
+                                    <p class="mt-1 text-[11px] opacity-80" x-text="notice.body"></p>
+                                    <span class="text-[10px] opacity-60" x-text="notice.time_ago"></span>
+                                </button>
+                            </template>
+                            <p x-show="branchNotices.loaded && branchNotices.list.length === 0" class="px-4 py-6 text-center text-slate-400">لا توجد إشعارات.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- مركز الإشعارات والتنبيهات (Notifications Dropdown) -->
                 <!-- مركز التنبيهات والتدقيق الحي (Live Audit & Notifications Hub) -->
                 <div class="relative" x-data="{ open: false }" x-init="loadLiveAlerts()">

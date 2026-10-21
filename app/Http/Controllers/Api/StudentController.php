@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Models\BranchNotice;
+use App\Models\Nationality;
 use App\Models\Student;
 use App\Models\StudentDocument;
 use App\Models\AcademicYear;
@@ -196,9 +198,13 @@ class StudentController extends Controller
 
         $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
         $validated['enrolled_academic_year_id'] = $currentYear ? $currentYear->id : 1;
-        $validated['academic_status'] = 'ENROLLED_ACTIVE'; // Direct registration with official number
-        $validated['approved_by'] = $user ? $user->id : null;
-        $validated['approved_at'] = Carbon::now();
+
+        // The non-Libyan student is saved as a draft: documents are attached next, then the file is submitted to HQ.
+        // No academic number is issued until HQ approves it.
+        $nonLibyan = $validated['nationality_category'] === 'OTHER';
+        $validated['academic_status'] = $nonLibyan ? 'NEW_DRAFT' : 'ENROLLED_ACTIVE';
+        $validated['approved_by'] = $nonLibyan || !$user ? null : $user->id;
+        $validated['approved_at'] = $nonLibyan ? null : Carbon::now();
 
         // Auto assign branch if not provided or if non-HQ
         if (!$user || !$user->hasGlobalAccessScope() || empty($validated['branch_id'])) {
@@ -245,7 +251,7 @@ class StudentController extends Controller
 
         // 4. Create Student and Auto-Generate Enrollment Number in Transaction
         try {
-            $student = DB::transaction(function () use ($validated, $currentYear, $ageExemption, $gradeExemption) {
+            $student = DB::transaction(function () use ($validated, $currentYear, $ageExemption, $gradeExemption, $nonLibyan) {
                 // Each approved request is spent exactly once, in the same transaction as the enrollment.
                 $service = app(AdministrativeRequestService::class);
                 foreach (array_filter([$ageExemption, $gradeExemption]) as $approvedRequest) {
@@ -254,6 +260,10 @@ class StudentController extends Controller
                             'admission_request_id' => 'الطلب المعتمد مستهلك أو لم يعد صالحاً لهذا القيد.',
                         ]);
                     }
+                }
+
+                if ($nonLibyan) {
+                    return Student::create($validated);
                 }
 
                 // Instantiate temporary model to calculate number
@@ -279,9 +289,13 @@ class StudentController extends Controller
         // 5. Save Attached Documents if any
         $this->handleAttachedDocuments($request, $student, $user);
 
+        $message = $nonLibyan
+            ? 'تم حفظ بيانات الطالب غير الليبي كمسودة دون رقم قيد. ارفع المستندات المطلوبة ثم أرسل الطلب للإدارة العامة.'
+            : 'تم تسجيل وقيد الطالب وتوليد رقم القيد (' . $student->academic_number . ') بنجاح.';
+
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل وقيد الطالب وتوليد رقم القيد (' . $student->academic_number . ') بنجاح.',
+            'message' => $message,
             'student' => $student->fresh(['branch', 'department', 'currentStudyYear', 'enrolledAcademicYear', 'documents']),
             'data'    => $student->fresh(['branch', 'department', 'currentStudyYear', 'enrolledAcademicYear', 'documents']),
         ], 201);
@@ -321,7 +335,7 @@ class StudentController extends Controller
             'gender' => 'required|in:MALE,FEMALE',
             'birth_date' => ['required', 'date'],
             'birth_place' => 'required|string|max:100',
-            'nationality' => $this->nationalityRules($request),
+            'nationality' => $this->nationalityRules($request, $student->nationality),
             'religion' => 'nullable|string|max:50',
             'phone' => 'required|string|max:30',
             'guardian_phone' => 'required|string|max:30',
@@ -777,13 +791,16 @@ class StudentController extends Controller
             // 7. Parse & Normalize Birth Date (handle Excel serial numbers & string formats)
             $birthDate = $this->normalizeDate($rawBirthDate);
 
-            // Validations
-            if (strlen($nationalId) !== 12) {
+            // Validations: a Libyan row needs a 12-digit national ID. A non-Libyan row needs a passport number
+            // and a nationality from the list HQ manages; it is then saved as a draft for central approval.
+            $passportInput = strtoupper(trim((string)($row['passport_number'] ?? '')));
+            if (strlen($nationalId) !== 12
+                && ($passportInput === '' || !in_array($nationality, Nationality::activeNames(), true))) {
                 $errors[] = [
                     'row' => $rowNum,
                     'national_id' => $nationalId,
                     'name' => "{$firstName} {$familyName}",
-                    'error' => "الرقم الوطني يجب أن يتكون من 12 خانة رقمية دقيقة (المدخل: {$nationalId})",
+                    'error' => "الرقم الوطني يجب أن يتكون من 12 خانة رقمية دقيقة، أو يُدخل الطالب غير الليبي رقم جوازه وجنسيته من القائمة المعتمدة (المدخل: {$nationalId})",
                 ];
                 continue;
             }
@@ -857,6 +874,9 @@ class StudentController extends Controller
             $healthStatus = trim((string)($row['health_status'] ?? 'سليم'));
             $chronicDiseases = trim((string)($row['chronic_diseases'] ?? ''));
 
+            // A row without a 12-digit national ID is a non-Libyan file: it is saved as a draft and goes through central approval.
+            $nonLibyan = strlen($nationalId) !== 12;
+
             try {
                 $studentData = [
                     'national_id' => $nationalId,
@@ -883,7 +903,7 @@ class StudentController extends Controller
                     'current_study_year_id' => $studyYearId,
                     'study_type' => $studyType,
                     'enrolled_academic_year_id' => $yearId,
-                    'academic_status' => 'ENROLLED_ACTIVE',
+                    'academic_status' => $nonLibyan ? 'NEW_DRAFT' : 'ENROLLED_ACTIVE',
                     'has_disability' => $hasDisability,
                     'disability_type' => $disabilityType ?: null,
                     'health_status' => $healthStatus,
@@ -892,25 +912,32 @@ class StudentController extends Controller
                     // Empty identifiers are stored as NULL so the unique indexes accept many rows without one.
                     'nationality_category' => strlen($nationalId) === 12 ? 'LIBYAN' : 'OTHER',
                     'passport_number' => ($passportNumber = strtoupper(trim((string)($row['passport_number'] ?? '')))) !== '' ? $passportNumber : null,
-                    'approved_by' => $user?->id,
-                    'approved_at' => Carbon::now(),
-                    'notes' => $notes ?: 'تم القيد وتوليد رقم القيد الرسمي عبر استيراد إكسل للدفعة',
+                    'approved_by' => $nonLibyan ? null : $user?->id,
+                    'approved_at' => $nonLibyan ? null : Carbon::now(),
+                    'notes' => $nonLibyan
+                        ? 'حُفظ كمسودة لطالب غير ليبي عبر استيراد إكسل، بانتظار الاعتماد المركزي'
+                        : ($notes ?: 'تم القيد وتوليد رقم القيد الرسمي عبر استيراد إكسل للدفعة'),
                 ];
 
-                $student = DB::transaction(function () use ($studentData, $currentYear, $user) {
-                    $tempStudent = new Student($studentData);
-                    if ($currentYear) {
-                        $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
+                $student = DB::transaction(function () use ($studentData, $currentYear, $user, $nonLibyan) {
+                    // The number is issued only for a Libyan row; a non-Libyan draft gets it at central approval.
+                    if (!$nonLibyan) {
+                        $tempStudent = new Student($studentData);
+                        if ($currentYear) {
+                            $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
+                        }
+                        $studentData['academic_number'] = $this->numberGenerator->generate($tempStudent);
                     }
-                    $studentData['academic_number'] = $this->numberGenerator->generate($tempStudent);
                     $newStudent = Student::create($studentData);
 
                     \App\Models\StudentStatusHistory::create([
                         'student_id' => $newStudent->id,
                         'old_status' => null,
-                        'new_status' => 'ENROLLED_ACTIVE',
-                        'event_type' => 'RENEWAL',
-                        'reason' => 'قيد جديد وتوليد رقم قيد أكاديمي رسمي عبر استيراد الدفعة',
+                        'new_status' => $newStudent->academic_status,
+                        'event_type' => $nonLibyan ? 'STATUS_CHANGE' : 'RENEWAL',
+                        'reason' => $nonLibyan
+                            ? 'حفظ طالب غير ليبي كمسودة عبر استيراد الدفعة بانتظار الاعتماد المركزي'
+                            : 'قيد جديد وتوليد رقم قيد أكاديمي رسمي عبر استيراد الدفعة',
                         'changed_by' => $user?->id,
                         'event_date' => Carbon::now(),
                         'meta' => [
@@ -1354,6 +1381,10 @@ class StudentController extends Controller
      */
     public function submitToHq(Student $student): JsonResponse
     {
+        if ($student->nationality_category === 'OTHER') {
+            return $this->submitNonLibyanToHq($student);
+        }
+
         if ($student->academic_status !== 'NEW_DRAFT' && $student->academic_status !== 'REJECTED_REVISION') {
             return response()->json([
                 'success' => false,
@@ -1384,6 +1415,14 @@ class StudentController extends Controller
             ], 403);
         }
 
+        // A non-Libyan file reaches HQ only through its submission step, after all its documents are attached.
+        if ($student->nationality_category === 'OTHER' && $student->academic_status !== 'PENDING_HQ') {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يُعتمد طلب الطالب غير الليبي قبل رفعه من الفرع للاعتماد المركزي.',
+            ], 422);
+        }
+
         // Final approval is refused while a mandatory document for the student's nationality category is missing.
         $missing = app(\App\Services\StudentDocumentService::class)->missingRequiredTypes($student);
         if (!empty($missing)) {
@@ -1410,6 +1449,26 @@ class StudentController extends Controller
             ]);
         });
 
+        if ($student->nationality_category === 'OTHER') {
+            SystemAuditTrail::log(
+                eventType: 'NON_LIBYAN_ENROLLMENT_APPROVED',
+                description: "اعتمدت الإدارة العامة طلب تسجيل طالب غير ليبي (المرجع {$student->id}) وصدر رقم القيد {$student->academic_number}",
+                payload: ['student_id' => $student->id, 'branch_id' => $student->branch_id, 'academic_number' => $student->academic_number],
+                userId: $user?->id,
+                branchId: $student->branch_id,
+                modelType: 'Student',
+                modelId: $student->id,
+                oldValues: ['academic_status' => 'PENDING_HQ'],
+                newValues: ['academic_status' => 'ENROLLED_ACTIVE', 'academic_number' => $student->academic_number],
+            );
+
+            BranchNotice::notify(
+                (int) $student->branch_id,
+                'اعتماد طالب غير ليبي',
+                "اعتمدت الإدارة العامة تسجيل الطالب {$student->full_name} وصدر رقم القيد {$student->academic_number}."
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'تم اعتماد الطالب رسمياً وتثبيت الرقم الأكاديمي الموحد بنجاح.',
@@ -1435,6 +1494,11 @@ class StudentController extends Controller
             'rejection_reason' => 'required|string|min:5',
         ]);
 
+        // A rejected non-Libyan file is purged, not returned: no number is ever reserved for it.
+        if ($student->nationality_category === 'OTHER') {
+            return $this->rejectAndPurgeNonLibyan($student, $request->input('rejection_reason'), $user);
+        }
+
         $student->update([
             'academic_status' => 'REJECTED_REVISION',
             'notes' => "سبب إعادة الملف من الإدارة العامة: " . $request->rejection_reason,
@@ -1445,6 +1509,155 @@ class StudentController extends Controller
             'message' => 'تمت إعادة الملف للفرع للتصحيح واستيفاء النواقص.',
             'student' => $student,
         ]);
+    }
+
+    /**
+     * الطالب غير الليبي يُرفع للإدارة العامة فقط بعد إرفاق كامل مستنداته الإلزامية.
+     */
+    private function submitNonLibyanToHq(Student $student): JsonResponse
+    {
+        if (!in_array($student->academic_status, ['NEW_DRAFT', 'REJECTED_REVISION'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الملف مرفوع مسبقاً أو معتمد بالفعل.',
+            ], 422);
+        }
+
+        $missing = app(StudentDocumentService::class)->missingRequiredTypes($student);
+        if (!empty($missing)) {
+            $labels = array_map(fn ($type) => StudentDocument::DOCUMENT_TYPES[$type] ?? $type, $missing);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يُرفع الطلب قبل إرفاق المستندات الإلزامية: ' . implode('، ', $labels) . '.',
+                'missing_documents' => $missing,
+            ], 422);
+        }
+
+        $previousStatus = $student->academic_status;
+        $student->update(['academic_status' => 'PENDING_HQ']);
+
+        SystemAuditTrail::log(
+            eventType: 'NON_LIBYAN_ENROLLMENT_SUBMITTED',
+            description: "رُفع طلب تسجيل طالب غير ليبي (المرجع {$student->id}) إلى الإدارة العامة",
+            payload: ['student_id' => $student->id, 'branch_id' => $student->branch_id],
+            userId: Auth::id(),
+            branchId: $student->branch_id,
+            modelType: 'Student',
+            modelId: $student->id,
+            oldValues: ['academic_status' => $previousStatus],
+            newValues: ['academic_status' => 'PENDING_HQ'],
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم رفع طلب تسجيل الطالب غير الليبي إلى الإدارة العامة للاعتماد.',
+            'student' => $student->fresh(),
+        ]);
+    }
+
+    /**
+     * رفض طلب الطالب غير الليبي يحذف بياناته ومستنداته نهائياً، ولا يُولَّد له رقم قيد.
+     * يبقى في سجل التدقيق المرجع وسبب الرفض فقط، دون البيانات الشخصية.
+     */
+    private function rejectAndPurgeNonLibyan(Student $student, string $reason, $user): JsonResponse
+    {
+        if ($student->academic_status !== 'PENDING_HQ') {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يُرفض إلا طلب بانتظار قرار الإدارة العامة.',
+            ], 422);
+        }
+
+        $documents = $student->documents()->get();
+        $publicFiles = array_values(array_filter([
+            $student->profile_photo_path,
+            $student->digital_signature_path,
+            $student->medical_report_path,
+        ]));
+        $reference = $student->id;
+        $branchId = $student->branch_id;
+
+        DB::transaction(function () use ($student, $reference, $branchId, $reason, $user, $documents) {
+            SystemAuditTrail::log(
+                eventType: 'NON_LIBYAN_ENROLLMENT_REJECTED',
+                description: "رفضت الإدارة العامة طلب تسجيل طالب غير ليبي (المرجع {$reference}) وحُذفت بياناته ومستنداته نهائياً. السبب: {$reason}",
+                payload: ['request_ref' => $reference, 'branch_id' => $branchId, 'documents_purged' => $documents->count(), 'reason' => $reason],
+                userId: $user?->id,
+                branchId: $branchId,
+                modelType: 'Student',
+                modelId: $reference,
+                oldValues: ['academic_status' => 'PENDING_HQ'],
+                newValues: ['purged' => true],
+            );
+
+            $student->documents()->delete();
+            $student->notes()->delete();
+            $student->attendance()->delete();
+            $student->behaviors()->delete();
+            $student->excuses()->delete();
+            $student->enrollmentStatusRequests()->delete();
+            $student->statusHistory()->delete();
+            $student->transfers()->delete();
+            \App\Models\DocumentVerification::where('student_id', $reference)->delete();
+
+            $student->delete();
+
+            // The notice names no student: the file it refers to is purged with the rejection.
+            BranchNotice::notify(
+                (int) $branchId,
+                'رفض طلب تسجيل طالب غير ليبي',
+                "رفضت الإدارة العامة طلب التسجيل (المرجع {$reference}) للسبب: {$reason}. حُذفت بيانات الطالب ومستنداته نهائياً، ولم يُصدر رقم قيد."
+            );
+        });
+
+        // Files are removed only after the rows are gone, so a rolled-back purge never leaves rows pointing at deleted files.
+        $service = app(StudentDocumentService::class);
+        foreach ($documents as $document) {
+            $service->deleteStoredFile($document);
+        }
+        if (!empty($publicFiles)) {
+            Storage::disk('public')->delete($publicFiles);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم رفض طلب تسجيل الطالب غير الليبي، وحُذفت بياناته ومستنداته نهائياً. لم يُولَّد أي رقم قيد.',
+        ]);
+    }
+
+    /**
+     * طلبات تسجيل الطلاب غير الليبيين بانتظار قرار الإدارة العامة، مع مستنداتها للمعاينة.
+     */
+    public function nonLibyanPending(): JsonResponse
+    {
+        $students = Student::query()
+            ->where('nationality_category', 'OTHER')
+            ->where('academic_status', 'PENDING_HQ')
+            ->with(['branch:id,name', 'department:id,name', 'documents'])
+            ->orderBy('updated_at')
+            ->get()
+            ->map(fn (Student $student) => [
+                'id' => $student->id,
+                'full_name' => $student->full_name,
+                'nationality' => $student->nationality,
+                'passport_number' => $student->passport_number,
+                'birth_date' => $student->birth_date,
+                'phone' => $student->phone,
+                'guardian_phone' => $student->guardian_phone,
+                'branch' => $student->branch?->name,
+                'department' => $student->department?->name,
+                'submitted_at' => $student->updated_at,
+                'documents' => $student->documents->map(fn (StudentDocument $document) => [
+                    'id' => $document->id,
+                    'label' => StudentDocument::DOCUMENT_TYPES[$document->document_type] ?? $document->document_type,
+                    'original_name' => $document->original_name,
+                    'file_url' => $document->file_url,
+                ])->values(),
+            ])
+            ->values();
+
+        return response()->json(['success' => true, 'students' => $students]);
     }
 
     /**
@@ -1469,11 +1682,19 @@ class StudentController extends Controller
     /**
      * الليبي: الجنسية «ليبي» فقط. غيره: جنسية أجنبية من القائمة الثابتة (ليبي مرفوضة).
      */
-    private function nationalityRules(Request $request): array
+    private function nationalityRules(Request $request, ?string $currentNationality = null): array
     {
-        return in_array($request->input('nationality_category'), Student::LIBYAN_CATEGORIES, true)
-            ? ['required', Rule::in([Student::LIBYAN_NATIONALITY])]
-            : ['required', 'string', Rule::in(Student::foreignNationalities())];
+        if (in_array($request->input('nationality_category'), Student::LIBYAN_CATEGORIES, true)) {
+            return ['required', Rule::in([Student::LIBYAN_NATIONALITY])];
+        }
+
+        // The list is managed by HQ. A student already recorded with a since-deactivated nationality keeps it until changed.
+        $allowed = Nationality::activeNames();
+        if ($currentNationality && $currentNationality !== Student::LIBYAN_NATIONALITY) {
+            $allowed[] = $currentNationality;
+        }
+
+        return ['required', 'string', Rule::in($allowed)];
     }
 
     /**
