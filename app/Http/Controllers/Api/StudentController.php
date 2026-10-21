@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
@@ -134,6 +135,9 @@ class StudentController extends Controller
     {
         $user = Auth::user();
 
+        // The Libyan category fixes the nationality and, with a national ID, the gender. Done before validation so the age rule sees the gender.
+        $this->applyLibyanNationalityAndGender($request);
+
         // Approved HQ requests that may waive a rule. Each one is only honoured for the identity it was issued for.
         $ageExemption = $this->approvedExceptionFor($request, AdministrativeRequest::TYPE_AGE_EXCEPTION, null);
 
@@ -151,7 +155,7 @@ class StudentController extends Controller
             'gender' => 'required|in:MALE,FEMALE',
             'birth_date' => ['required', 'date', new AdmissionAgeRule($request->input('study_type'), $request->input('gender'), $this->ruleBranchId($request, $user), $ageExemption !== null)],
             'birth_place' => 'required|string|max:100',
-            'nationality' => 'nullable|string|max:50',
+            'nationality' => $this->nationalityRules($request),
             'phone' => 'required|string|max:30',
             'guardian_phone' => 'required|string|max:30',
             'department_id' => 'required|exists:departments,id',
@@ -298,7 +302,12 @@ class StudentController extends Controller
             ], 403);
         }
 
-        // 2. Validation
+        // 2. Validation. The category falls back to the stored one, and the same Libyan rules as registration apply before the rules are built.
+        if (!$request->filled('nationality_category')) {
+            $request->merge(['nationality_category' => $student->nationality_category ?: 'LIBYAN']);
+        }
+        $this->applyLibyanNationalityAndGender($request);
+
         $rules = [
             'nationality_category' => 'nullable|in:LIBYAN,LIBYAN_NO_NATIONAL_ID,OTHER',
             'national_id' => 'nullable|string|max:20',
@@ -312,7 +321,7 @@ class StudentController extends Controller
             'gender' => 'required|in:MALE,FEMALE',
             'birth_date' => ['required', 'date'],
             'birth_place' => 'required|string|max:100',
-            'nationality' => 'nullable|string|max:50',
+            'nationality' => $this->nationalityRules($request),
             'religion' => 'nullable|string|max:50',
             'phone' => 'required|string|max:30',
             'guardian_phone' => 'required|string|max:30',
@@ -1452,6 +1461,47 @@ class StudentController extends Controller
         $found = $service->findApproved($type, $identity, $studyYearId);
 
         return $found && (int) $found->id === (int) $request->input('admission_request_id') ? $found : null;
+    }
+
+    /** الرقم الأول من الرقم الوطني يحدد الجنس: 1 ذكر، 2 أنثى. */
+    private const GENDER_BY_NATIONAL_ID_DIGIT = ['1' => 'MALE', '2' => 'FEMALE'];
+
+    /**
+     * الليبي: الجنسية «ليبي» فقط. غيره: جنسية أجنبية من القائمة الثابتة (ليبي مرفوضة).
+     */
+    private function nationalityRules(Request $request): array
+    {
+        return in_array($request->input('nationality_category'), Student::LIBYAN_CATEGORIES, true)
+            ? ['required', Rule::in([Student::LIBYAN_NATIONALITY])]
+            : ['required', 'string', Rule::in(Student::foreignNationalities())];
+    }
+
+    /**
+     * للطالب الليبي: تُفرض الجنسية «ليبي»، ويُستخرج الجنس من أول رقم في الرقم الوطني.
+     * الخادم هو المرجع، فيُستبدل الجنس الذي أرسلته الواجهة بالمستخرج من الرقم الوطني.
+     */
+    private function applyLibyanNationalityAndGender(Request $request): void
+    {
+        $category = (string) $request->input('nationality_category', '');
+        if (!in_array($category, Student::LIBYAN_CATEGORIES, true)) {
+            return;
+        }
+
+        $request->merge(['nationality' => Student::LIBYAN_NATIONALITY]);
+
+        $national = preg_replace('/\s+/', '', (string) $request->input('national_id', ''));
+        if ($category !== 'LIBYAN' || $national === '') {
+            return;
+        }
+
+        $gender = self::GENDER_BY_NATIONAL_ID_DIGIT[substr($national, 0, 1)] ?? null;
+        if ($gender === null) {
+            throw ValidationException::withMessages([
+                'national_id' => 'الرقم الوطني يجب أن يبدأ بالرقم 1 (ذكر) أو 2 (أنثى) لتحديد الجنس.',
+            ]);
+        }
+
+        $request->merge(['gender' => $gender]);
     }
 
     /**

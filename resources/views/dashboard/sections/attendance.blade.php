@@ -718,7 +718,7 @@
                                     <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
                                     <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
                                     <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                                    <div class="font-black text-sm text-[#14268d]" x-text="attendance.reports.payload.institute_name || adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'"></div>
+                                    <div class="font-black text-sm text-[#14268d]" x-text="attendance.reports.payload.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للدراسات الإسلامية'"></div>
                                     <div class="text-[11px] font-bold text-amber-700" x-text="'فرع: ' + (attendance.reports.payload.branch_name || adminSettings.profile.branch_label || 'جميع الفروع')"></div>
                                 </div>
 

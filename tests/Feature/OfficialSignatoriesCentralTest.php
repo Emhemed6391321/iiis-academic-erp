@@ -118,6 +118,26 @@ class OfficialSignatoriesCentralTest extends TestCase
         $this->assertCentralSignatories($response->json('certificate.signatories'));
     }
 
+    public function test_certificate_issuer_comes_from_a_central_slot_not_the_logged_in_user(): void
+    {
+        OfficialDocumentSignatory::create([
+            'document_code' => 'enrollment_cert',
+            'slot_key' => 'issued_by',
+            'slot_label' => 'الموظف المختص بالتسجيل',
+            'user_id' => $this->registrar->id,
+            'custom_title_override' => 'الموظف المختص بالتسجيل',
+            'is_active' => true,
+        ]);
+        AdminSettingsService::clearCache();
+
+        $response = $this->actingAs($this->admin)->getJson("/api/v1/students/{$this->student->id}/certificates/enrollment");
+
+        $response->assertOk();
+        $response->assertJsonMissingPath('certificate.issuer');
+        $this->assertSame($this->registrar->name, $response->json('certificate.signatories.issued_by.name'));
+        $this->assertSame('الموظف المختص بالتسجيل', $response->json('certificate.signatories.issued_by.title'));
+    }
+
     public function test_confidential_report_reads_signatories_from_central_settings(): void
     {
         $response = $this->actingAs($this->admin)->getJson("/api/v1/students/{$this->student->id}/confidential-report");

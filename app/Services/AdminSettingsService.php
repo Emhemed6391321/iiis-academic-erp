@@ -124,13 +124,17 @@ class AdminSettingsService
 
         $result = [];
         foreach ($signatories as $sig) {
-            $jobTitle = $sig->custom_title_override ?: ($sig->jobPosition ? $sig->jobPosition->title : 'المسؤول الإداري');
+            // The title and the name come only from this directory. Nothing is invented when a slot is unset.
+            $jobTitle = $sig->show_title
+                ? (string) ($sig->custom_title_override ?: ($sig->jobPosition?->title ?? ''))
+                : '';
+
             $placement = self::resolveSignatoryPlacement($sig, $branchId);
 
             $personName = $sig->user ? $sig->user->name : ($placement?->user?->name ?? '');
 
-            // التسكين يتحكم في ظهور اسم الموظف فقط؛ الصفة تبقى ظاهرة في المستند
-            if ($placement && !$placement->show_name_on_documents) {
+            // Two switches decide the name: the slot's own switch, and the placement's switch (the name is hidden if either is off).
+            if (!$sig->show_name || ($placement && !$placement->show_name_on_documents)) {
                 $personName = '';
             }
 
@@ -139,6 +143,8 @@ class AdminSettingsService
                 'slot_label' => $sig->slot_label,
                 'title'      => $jobTitle,
                 'name'       => $personName,
+                'show_name'  => (bool) $sig->show_name,
+                'show_title' => (bool) $sig->show_title,
             ];
         }
 

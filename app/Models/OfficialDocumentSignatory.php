@@ -15,10 +15,14 @@ class OfficialDocumentSignatory extends Model
         'user_id',
         'custom_title_override',
         'is_active',
+        'show_name',
+        'show_title',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'show_name' => 'boolean',
+        'show_title' => 'boolean',
     ];
 
     public function jobPosition(): BelongsTo

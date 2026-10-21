@@ -450,6 +450,8 @@ class AdminSettingsController extends Controller
             'signatories.*.user_id'               => 'nullable',
             'signatories.*.custom_title_override' => 'nullable|string|max:255',
             'signatories.*.is_active'             => 'nullable|boolean',
+            'signatories.*.show_name'             => 'nullable|boolean',
+            'signatories.*.show_title'            => 'nullable|boolean',
         ]);
 
         $userId = auth()->id() ?? 1;
@@ -469,6 +471,8 @@ class AdminSettingsController extends Controller
                     'user_id'               => $uId,
                     'custom_title_override' => $sigData['custom_title_override'] ?? null,
                     'is_active'             => $sigData['is_active'] ?? true,
+                    'show_name'             => $sigData['show_name'] ?? true,
+                    'show_title'            => $sigData['show_title'] ?? true,
                 ]
             );
         }

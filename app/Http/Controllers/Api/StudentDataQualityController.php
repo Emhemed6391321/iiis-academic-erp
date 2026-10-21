@@ -207,6 +207,8 @@ class StudentDataQualityController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => [
+                // Signatories of this report come from the central directory (مسميات التوقيعات), never from fixed text.
+                'signatories' => \App\Services\AdminSettingsService::getSignatoriesFor('data_quality', auth()->user()?->branch_id),
                 'summary' => [
                     'total_students_audited' => $totalStudents,
                     'deficient_students_count' => $deficientCount,

@@ -26,6 +26,15 @@ use App\Models\SystemAuditTrail;
 
 class StudentRegistryReportController extends Controller
 {
+
+    /**
+     * صفة معتمد المستند من مسميات التوقيعات المركزية (فارغة إن لم تُحدَّد).
+     */
+    private function approverTitleFor(string $documentCode, Student $student): string
+    {
+        return \App\Services\AdminSettingsService::getSignatoriesFor($documentCode, $student->branch_id)['approved_by']['title'] ?? '';
+    }
+
     /** Most rows one printed official registry carries; larger sets go through the CSV export. */
     private const OFFICIAL_PRINT_LIMIT = 500;
 
@@ -53,6 +62,7 @@ class StudentRegistryReportController extends Controller
                 'current_study_year_id', 'enrolled_academic_year_id',
                 'first_name', 'father_name', 'grandfather_name', 'family_name', 'mother_name',
                 'gender', 'birth_date', 'birth_place', 'nationality',
+                'nationality_category', 'administrative_number', 'passport_number', 'ministry_student_id',
                 'phone', 'guardian_phone', 'study_type', 'academic_status',
                 'is_archived', 'is_special_needs', 'has_disability',
                 'profile_photo_path', 'approved_by', 'approved_at', 'data_verified_at', 'created_at'
@@ -322,7 +332,7 @@ class StudentRegistryReportController extends Controller
                     'section'       => $sectionName,
                     'study_type'    => $studyType,
                 ],
-                'مدير عام المعهد التخصصي للعلوم الشرعية',
+                $this->approverTitleFor('enrollment_cert', $student),
                 $user?->id
             );
         }
@@ -363,12 +373,6 @@ class StudentRegistryReportController extends Controller
                 'guardian_phone'     => $student->guardian_phone,
             ],
             'official_text'      => $officialText,
-            'issuer'             => [
-                'name'               => $user?->name ?? 'مسؤول التسجيل وشؤون الطلاب',
-                'role'               => $user?->role ?? 'مسجل عام المعهد',
-                'branch'             => $user?->branch?->name ?? $branchName,
-                'timestamp'          => Carbon::now()->format('Y-m-d H:i:s'),
-            ],
             'signatories'        => $signatories,
             'qr_verification_code' => $qrCodeUrl,
         ];
@@ -433,7 +437,7 @@ class StudentRegistryReportController extends Controller
                     'study_type'    => $studyType,
                     'clean_record'  => $hasCleanRecord,
                 ],
-                'مدير عام المعهد التخصصي للعلوم الشرعية',
+                $this->approverTitleFor('conduct_cert', $student),
                 $user?->id
             );
         }
@@ -470,12 +474,6 @@ class StudentRegistryReportController extends Controller
             ],
             'official_text'      => $officialText,
             'clean_record'       => $hasCleanRecord,
-            'issuer'             => [
-                'name'               => $user?->name ?? 'مسؤول شؤون الطلاب والامتحانات',
-                'role'               => $user?->role ?? 'مسجل عام المعهد',
-                'branch'             => $user?->branch?->name ?? $branchName,
-                'timestamp'          => Carbon::now()->format('Y-m-d H:i:s'),
-            ],
             'signatories'        => $signatories,
             'qr_verification_code' => $qrCodeUrl,
         ];

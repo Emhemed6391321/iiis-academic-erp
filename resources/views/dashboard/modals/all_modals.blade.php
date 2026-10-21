@@ -2719,7 +2719,7 @@
                                 x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة
                                 التعليم الأصيل</div>
                             <div class="font-black text-sm text-[#14268d]"
-                                x-text="attendance.warningModal.issuedNotice.institute_name || adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'">
+                                x-text="attendance.warningModal.issuedNotice.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للدراسات الإسلامية'">
                             </div>
                             <div class="text-[11px] font-bold text-rose-700"
                                 x-text="'فرع: ' + (attendance.warningModal.issuedNotice.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')">
@@ -2768,13 +2768,13 @@
                     <div class="grid grid-cols-2 gap-8 pt-8 mt-12 border-t-2 border-rose-900 text-center">
                         <div class="space-y-12">
                             <div class="font-bold text-xs"
-                                x-text="attendance.warningModal.issuedNotice.signatories?.officer_role || 'مسؤول شؤون الطلاب والحضور'">
+                                x-text="attendance.warningModal.issuedNotice.signatories?.officer_role || ''">
                             </div>
                             <div class="font-bold text-xs"
                                 x-text="attendance.warningModal.issuedNotice.signatories?.officer_name"></div>
                         </div>
                         <div class="space-y-12">
-                            <div class="font-bold text-xs" x-text="attendance.warningModal.issuedNotice.signatories?.director_title || 'مدير فرع المعهد'"></div>
+                            <div class="font-bold text-xs" x-text="attendance.warningModal.issuedNotice.signatories?.director_title || ''"></div>
                             <div class="font-bold text-xs" x-text="attendance.warningModal.issuedNotice.signatories?.director_name"></div>
                             <div class="font-mono text-xs text-slate-400">
                                 ................................................</div>

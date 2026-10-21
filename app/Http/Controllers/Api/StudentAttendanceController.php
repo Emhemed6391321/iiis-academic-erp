@@ -861,9 +861,9 @@ class StudentAttendanceController extends Controller
             ],
             'official_statement'=> $statement,
             'signatories'       => [
-                'officer_name'      => $signatories['prepared_by']['name'] ?? ($user?->name ?? 'مسؤول شؤون الطلاب والحضور'),
-                'officer_role'      => $signatories['prepared_by']['title'] ?? ($user?->role ?? 'مشرف الحضور والانضباط'),
-                'director_title'    => $signatories['approved_by']['title'] ?? 'مدير فرع المعهد',
+                'officer_name'      => $signatories['prepared_by']['name'] ?? '',
+                'officer_role'      => $signatories['prepared_by']['title'] ?? '',
+                'director_title'    => $signatories['approved_by']['title'] ?? '',
                 'director_name'     => $signatories['approved_by']['name'] ?? '',
             ],
             'qr_verification'   => url("/api/v1/students/{$student->id}/card"),

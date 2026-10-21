@@ -1763,6 +1763,30 @@
                     this.applyAdmissionDefaults();
                 },
 
+                // الليبي: الجنسية «ليبي» تلقائياً. غيره: يُختار من الجنسيات الأجنبية. الجنس للليبي يُستخرج من أول رقم في الرقم الوطني.
+                isLibyanNationalityCategory(category) {
+                    return category === 'LIBYAN' || category === 'LIBYAN_NO_NATIONAL_ID';
+                },
+
+                // تعمل على أي نموذج طالب (الإضافة أو التعديل) عبر كائن الحقول الممرَّر.
+                onNationalityCategoryChange(form, category) {
+                    if (this.isLibyanNationalityCategory(category)) {
+                        form.nationality = 'ليبي';
+                    } else if (form.nationality === 'ليبي') {
+                        form.nationality = '';
+                    }
+                    this.syncGenderFromNationalId(form, category, form.national_id);
+                },
+
+                // 1 = ذكر، 2 = أنثى. أي رقم آخر يترك الجنس فارغاً ليُرفض قبل الإرسال.
+                syncGenderFromNationalId(form, category, nationalId) {
+                    if (category !== 'LIBYAN') {
+                        return;
+                    }
+                    const digit = String(nationalId || '').replace(/\s+/g, '').charAt(0);
+                    form.gender = digit === '1' ? 'MALE' : (digit === '2' ? 'FEMALE' : '');
+                },
+
                 async submitCreateStudent() {
                     this.createStudentModal.submitting = true;
                     this.createStudentModal.errorMessage = '';
@@ -1787,6 +1811,22 @@
                         this.createStudentModal.errorMessage = 'الرقم الوطني يجب أن يتكون من 12 رقماً تماماً.';
                         this.createStudentModal.submitting = false;
                         this.showToast('الرقم الوطني يجب أن يتكون من 12 رقماً');
+                        return;
+                    }
+
+                    // Nationality and gender follow the category: the Libyan one is fixed, any other needs a foreign nationality.
+                    if (this.isLibyanNationalityCategory(category)) {
+                        f.nationality = 'ليبي';
+                    }
+                    const nationalityMissing = !this.isLibyanNationalityCategory(category) && (!f.nationality || f.nationality === 'ليبي');
+                    const genderMissing = !['MALE', 'FEMALE'].includes(f.gender);
+                    if (nationalityMissing || genderMissing) {
+                        this.createStudentModal.activeTab = 'personal';
+                        this.createStudentModal.errorMessage = nationalityMissing
+                            ? 'يرجى اختيار جنسية غير ليبية للطالب غير الليبي.'
+                            : 'الرقم الوطني للطالب الليبي يجب أن يبدأ بالرقم 1 (ذكر) أو 2 (أنثى).';
+                        this.createStudentModal.submitting = false;
+                        this.showToast(this.createStudentModal.errorMessage);
                         return;
                     }
 
@@ -1866,19 +1906,22 @@
                         cList = st.chronic_diseases.split('،').map(s => s.trim()).filter(Boolean);
                     }
 
+                    const category = st.nationality_category || 'LIBYAN';
                     this.editStudentModal.form = {
                         first_name: st.first_name || '',
                         father_name: st.father_name || '',
                         grandfather_name: st.grandfather_name || '',
                         family_name: st.family_name || '',
                         mother_name: st.mother_name || '',
+                        nationality_category: category,
                         national_id: st.national_id || '',
+                        administrative_number: st.administrative_number || '',
                         ministry_student_id: st.ministry_student_id || '',
                         passport_number: st.passport_number || '',
                         gender: st.gender || 'MALE',
                         birth_date: st.birth_date ? (typeof st.birth_date === 'string' ? st.birth_date.split('T')[0] : st.birth_date) : '2006-01-01',
                         birth_place: st.birth_place || 'طرابلس',
-                        nationality: st.nationality || 'ليبي',
+                        nationality: st.nationality || (this.isLibyanNationalityCategory(category) ? 'ليبي' : ''),
                         religion: st.religion || 'مسلم',
                         phone: st.phone || '',
                         guardian_phone: st.guardian_phone || '',
@@ -1907,6 +1950,9 @@
                         medical_report_base64: null,
                         notes: st.notes || ''
                     };
+                    // The Libyan category fixes the nationality, and gender follows the first digit of the national ID (same rule as registration).
+                    this.onNationalityCategoryChange(this.editStudentModal.form, category);
+
                     // خيارات الفرع والشعبة والمرحلة يجب أن تكون محمّلة، وأي قيمة مفقودة تُملأ من أول خيار متاح
                     // حتى لا يبقى حقل "مطلوب" فارغاً مخفياً داخل تبويب آخر فيمنع الحفظ
                     this.loadAdmissionOptions().then(() => {
@@ -1924,6 +1970,22 @@
                     this.editStudentModal.submitting = true;
                     this.editStudentModal.errorMessage = '';
                     try {
+                        // Same checks as registration: the Libyan nationality is fixed, and a non-Libyan needs a foreign nationality.
+                        const ef = this.editStudentModal.form;
+                        const libyan = this.isLibyanNationalityCategory(ef.nationality_category);
+                        if (libyan) {
+                            ef.nationality = 'ليبي';
+                        }
+                        const nationalityMissing = !libyan && (!ef.nationality || ef.nationality === 'ليبي');
+                        const genderMissing = ef.nationality_category === 'LIBYAN' && !['MALE', 'FEMALE'].includes(ef.gender);
+                        if (nationalityMissing || genderMissing) {
+                            this.editStudentModal.activeTab = 'personal';
+                            this.editStudentModal.errorMessage = nationalityMissing
+                                ? 'يرجى اختيار جنسية غير ليبية للطالب غير الليبي.'
+                                : 'الرقم الوطني للطالب الليبي يجب أن يبدأ بالرقم 1 (ذكر) أو 2 (أنثى).';
+                            return;
+                        }
+
                         const payload = { ...this.editStudentModal.form };
                         delete payload.disability_report_base64;
                         const res = await fetch(`/api/v1/students/${this.editStudentModal.studentId}`, {
@@ -2103,25 +2165,21 @@
                     };
                 },
 
-                // resolved: the signatories the server already resolved for this document (slot => {slot_label, title, name}).
-                // Printed forms pass it, so names and titles come from the central settings for every user, not only admins.
+                // Returns the label, title and name of one signature slot, and only what the central directory holds.
+                // Nothing is invented: an unset slot yields empty strings, so no name or title is printed for it.
+                // resolved: the signatories the server resolved for this document (slot => {slot_label, title, name}).
                 getSignatoryInfo(docCode, slotKey, defaultLabel, defaultName, resolved = null) {
-                    if (resolved && resolved[slotKey]) {
+                    if (resolved) {
                         const r = resolved[slotKey];
-                        return { label: r.slot_label || defaultLabel || '', title: r.title || defaultLabel || '', name: r.name || '' };
+                        return r ? { label: r.slot_label || '', title: r.title || '', name: r.name || '' } : { label: '', title: '', name: '' };
                     }
-                    if (!this.adminSettings || !this.adminSettings.signatories || !this.adminSettings.signatories.length) {
-                        return { label: defaultLabel || '', title: defaultLabel || '', name: defaultName || '' };
-                    }
-                    const sig = this.adminSettings.signatories.find(
-                        s => s.document_code === docCode && s.slot_key === slotKey && (s.is_active !== false)
-                    );
+                    const list = (this.adminSettings && this.adminSettings.signatories) || [];
+                    const sig = list.find(s => s.document_code === docCode && s.slot_key === slotKey && s.is_active !== false);
                     if (!sig) {
-                        return { label: defaultLabel || '', title: defaultLabel || '', name: defaultName || '' };
+                        return { label: '', title: '', name: '' };
                     }
-                    const title = sig.custom_title_override || (sig.job_position ? sig.job_position.title : (sig.slot_label || defaultLabel));
+                    const title = sig.show_title === false ? '' : (sig.custom_title_override || (sig.job_position ? sig.job_position.title : ''));
                     let name = sig.user ? sig.user.name : '';
-                    let nameHidden = false;
                     const activePlacements = (this.adminSettings.placements || []).filter(p => p.is_current && p.status === 'active');
                     let placement = null;
                     if (sig.user_id) {
@@ -2130,18 +2188,13 @@
                     } else if (sig.job_position_id) {
                         placement = activePlacements.find(p => p.job_position_id === sig.job_position_id) || null;
                     }
-                    // تسكين مُعطّل فيه إظهار الاسم: تظهر الصفة فقط دون الاسم
-                    if (placement && placement.show_name_on_documents === false) {
-                        nameHidden = true;
+                    const nameHidden = sig.show_name === false || (placement && placement.show_name_on_documents === false);
+                    if (nameHidden) {
                         name = '';
                     } else if (!name && placement && placement.user) {
                         name = placement.user.name;
                     }
-                    return {
-                        label: sig.slot_label || defaultLabel || '',
-                        title: title || defaultLabel || '',
-                        name: nameHidden ? '' : (name || defaultName || '')
-                    };
+                    return { label: sig.slot_label || '', title: title || '', name: name || '' };
                 },
 
                 async openOfficialRegistryPrint() {
@@ -5906,6 +5959,7 @@ async loadBranchOperations() {
                         const json = await res.json();
                         if (json.status === 'success') {
                             this.dataQuality.summary = json.data.summary;
+                            this.dataQuality.signatories = json.data.signatories || {};
                             this.dataQuality.branchCards = json.data.branch_cards;
                             this.dataQuality.studentsRoster = json.data.students_roster;
                             this.dataQuality.fieldsCatalog = json.data.fields_catalog;

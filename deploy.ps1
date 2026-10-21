@@ -78,7 +78,7 @@ if ($dirty) {
 # 3. Deploy on remote server (fast-forward only: never creates a merge commit on the server)
 Write-Host "`n[3/3] Applying updates on the server..." -ForegroundColor Yellow
 
-$remoteCmd = "cd $appDir && git pull --ff-only origin main && $php artisan migrate --force && $php artisan db:seed --class=SystemChangelogSeeder --force && $php artisan view:clear && $php artisan route:clear && $php artisan cache:clear && $php artisan config:clear && systemctl restart iiis-erp.service"
+$remoteCmd = "cd $appDir && git pull --ff-only origin main && $php artisan migrate --force && $php artisan db:seed --class=SystemChangelogSeeder --force && $php artisan db:seed --class=OfficialSignatoriesSeeder --force && $php artisan view:clear && $php artisan route:clear && $php artisan cache:clear && $php artisan config:clear && systemctl restart iiis-erp.service"
 
 ssh -n $server "$remoteCmd"
 

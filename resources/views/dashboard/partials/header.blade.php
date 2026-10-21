@@ -25,7 +25,7 @@
                     </div>
                     <div>
                         <div class="text-sm font-bold leading-tight flex items-center gap-2">
-                            <span x-text="adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'">المعهد المتوسط للدراسات الإسلامية</span>
+                            <span x-text="adminSettings.profile.institute_name || 'المعهد التخصصي للدراسات الإسلامية'">المعهد التخصصي للدراسات الإسلامية</span>
                             <span class="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold"
                                   :class="darkMode ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-blue-50 text-[#2b78a5] border border-blue-200/80'">ERP v2.0</span>
                         </div>

@@ -491,19 +491,15 @@
 
         <!-- Official Print Signatures Footer (Visible only in print) -->
         <div class="hidden print:block mt-12 pt-6 border-t-2 border-slate-900 text-xs">
+            <!-- Signature slots come from the central directory (مسميات التوقيعات), shown only when set there -->
             <div class="grid grid-cols-3 text-center">
-                <div>
-                    <p class="font-bold">مسؤول فحص الجودة والإدخال</p>
-                    <p class="mt-8 font-serif">......................................</p>
-                </div>
-                <div>
-                    <p class="font-bold">رئيس قسم الشؤون التعليمية بالفرع</p>
-                    <p class="mt-8 font-serif">......................................</p>
-                </div>
-                <div>
-                    <p class="font-bold">مدير فرع المعهد التخصصي</p>
-                    <p class="mt-8 font-serif">......................................</p>
-                </div>
+                <template x-for="slot in ['prepared_by', 'verified_by', 'approved_by']" :key="slot">
+                    <div>
+                        <p class="font-bold" x-text="getSignatoryInfo('data_quality', slot, '', '', dataQuality.signatories).label"></p>
+                        <p class="text-[11px] font-bold" x-text="getSignatoryInfo('data_quality', slot, '', '', dataQuality.signatories).name || getSignatoryInfo('data_quality', slot, '', '', dataQuality.signatories).title"></p>
+                        <p class="mt-8 font-serif">......................................</p>
+                    </div>
+                </template>
             </div>
             <p class="text-center text-[10px] text-slate-500 mt-6">تم استخراج هذا التقرير تلقائياً عبر البوابة الموحدة للمعهد التخصصي للدراسات الإسلامية (IIIS ERP)</p>
         </div>

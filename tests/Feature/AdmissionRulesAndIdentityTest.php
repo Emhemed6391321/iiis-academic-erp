@@ -99,6 +99,7 @@ class AdmissionRulesAndIdentityTest extends TestCase
     {
         $response = $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
             'study_type' => 'INTISAB',
+            'national_id' => '220' . random_int(100000000, 999999999),
             'gender' => 'FEMALE',
             'birth_date' => $this->birthDateForAge(15),
         ]));
@@ -208,6 +209,109 @@ class AdmissionRulesAndIdentityTest extends TestCase
         ]))->assertStatus(201);
 
         $this->assertDatabaseHas('students', ['passport_number' => 'A1234567', 'nationality_category' => 'OTHER', 'national_id' => null]);
+    }
+
+    public function test_libyan_category_fixes_the_nationality_to_libyan(): void
+    {
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration(['nationality' => 'فرنسي']))
+            ->assertStatus(201);
+
+        $this->assertDatabaseHas('students', ['nationality_category' => 'LIBYAN', 'nationality' => 'ليبي']);
+    }
+
+    public function test_other_category_needs_a_foreign_nationality_from_the_fixed_list(): void
+    {
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'nationality_category' => 'OTHER', 'nationality' => 'ليبي', 'national_id' => null, 'passport_number' => 'C7654321',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['nationality']);
+
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'nationality_category' => 'OTHER', 'nationality' => 'فرنسي', 'national_id' => null, 'passport_number' => 'C7654322',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['nationality']);
+
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'nationality_category' => 'OTHER', 'nationality' => 'تونسي', 'national_id' => null, 'passport_number' => 'C7654323',
+        ]))->assertStatus(201);
+    }
+
+    public function test_libyan_gender_comes_from_the_first_digit_of_the_national_id(): void
+    {
+        // The client sends MALE, but the first digit 2 decides the gender on the server.
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'national_id' => '200000000001', 'gender' => 'MALE',
+        ]))->assertStatus(201);
+        $this->assertDatabaseHas('students', ['national_id' => '200000000001', 'gender' => 'FEMALE']);
+
+        // A first digit other than 1 or 2 has no gender, so the registration is refused on the national ID.
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'national_id' => '300000000001',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['national_id']);
+    }
+
+    /** The fields the edit form sends, taken from the stored student so that only the tested field changes. */
+    private function editPayload(Student $student, array $overrides = []): array
+    {
+        return array_merge([
+            'first_name' => $student->first_name,
+            'father_name' => $student->father_name,
+            'grandfather_name' => $student->grandfather_name,
+            'family_name' => $student->family_name,
+            'mother_name' => $student->mother_name,
+            'national_id' => $student->national_id,
+            'administrative_number' => $student->administrative_number,
+            'passport_number' => $student->passport_number,
+            'gender' => $student->gender,
+            'birth_date' => Carbon::parse($student->birth_date)->format('Y-m-d'),
+            'birth_place' => $student->birth_place,
+            'phone' => '091-1112233',
+            'guardian_phone' => '091-2223344',
+            'department_id' => $student->department_id,
+            'current_study_year_id' => $student->current_study_year_id,
+            'study_type' => $student->study_type,
+        ], $overrides);
+    }
+
+    public function test_editing_a_libyan_student_keeps_nationality_libyan_and_derives_gender(): void
+    {
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration(['national_id' => '119000000001']))
+            ->assertStatus(201);
+        $student = Student::where('national_id', '119000000001')->firstOrFail();
+
+        // The client sends a foreign nationality and MALE, but the national ID starts with 2, so the server stores FEMALE and ليبي.
+        $this->actingAs($this->hq)->putJson("/api/v1/students/{$student->id}", $this->editPayload($student, [
+            'nationality' => 'فرنسي',
+            'national_id' => '200000000001',
+            'gender' => 'MALE',
+        ]))->assertOk();
+
+        $this->assertDatabaseHas('students', ['id' => $student->id, 'nationality' => 'ليبي', 'gender' => 'FEMALE', 'national_id' => '200000000001']);
+    }
+
+    public function test_editing_a_non_libyan_student_refuses_libyan_nationality(): void
+    {
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'nationality_category' => 'OTHER', 'nationality' => 'مصري', 'national_id' => null, 'passport_number' => 'D7654321',
+        ]))->assertStatus(201);
+        $student = Student::where('passport_number', 'D7654321')->firstOrFail();
+
+        $this->actingAs($this->hq)->putJson("/api/v1/students/{$student->id}", $this->editPayload($student, [
+            'nationality_category' => 'OTHER', 'nationality' => 'ليبي',
+        ]))->assertStatus(422)->assertJsonValidationErrors(['nationality']);
+    }
+
+    public function test_editing_without_a_category_uses_the_stored_one(): void
+    {
+        $this->actingAs($this->hq)->postJson('/api/v1/students', $this->registration([
+            'nationality_category' => 'LIBYAN_NO_NATIONAL_ID', 'national_id' => null, 'administrative_number' => 'ADM-7788',
+        ]))->assertStatus(201);
+        $student = Student::where('administrative_number', 'ADM-7788')->firstOrFail();
+
+        // No category in the payload: the stored LIBYAN_NO_NATIONAL_ID applies, so the nationality is forced to ليبي.
+        $this->actingAs($this->hq)->putJson("/api/v1/students/{$student->id}", $this->editPayload($student, [
+            'nationality' => 'فرنسي', 'gender' => 'FEMALE',
+        ]))->assertOk();
+
+        $this->assertDatabaseHas('students', ['id' => $student->id, 'nationality' => 'ليبي', 'gender' => 'FEMALE', 'nationality_category' => 'LIBYAN_NO_NATIONAL_ID']);
     }
 
     public function test_duplicate_identity_is_refused_by_validation_and_by_the_database(): void

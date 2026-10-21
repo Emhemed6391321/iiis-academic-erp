@@ -697,6 +697,7 @@
                             <div>
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">تصنيف الجنسية <span class="text-rose-500">*</span></label>
                                 <select x-model="createStudentModal.form.nationality_category"
+                                        @change="onNationalityCategoryChange(createStudentModal.form, $event.target.value)"
                                         class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
                                     <option value="LIBYAN">ليبي</option>
                                     <option value="LIBYAN_NO_NATIONAL_ID">ليبي بدون رقم وطني</option>
@@ -708,6 +709,7 @@
                             <div x-show="createStudentModal.form.nationality_category === 'LIBYAN'">
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الوطني (12 خانة) <span class="text-rose-500">*</span></label>
                                 <input type="text" x-model="createStudentModal.form.national_id" maxlength="12" inputmode="numeric" placeholder="119950000000"
+                                       @input="syncGenderFromNationalId(createStudentModal.form, createStudentModal.form.nationality_category, $event.target.value)"
                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
                             </div>
                             <div x-show="createStudentModal.form.nationality_category === 'LIBYAN_NO_NATIONAL_ID'">
@@ -742,7 +744,9 @@
                             <div>
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الجنس <span class="text-rose-500">*</span></label>
                                 <select x-model="createStudentModal.form.gender" required
-                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                                        :disabled="createStudentModal.form.nationality_category === 'LIBYAN'"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none disabled:opacity-70">
+                                    <option value="" disabled>يُحدَّد من أول رقم في الرقم الوطني</option>
                                     <option value="MALE">ذكر (طالب) - بادئة 1</option>
                                     <option value="FEMALE">أنثى (طالبة) - بادئة 2</option>
                                 </select>
@@ -762,8 +766,18 @@
                             </div>
                             <div>
                                 <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الجنسية</label>
-                                <input type="text" x-model="createStudentModal.form.nationality" placeholder="ليبي"
-                                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#2b78a5] outline-none">
+                                <select x-model="createStudentModal.form.nationality" required
+                                        :disabled="isLibyanNationalityCategory(createStudentModal.form.nationality_category)"
+                                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-[#2b78a5] outline-none disabled:opacity-70">
+                                    <option value="" disabled>اختر الجنسية</option>
+                                    @foreach (\App\Models\Student::NATIONALITIES as $nationalityOption)
+                                        @if ($nationalityOption === \App\Models\Student::LIBYAN_NATIONALITY)
+                                            <option value="{{ $nationalityOption }}" :disabled="!isLibyanNationalityCategory(createStudentModal.form.nationality_category)">{{ $nationalityOption }}</option>
+                                        @else
+                                            <option value="{{ $nationalityOption }}">{{ $nationalityOption }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -1306,16 +1320,34 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">اسم الأم الكامل <span class="text-rose-500">*</span></label>
                             <input type="text" x-model="editStudentModal.form.mother_name" required
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
                         </div>
                         <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">تصنيف الجنسية <span class="text-rose-500">*</span></label>
+                            <select x-model="editStudentModal.form.nationality_category" required
+                                    @change="onNationalityCategoryChange(editStudentModal.form, $event.target.value)"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
+                                <option value="LIBYAN">ليبي</option>
+                                <option value="LIBYAN_NO_NATIONAL_ID">ليبي بدون رقم وطني</option>
+                                <option value="OTHER">أخرى (باقي الجنسيات)</option>
+                            </select>
+                        </div>
+                        <div>
+                        <div x-show="editStudentModal.form.nationality_category === 'LIBYAN'">
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الوطني (12 خانة) <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="editStudentModal.form.national_id" maxlength="12"
+                            <input type="text" x-model="editStudentModal.form.national_id" maxlength="12" inputmode="numeric"
+                                   @input="syncGenderFromNationalId(editStudentModal.form, editStudentModal.form.nationality_category, $event.target.value)"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-amber-500 outline-none">
+                        </div>
+                        <div x-show="editStudentModal.form.nationality_category === 'LIBYAN_NO_NATIONAL_ID'">
+                            <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الرقم الإداري <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="editStudentModal.form.administrative_number" maxlength="50"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-mono font-bold focus:ring-2 focus:ring-amber-500 outline-none">
+                        </div>
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">رقم قيد المنظومة الوزارية</label>
@@ -1328,7 +1360,9 @@
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الجنس <span class="text-rose-500">*</span></label>
                             <select x-model="editStudentModal.form.gender" required
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
+                                    :disabled="editStudentModal.form.nationality_category === 'LIBYAN'"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-70">
+                                <option value="" disabled>يُحدَّد من أول رقم في الرقم الوطني</option>
                                 <option value="MALE">ذكر (طالب)</option>
                                 <option value="FEMALE">أنثى (طالبة)</option>
                             </select>
@@ -1345,8 +1379,18 @@
                         </div>
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">الجنسية</label>
-                            <input type="text" x-model="editStudentModal.form.nationality"
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none">
+                            <select x-model="editStudentModal.form.nationality" required
+                                    :disabled="isLibyanNationalityCategory(editStudentModal.form.nationality_category)"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-70">
+                                <option value="" disabled>اختر الجنسية</option>
+                                @foreach (\App\Models\Student::NATIONALITIES as $nationalityOption)
+                                    @if ($nationalityOption === \App\Models\Student::LIBYAN_NATIONALITY)
+                                        <option value="{{ $nationalityOption }}" :disabled="!isLibyanNationalityCategory(editStudentModal.form.nationality_category)">{{ $nationalityOption }}</option>
+                                    @else
+                                        <option value="{{ $nationalityOption }}">{{ $nationalityOption }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -2111,17 +2155,16 @@
                         
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]">الموظف المختص بالتسجيل:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="enrollmentCertModal.cert?.issuer.name"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="enrollmentCertModal.cert?.issuer.timestamp"></div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', enrollmentCertModal.cert?.signatories).title">أ. مسجل عام المعهد</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
@@ -2134,8 +2177,8 @@
                                      alt="الختم الرسمي">
                             </template>
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'مدير عام المعهد التخصصي للعلوم الشرعية', enrollmentCertModal.cert?.signatories).title">مدير عام المعهد التخصصي للعلوم الشرعية</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم المعتمد: ............................</div>
                         </div>
@@ -2201,7 +2244,7 @@
                             <div class="font-bold text-xs" x-text="adminSettings.profile.state_name || 'دولة ليبيا'">دولة ليبيا</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية'">الهيئة العامة للأوقاف والشؤون الإسلامية</div>
                             <div class="font-bold text-xs text-slate-800" x-text="adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل'">إدارة التعليم الأصيل</div>
-                            <div class="font-black text-sm text-emerald-950" x-text="goodConductCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية'"></div>
+                            <div class="font-black text-sm text-emerald-950" x-text="goodConductCertModal.cert.institute_name || adminSettings.profile.institute_name || 'المعهد التخصصي للدراسات الإسلامية'"></div>
                             <div class="text-[11px] font-bold text-emerald-700" x-text="'فرع: ' + (goodConductCertModal.cert.student.branch_name || adminSettings.profile.branch_label || 'الفرع الرئيسي')"></div>
                         </div>
 
@@ -2252,17 +2295,16 @@
                         
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]">الموظف المستخرج للشهادة:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="goodConductCertModal.cert.issuer.name"></div>
-                                <div class="text-[9px] text-slate-400 font-mono" x-text="goodConductCertModal.cert.issuer.timestamp"></div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).label">مسجل شؤون الطلاب:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'prepared_by', 'مسجل شؤون الطلاب', 'أ. مسجل عام المعهد', goodConductCertModal.cert?.signatories).title">أ. مسجل عام المعهد</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
@@ -2275,8 +2317,8 @@
                                      alt="الختم الرسمي">
                             </template>
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).label">يعتمد مدير عام المعهد:</div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'approved_by', 'يعتمد / مدير عام المعهد', 'د. مدير المعهد المتوسط للدراسات الإسلامية', goodConductCertModal.cert?.signatories).title">د. مدير المعهد المتوسط للدراسات الإسلامية</div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
                         </div>
@@ -2348,7 +2390,7 @@
                             </div>
                             <div class="space-y-0.5">
                                 <div class="font-bold text-xs" x-text="(adminSettings.profile.state_name || 'دولة ليبيا') + ' • ' + (adminSettings.profile.supervising_body || 'الهيئة العامة للأوقاف والشؤون الإسلامية')">دولة ليبيا • الهيئة العامة للأوقاف والشؤون الإسلامية</div>
-                                <div class="font-bold text-xs" x-text="(adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل') + ' • ' + (adminSettings.profile.institute_name || 'المعهد المتوسط للدراسات الإسلامية')">إدارة التعليم الأصيل • المعهد المتوسط للدراسات الإسلامية</div>
+                                <div class="font-bold text-xs" x-text="(adminSettings.profile.supervising_department || 'إدارة التعليم الأصيل') + ' • ' + (adminSettings.profile.institute_name || 'المعهد التخصصي للدراسات الإسلامية')">إدارة التعليم الأصيل • المعهد التخصصي للدراسات الإسلامية</div>
                                 <div class="font-black text-sm text-rose-950" x-text="adminSettings.profile.header_title || 'الإدارة العامة للرقابة والتفتيش الأكاديمي وشؤون الطلاب'">الإدارة العامة للرقابة والتفتيش الأكاديمي وشؤون الطلاب</div>
                             </div>
                         </div>
@@ -2535,16 +2577,16 @@
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).label"></div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'prepared_by', 'إعداد / مسؤول التقرير السري', '', confidentialReportModal.report?.signatories).title"></div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
 
                         <div class="space-y-6">
                             <div>
-                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).label"></div>
-                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'approved_by', 'يعتمد / المدير العام للمعهد', '', confidentialReportModal.report?.signatories).title"></div>
+                                <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).label"></div>
+                                <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
                             <div class="text-slate-400 text-[10px]">التوقيع والختم السري: ............................</div>
                         </div>

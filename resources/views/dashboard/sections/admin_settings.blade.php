@@ -615,6 +615,18 @@
                                 class="w-full p-2 rounded-lg text-xs font-bold border outline-none focus:border-amber-500"
                                 :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-800'">
                         </div>
+
+                        <!-- ما يظهر في المستند: الصفة والاسم كلٌّ على حدة، والخانة الفارغة لا تطبع شيئاً -->
+                        <div class="flex flex-wrap gap-4 text-xs font-bold">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" x-model="sig.show_title" class="rounded w-4 h-4 text-amber-600">
+                                <span>إظهار الصفة في المستند</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" x-model="sig.show_name" class="rounded w-4 h-4 text-amber-600">
+                                <span>إظهار الاسم في المستند</span>
+                            </label>
+                        </div>
                     </div>
                 </template>
             </div>

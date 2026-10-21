@@ -17,7 +17,7 @@ class DocumentLedgerService
         string $documentType,
         Student $student,
         array $metadata = [],
-        ?string $signatoryPosition = 'مدير عام المعهد / الشؤون التعليمية',
+        ?string $signatoryPosition = '',
         ?int $issuedBy = null
     ): DocumentVerification {
         $documentUuid = (string) Str::uuid();
