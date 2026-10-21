@@ -171,6 +171,7 @@ class AcademicSystemSeeder extends Seeder
             $permissions['students.view']->id,
             $permissions['students.create']->id,
             $permissions['students.submit_hq']->id,
+            $permissions['students.transfer']->id,
             $permissions['attendance.view']->id,
             $permissions['attendance.record']->id,
             $permissions['attendance.reports']->id,

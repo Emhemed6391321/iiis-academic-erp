@@ -19,6 +19,7 @@ class StudentDocumentService
     public const LABEL_TO_TYPE = [
         'شهادة إتمام المرحلة الأساسية' => 'BASIC_EDUCATION_CERT',
         'شهادة ميلاد بالرقم الوطني' => 'BIRTH_CERT',
+        'شهادة ميلاد لغير الليبيين' => 'FOREIGN_BIRTH_CERT',
         'التقرير الطبي الخاص بالإعاقة' => 'DISABILITY_MEDICAL_REP',
         'التقرير الطبي' => 'DISABILITY_MEDICAL_REP',
         'صورة من الرقم الوطني' => 'NATIONAL_ID_CARD',
@@ -54,7 +55,7 @@ class StudentDocumentService
     /**
      * المستندات الإلزامية بحسب تصنيف جنسية الطالب (الخادم هو المرجع).
      * - ليبي / ليبي بدون رقم وطني: شهادة الميلاد، والشهادة الإعدادية، والبطاقة أو إثبات الهوية.
-     * - أخرى: شهادة الميلاد الملونة، وصورة الجواز الملونة، والإقامة السارية.
+     * - غير الليبي: شهادة ميلاد لغير الليبيين، وصورة الجواز الملونة، والإقامة السارية.
      * - الشهادة الصحية مطلوبة لجميع الطلاب وفق الإجراء القائم.
      *
      * @return string[] مفاتيح DOCUMENT_TYPES
@@ -64,7 +65,7 @@ class StudentDocumentService
         $common = ['HEALTH_CERT'];
 
         $byCategory = match ($student->nationality_category) {
-            'OTHER' => ['BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
+            'OTHER' => ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
             default => ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
         };
 

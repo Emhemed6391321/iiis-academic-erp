@@ -34,6 +34,7 @@ class StudentDocument extends Model
     public const DOCUMENT_TYPES = [
         'NATIONAL_ID_CARD'       => 'صورة من الرقم الوطني أو إثبات الهوية',
         'BIRTH_CERT'             => 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد',
+        'FOREIGN_BIRTH_CERT'     => 'شهادة ميلاد لغير الليبيين',
         'BASIC_EDUCATION_CERT'   => 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب',
         'HEALTH_CERT'            => 'الشهادة الصحية أو الكشف الطبي',
         'DISABILITY_MEDICAL_REP' => 'التقرير الطبي الخاص بالإعاقة',

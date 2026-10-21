@@ -27,6 +27,7 @@ class BranchManagerPermissionsTest extends TestCase
         'students.view',
         'students.create',
         'students.submit_hq',
+        'students.transfer',
         'attendance.view',
         'attendance.record',
         'attendance.reports',

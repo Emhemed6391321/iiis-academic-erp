@@ -682,9 +682,51 @@
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     
+                                    <!-- مستندات غير الليبيين الإلزامية (من docSlots نفسها في نموذج القبول، وتطابق requiredTypesFor في الخادم) -->
+                                    <template x-for="doc in foreignRequiredDocSlots()" :key="doc.key">
+                                        <div class="p-5 rounded-[18px] border transition-all relative flex flex-col justify-between"
+                                             :class="studentFile.docsByType[doc.key] ? 'bg-white dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/50 shadow-sm' : 'bg-white dark:bg-slate-900/60 border-rose-200 dark:border-rose-900/40 border-dashed shadow-sm'">
+                                            <div>
+                                                <div class="flex items-start justify-between gap-2 mb-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-9 h-9 rounded-xl flex items-center justify-center text-base font-bold shadow-sm"
+                                                             :class="studentFile.docsByType[doc.key] ? 'bg-emerald-500 text-white' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'">
+                                                            <span x-text="studentFile.docsByType[doc.key] ? '✓' : '•'"></span>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="font-black text-xs text-slate-900 dark:text-white" x-text="doc.label"></h6>
+                                                            <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">مستند إلزامي لغير الليبيين *</span>
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                                                          :class="studentFile.docsByType[doc.key] ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300'"
+                                                          x-text="studentFile.docsByType[doc.key] ? 'مرفوع ✅' : 'غير مرفوع ❌'"></span>
+                                                </div>
+                                                <div x-show="studentFile.docsByType[doc.key]" class="p-2.5 rounded-xl text-[11px] mb-3 border truncate font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/60"
+                                                     x-text="studentFile.docsByType[doc.key]?.[0]?.original_name || doc.label"></div>
+                                            </div>
+                                            <div class="space-y-2">
+                                                <template x-if="studentFile.docsByType[doc.key]">
+                                                    <div class="grid grid-cols-3 gap-2">
+                                                        <button type="button" @click="openDocPreview(studentFile.docsByType[doc.key]?.[0])" class="py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">معاينة</button>
+                                                        <a :href="studentFile.docsByType[doc.key]?.[0]?.file_url" download class="py-2 rounded-xl text-xs font-bold text-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">تنزيل</a>
+                                                        <button type="button" @click="sfDeleteDoc(studentFile.docsByType[doc.key]?.[0]?.id)" class="py-2 rounded-xl text-xs font-bold bg-rose-50 dark:bg-rose-950/30 text-rose-600">حذف</button>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!studentFile.docsByType[doc.key]">
+                                                    <button type="button" @click="openDocSlotUpload(doc.key)"
+                                                            class="w-full py-2 px-3 rounded-xl text-xs font-bold bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white transition shadow-sm">
+                                                        رفع الوثيقة (PDF/JPG)
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
                                     <!-- 1. صورة من الرقم الوطني أو إثبات الهوية (إلزامي) -->
                                     <div class="p-5 rounded-[18px] border transition-all relative flex flex-col justify-between"
-                                         :class="studentFile.docsByType['NATIONAL_ID_CARD'] ? 
+                                         x-show="studentFile.student?.nationality_category !== 'OTHER'"
+                                         :class="studentFile.docsByType['NATIONAL_ID_CARD'] ?
                                              (darkMode ? 'bg-emerald-950/20 border-emerald-800/50 shadow-sm' : 'bg-white border-emerald-200 shadow-[0_4px_16px_rgba(16,185,129,0.06)]') :
                                              (darkMode ? 'bg-slate-900/60 border-rose-900/40 border-dashed' : 'bg-white border-rose-200 border-dashed shadow-sm')">
                                         <div>
@@ -756,7 +798,8 @@
 
                                     <!-- 2. شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد (إلزامي) -->
                                     <div class="p-5 rounded-[18px] border transition-all relative flex flex-col justify-between"
-                                         :class="studentFile.docsByType['BIRTH_CERT'] ? 
+                                         x-show="studentFile.student?.nationality_category !== 'OTHER'"
+                                         :class="studentFile.docsByType['BIRTH_CERT'] ?
                                              (darkMode ? 'bg-emerald-950/20 border-emerald-800/50 shadow-sm' : 'bg-white border-emerald-200 shadow-[0_4px_16px_rgba(16,185,129,0.06)]') :
                                              (darkMode ? 'bg-slate-900/60 border-rose-900/40 border-dashed' : 'bg-white border-rose-200 border-dashed shadow-sm')">
                                         <div>
@@ -826,7 +869,8 @@
 
                                     <!-- 3. شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب (إلزامي) -->
                                     <div class="p-5 rounded-[18px] border transition-all relative flex flex-col justify-between"
-                                         :class="studentFile.docsByType['BASIC_EDUCATION_CERT'] ? 
+                                         x-show="studentFile.student?.nationality_category !== 'OTHER'"
+                                         :class="studentFile.docsByType['BASIC_EDUCATION_CERT'] ?
                                              (darkMode ? 'bg-emerald-950/20 border-emerald-800/50 shadow-sm' : 'bg-white border-emerald-200 shadow-[0_4px_16px_rgba(16,185,129,0.06)]') :
                                              (darkMode ? 'bg-slate-900/60 border-rose-900/40 border-dashed' : 'bg-white border-rose-200 border-dashed shadow-sm')">
                                         <div>
@@ -1236,7 +1280,7 @@
                                         <textarea x-model="studentFile.actionForm.reason" rows="2" placeholder="سبب تغيير الحالة (إلزامي) *"
                                                   class="w-full text-xs p-3 rounded-[10px] border resize-none outline-none"
                                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-800'"></textarea>
-                                        <button @click="sfChangeStatus()"
+                                        <button x-show="hasPermission('CHANGE_STUDENT_STATUS')" @click="sfChangeStatus()"
                                                 class="w-full py-2.5 rounded-[10px] text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all">
                                             تطبيق تغيير الحالة
                                         </button>
@@ -1264,7 +1308,7 @@
                                         <textarea x-model="studentFile.actionForm.studyTypeReason" rows="2" placeholder="سبب التغيير *"
                                                   class="w-full text-xs p-3 rounded-[10px] border resize-none outline-none"
                                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-800'"></textarea>
-                                        <button @click="sfChangeStudyType()"
+                                        <button x-show="hasPermission('CHANGE_STUDENT_STATUS')" @click="sfChangeStudyType()"
                                                 class="w-full py-2.5 rounded-[10px] text-xs font-bold bg-[#14268d] hover:bg-[#2b78a5] text-white shadow-sm transition-all">
                                             تطبيق تغيير الصفة
                                         </button>
@@ -1293,10 +1337,9 @@
                                         <textarea x-model="studentFile.actionForm.transferReason" rows="2" placeholder="سبب النقل *"
                                                   class="w-full text-xs p-3 rounded-[10px] border resize-none outline-none"
                                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-800'"></textarea>
-                                        <button @click="sfTransferStudent()"
-                                                class="w-full py-2.5 rounded-[10px] text-xs font-bold bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white shadow-sm transition-all">
-                                            تنفيذ عملية النقل
-                                        </button>
+                                        <button x-show="hasPermission('students.transfer')" @click="sfTransferStudent()"
+                                                class="w-full py-2.5 rounded-[10px] text-xs font-bold bg-gradient-to-r from-[#2b78a5] to-[#14268d] hover:brightness-110 text-white shadow-sm transition-all"
+                                                x-text="userScope === 'HQ' ? 'تنفيذ عملية النقل' : 'رفع طلب النقل إلى الفرع المستقبل'"></button>
                                     </div>
                                 </div>
 
@@ -1339,7 +1382,7 @@
                                         <textarea x-model="studentFile.actionForm.placementReason" rows="2" placeholder="سبب تعديل التنسيب أو الترفيع *"
                                                   class="w-full text-xs p-3 rounded-[10px] border resize-none outline-none"
                                                   :class="darkMode ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-[#f6f7fb] border-[#e8ebf2] text-slate-800'"></textarea>
-                                        <button @click="sfChangeAcademicPlacement()"
+                                        <button x-show="hasPermission('CHANGE_STUDENT_STATUS')" @click="sfChangeAcademicPlacement()"
                                                 class="w-full py-2.5 rounded-[10px] text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all">
                                             اعتماد التنسيب وتوثيقه في السجل
                                         </button>

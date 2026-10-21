@@ -52,7 +52,9 @@ class BranchOperationsController extends Controller
             $ownedBranches = ($targetBranch && in_array($targetBranch->building_type, ['owned', 'state'])) ? 1 : 0;
             $rentedBranches = ($targetBranch && $targetBranch->building_type === 'rented') ? 1 : 0;
             $avgScore = $targetBranch ? (float)$targetBranch->latest_score : 0;
-            $staff = BranchStaffService::forBranch((int) $userBranchId);
+            $staff = $targetBranch
+                ? BranchStaffService::effective($targetBranch, BranchStaffService::forBranch((int) $userBranchId))
+                : BranchStaffService::forBranch((int) $userBranchId);
             $totalStaff = $staff['total'];
             $academicStaff = $staff['academic'];
             $adminStaff = $staff['admin'];
@@ -113,10 +115,10 @@ class BranchOperationsController extends Controller
 
         $branches = $query->orderBy('id')->get();
 
-        // الكادر يُحسب من الموظفين والتسكينات الفعلية لا من الأرقام اليدوية المخزّنة
+        // الكادر المعروض: العدد المُدخل للفرع، وإن كان فارغاً فالعدد المحسوب من الموظفين والتسكينات الفعلية
         $staffCounts = BranchStaffService::countsByBranch();
         $branches->each(function (Branch $branch) use ($staffCounts) {
-            $staff = $staffCounts[$branch->id] ?? ['total' => 0, 'academic' => 0, 'admin' => 0];
+            $staff = BranchStaffService::effective($branch, $staffCounts[$branch->id] ?? ['total' => 0, 'academic' => 0, 'admin' => 0]);
             $branch->total_staff = $staff['total'];
             $branch->academic_staff = $staff['academic'];
             $branch->admin_staff = $staff['admin'];
@@ -531,7 +533,7 @@ class BranchOperationsController extends Controller
             return response()->json(['status' => 'error', 'message' => 'الفرع غير موجود'], 404);
         }
 
-        $staff = BranchStaffService::forBranch((int) $branch->id);
+        $staff = BranchStaffService::effective($branch, BranchStaffService::forBranch((int) $branch->id));
         $branch->total_staff = $staff['total'];
         $branch->academic_staff = $staff['academic'];
         $branch->admin_staff = $staff['admin'];
@@ -693,6 +695,8 @@ class BranchOperationsController extends Controller
             'total_staff' => 'nullable|integer|min:0',
             'academic_staff' => 'nullable|integer|min:0',
             'admin_staff' => 'nullable|integer|min:0',
+            'operational_admin_staff' => 'nullable|integer|min:0|max:10000',
+            'operational_academic_staff' => 'nullable|integer|min:0|max:10000',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',
@@ -761,6 +765,8 @@ class BranchOperationsController extends Controller
             'total_staff' => 'nullable|integer|min:0',
             'academic_staff' => 'nullable|integer|min:0',
             'admin_staff' => 'nullable|integer|min:0',
+            'operational_admin_staff' => 'nullable|integer|min:0|max:10000',
+            'operational_academic_staff' => 'nullable|integer|min:0|max:10000',
             'address' => 'nullable|string',
             'phone' => 'nullable|string|max:30',
             'email' => 'nullable|email|max:100',

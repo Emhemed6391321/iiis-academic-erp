@@ -1235,10 +1235,24 @@
                             :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
                     </div>
 
-                    <div class="md:col-span-2 p-3 rounded-[12px] border text-xs"
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد الموظفين بالفرع</label>
+                        <input type="number" min="0" max="10000" x-model="branchForm.operational_admin_staff" placeholder="0"
+                            class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-800'">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-1.5 text-slate-400">عدد المعلمين بالفرع</label>
+                        <input type="number" min="0" max="10000" x-model="branchForm.operational_academic_staff" placeholder="0"
+                            class="w-full p-2.5 rounded-[12px] text-xs font-bold border outline-none focus:border-[#2b78a5]"
+                            :class="darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-600'">
+                    </div>
+
+                    <div class="md:col-span-3 p-3 rounded-[12px] border text-xs"
                         :class="darkMode ? 'bg-slate-800/60 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'">
-                        <span class="font-bold">الكادر يُحسب تلقائياً</span>
-                        من الموظفين المرتبطين بالفرع والتسكينات الحالية في الإعدادات الإدارية، ولا يُدخل يدوياً.
+                        <span class="font-bold">يُدخل عدد العاملين بالفرع</span>
+                        ويظهر في دليل الفروع وتفاصيله. إذا تُرك أي حقل فارغاً يُحسب العدد تلقائياً من الموظفين المرتبطين بالفرع والتسكينات الحالية.
                     </div>
 
                     <div>

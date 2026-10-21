@@ -292,7 +292,7 @@
                                     </button>
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <template x-if="req.final_status === 'PENDING'">
+                                    <template x-if="req.final_status === 'PENDING' && hasPermission('CHANGE_STUDENT_STATUS|students.approve_hq')">
                                         <button @click="openWorkflowDecisionModal(req, 'status')"
                                                 class="px-3 py-1 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all">
                                             اتخاذ القرار
@@ -381,7 +381,7 @@
                                     </button>
                                 </td>
                                 <td class="py-3 px-4 text-center">
-                                    <template x-if="req.final_status === 'PENDING'">
+                                    <template x-if="req.final_status === 'PENDING' && hasPermission('CHANGE_STUDENT_STATUS|students.approve_hq')">
                                         <button @click="openWorkflowDecisionModal(req, 'system')"
                                                 class="px-3 py-1 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all">
                                             اتخاذ القرار
@@ -491,7 +491,7 @@
                                 <td class="py-3 px-4 text-center">
                                     <div class="flex items-center justify-center space-x-1 space-x-reverse">
                                         <!-- Step 1 action button -->
-                                        <template x-if="req.status === 'PENDING' && !req.central_affairs_statement">
+                                        <template x-if="req.status === 'PENDING' && !req.central_affairs_statement && hasPermission('students.transfer') && userScope === 'HQ'">
                                             <button @click="openTransferStepModal(req, 'central_memo')"
                                                     class="px-2.5 py-1 rounded-lg text-xs font-black bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all">
                                                 إفادة الشؤون
@@ -499,10 +499,18 @@
                                         </template>
 
                                         <!-- Step 2 action button -->
-                                        <template x-if="req.status === 'PENDING' && req.central_affairs_statement && req.receiving_branch_status === 'PENDING'">
+                                        <template x-if="req.status === 'PENDING' && req.central_affairs_statement && req.receiving_branch_status === 'PENDING' && hasPermission('students.transfer') && Number(req.to_branch_id) === Number(userBranchId)">
                                             <button @click="openTransferStepModal(req, 'receiving_decision')"
                                                     class="px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all">
                                                 قرار الفرع المستقبل
+                                            </button>
+                                        </template>
+
+                                        <!-- Final approval: central administration only, after the receiving branch accepted -->
+                                        <template x-if="req.status === 'PENDING' && req.receiving_branch_status === 'APPROVED' && userScope === 'HQ'">
+                                            <button @click="openTransferStepModal(req, 'hq_final')"
+                                                    class="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all">
+                                                الاعتماد النهائي للنقل
                                             </button>
                                         </template>
 
@@ -625,8 +633,8 @@
                                                    x-model="studentWorkflow.officialRequests.decisionNotes[req.id]"
                                                    class="w-full p-1.5 rounded-lg border text-[11px] bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
                                             <div class="flex gap-2">
-                                                <button @click="decideOfficialRequest(req.id, 'APPROVED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white">اعتماد</button>
-                                                <button @click="decideOfficialRequest(req.id, 'REJECTED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-rose-600 text-white">رفض</button>
+                                                <button x-show="hasPermission('students.approve_hq')" @click="decideOfficialRequest(req.id, 'APPROVED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-emerald-600 text-white">اعتماد</button>
+                                                <button x-show="hasPermission('students.approve_hq')" @click="decideOfficialRequest(req.id, 'REJECTED')" class="px-3 py-1.5 rounded-lg text-[11px] font-black bg-rose-600 text-white">رفض</button>
                                             </div>
                                         </div>
                                     </template>
@@ -738,7 +746,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                     </span>
                     <h3 class="text-sm font-black text-slate-900 dark:text-white"
-                        x-text="studentWorkflow.transferModal.step === 'central_memo' ? 'مرحلة 1: تسجيل إفادة وتوصية الشؤون التعليمية' : 'مرحلة 2: قرار الضم من الفرع المستقبل'"></h3>
+                        x-text="studentWorkflow.transferModal.step === 'central_memo' ? 'مرحلة 1: تسجيل إفادة وتوصية الشؤون التعليمية' : (studentWorkflow.transferModal.step === 'hq_final' ? 'مرحلة 3: الاعتماد النهائي للإدارة العامة' : 'مرحلة 2: قرار الضم من الفرع المستقبل')"></h3>
                 </div>
                 <button @click="studentWorkflow.transferModal.open = false" class="text-slate-400 hover:text-slate-600">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -785,7 +793,7 @@
                         <div>
                             <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">قرار الفرع المستقبل:</label>
                             <select x-model="studentWorkflow.transferModal.decision" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200">
-                                <option value="APPROVED">موافقة على ضم الطالب للفرع (نقل نهائي فوري)</option>
+                                <option value="APPROVED">موافقة على ضم الطالب (يُرفع القرار للإدارة العامة لاعتماد النقل)</option>
                                 <option value="REJECTED">اعتذار عن قبول الضم في الفرع</option>
                             </select>
                         </div>
@@ -797,7 +805,22 @@
                                       class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500"></textarea>
                         </div>
                         <div x-show="studentWorkflow.transferModal.decision === 'APPROVED'" class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 text-[11px]">
-                            بالموافقة على الضم، سيتم تحويل تبعية الطالب آلياً إلى هذا الفرع وتحديث سجلاته ضمن حركة ذرية (Atomic Transaction).
+                            بالموافقة على الضم، لا تنتقل تبعية الطالب إلا بعد الاعتماد النهائي من الإدارة العامة.
+                        </div>
+                    </div>
+                </template>
+                <!-- Form for HQ final approval (central administration only) -->
+                <template x-if="studentWorkflow.transferModal.step === 'hq_final'">
+                    <div class="space-y-3">
+                        <div class="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-emerald-800 dark:text-emerald-300 text-[11px]">
+                            الفرع المستقبل وافق على ضم الطالب. اعتماد الإدارة العامة ينقل تبعية الطالب إلى الفرع الجديد ضمن حركة واحدة.
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 dark:text-slate-200 mb-1">ملاحظات الاعتماد النهائي:</label>
+                            <textarea x-model="studentWorkflow.transferModal.notes"
+                                      rows="3"
+                                      placeholder="ملاحظات الإدارة العامة على قرار النقل..."
+                                      class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
                         </div>
                     </div>
                 </template>

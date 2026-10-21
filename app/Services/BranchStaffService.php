@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Branch;
 use App\Models\EmployeePlacement;
 use App\Models\Role;
 use App\Models\User;
@@ -69,6 +70,21 @@ class BranchStaffService
     public static function forBranch(int $branchId): array
     {
         return self::countsByBranch()[$branchId] ?? ['total' => 0, 'academic' => 0, 'admin' => 0];
+    }
+
+    /**
+     * العدد المعروض للفرع: عدد الموظفين والمعلمين المُدخل عند إضافة الفرع أو تعديله.
+     * وإن تُرك أي حقل فارغاً يُعرض العدد المحسوب من الحسابات والتسكينات لذلك الصنف.
+     *
+     * @param  array{total: int, academic: int, admin: int}  $live  الأعداد المحسوبة للفرع
+     * @return array{total: int, academic: int, admin: int}
+     */
+    public static function effective(Branch $branch, array $live): array
+    {
+        $academic = $branch->operational_academic_staff ?? $live['academic'];
+        $admin = $branch->operational_admin_staff ?? $live['admin'];
+
+        return ['total' => $academic + $admin, 'academic' => $academic, 'admin' => $admin];
     }
 
     private static function isInstructor(?int $roleId, ?int $instructorRoleId): bool

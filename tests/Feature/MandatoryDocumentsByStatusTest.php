@@ -82,15 +82,38 @@ class MandatoryDocumentsByStatusTest extends TestCase
         );
     }
 
-    public function test_non_libyan_student_needs_passport_residence_and_health_documents_instead(): void
+    public function test_non_libyan_student_needs_foreign_birth_certificate_passport_residence_and_health_documents(): void
     {
         $student = $this->createStudent('OTHER');
         $service = app(StudentDocumentService::class);
 
         $this->assertEqualsCanonicalizing(
-            ['BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'],
+            ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'],
             $service->missingRequiredTypes($student)
         );
+    }
+
+    public function test_non_libyan_final_approval_waits_for_the_foreign_birth_certificate(): void
+    {
+        $student = $this->createStudent('OTHER');
+        $required = ['FOREIGN_BIRTH_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'];
+
+        $refused = $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq");
+        $refused->assertStatus(422);
+        $this->assertEqualsCanonicalizing($required, $refused->json('missing_documents'));
+
+        foreach ($required as $type) {
+            $this->upload($student, $type);
+        }
+
+        $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq")->assertOk();
+        $this->assertNotNull($student->fresh()->academic_number);
+    }
+
+    public function test_foreign_birth_certificate_is_recognised_by_its_arabic_label(): void
+    {
+        $this->assertSame(['FOREIGN_BIRTH_CERT', null], StudentDocumentService::resolveType('شهادة ميلاد لغير الليبيين'));
+        $this->assertSame(['FOREIGN_BIRTH_CERT', null], StudentDocumentService::resolveType('FOREIGN_BIRTH_CERT'));
     }
 
     public function test_final_hq_approval_is_refused_until_mandatory_documents_are_complete(): void

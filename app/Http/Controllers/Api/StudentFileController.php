@@ -693,6 +693,24 @@ class StudentFileController extends Controller
             return response()->json(['success' => false, 'message' => 'الطالب مسجل في هذا الفرع بالفعل.'], 422);
         }
 
+        // Branch users never move a student directly. Their request goes through the transfer handshake:
+        // the receiving branch accepts, then HQ approves and the student moves.
+        $user = Auth::user();
+        if ($user && !$user->hasGlobalAccessScope()) {
+            $transfer = app(\App\Services\StudentTransferWorkflow::class)->initiateTransfer(
+                $student,
+                (int) $request->to_branch_id,
+                (string) $request->reason,
+                $user
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'تم رفع طلب النقل. ينتقل الطالب بعد قبول الفرع المستقبل واعتماد الإدارة العامة.',
+                'transfer_id' => $transfer->id,
+            ], 202);
+        }
+
         $docPath   = null;
         $oldBranch = $student->branch_id;
 

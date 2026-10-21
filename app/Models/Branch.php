@@ -29,6 +29,8 @@ class Branch extends Model
         'total_staff',
         'academic_staff',
         'admin_staff',
+        'operational_admin_staff',
+        'operational_academic_staff',
         'latest_score',
         'latest_rating',
         'notes',
@@ -61,6 +63,8 @@ class Branch extends Model
         'total_staff' => 'integer',
         'academic_staff' => 'integer',
         'admin_staff' => 'integer',
+        'operational_admin_staff' => 'integer',
+        'operational_academic_staff' => 'integer',
         'photos' => 'array',
         'social_links' => 'array',
     ];

@@ -80,10 +80,10 @@
                                         </td>
                                         <td class="p-3 text-center">
                                             <div class="flex items-center justify-center gap-1.5" x-show="req.status !== 'completed'">
-                                                <button @click="updateBranchRequestStatus(req.id, 'in_progress')" x-show="req.status === 'pending'" class="px-2.5 py-1 rounded-[8px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px]">
+                                                <button @click="updateBranchRequestStatus(req.id, 'in_progress')" x-show="hasPermission('branches.manage') && req.status === 'pending'" class="px-2.5 py-1 rounded-[8px] bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px]">
                                                     بدء العمل
                                                 </button>
-                                                <button @click="updateBranchRequestStatus(req.id, 'completed')" class="px-2.5 py-1 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]">
+                                                <button x-show="hasPermission('branches.manage')" @click="updateBranchRequestStatus(req.id, 'completed')" class="px-2.5 py-1 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px]">
                                                     إغلاق التذكرة
                                                 </button>
                                             </div>

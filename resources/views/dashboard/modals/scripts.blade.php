@@ -100,10 +100,15 @@
                 branchOptions: [],
                 moduleStates: [],
                 // خانات المستندات الرسمية: نفسها في ملف الطالب (تطابق DOCUMENT_TYPES في الخادم)
+                // nationality: 'LIBYAN' للطلاب الليبيين (الفئات غير OTHER)، و'OTHER' لغير الليبيين. بدونها تظهر للجميع.
+                // يطابق requiredTypesFor في الخادم، فالخانة المطلوبة هنا هي نفسها المطلوبة عند الاعتماد.
                 docSlots: [
-                    { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: true },
-                    { key: 'BIRTH_CERT', label: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد', required: true },
-                    { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب', required: true },
+                    { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: true, nationality: 'LIBYAN' },
+                    { key: 'BIRTH_CERT', label: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد', required: true, nationality: 'LIBYAN' },
+                    { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب', required: true, nationality: 'LIBYAN' },
+                    { key: 'FOREIGN_BIRTH_CERT', label: 'شهادة ميلاد لغير الليبيين', required: true, nationality: 'OTHER' },
+                    { key: 'PASSPORT_COPY', label: 'صورة ملونة من جواز السفر', required: true, nationality: 'OTHER' },
+                    { key: 'RESIDENCE_PERMIT', label: 'إقامة سارية', required: true, nationality: 'OTHER' },
                     { key: 'HEALTH_CERT', label: 'الشهادة الصحية أو الكشف الطبي', required: true },
                     { key: 'DISABILITY_MEDICAL_REP', label: 'التقرير الطبي الخاص بالإعاقة', required: false, conditional: 'has_disability' },
                     { key: 'PERSONAL_PHOTO', label: 'صورة شخصية للطالب', required: false },
@@ -3562,8 +3567,20 @@ async initApp() {
                 },
 
                 // الخانات المعروضة للنموذج: الخانة المشروطة (الإعاقة) تظهر فقط عند تفعيلها
+                // بطاقات مستندات غير الليبيين في ملف الطالب: الخانات المخصصة لهم فقط، وللطالب غير الليبي فقط.
+                foreignRequiredDocSlots() {
+                    const isForeign = !!(this.studentFile && this.studentFile.student && this.studentFile.student.nationality_category === 'OTHER');
+                    return isForeign ? this.docSlots.filter(s => s.nationality === 'OTHER') : [];
+                },
+
                 docSlotsFor(form) {
-                    return this.docSlots.filter(s => !s.conditional || !!(form && form[s.conditional]));
+                    const isForeign = !!(form && form.nationality_category === 'OTHER');
+                    return this.docSlots.filter(s => {
+                        if (s.nationality && form && form.nationality_category) {
+                            if ((s.nationality === 'OTHER') !== isForeign) return false;
+                        }
+                        return !s.conditional || !!(form && form[s.conditional]);
+                    });
                 },
 
                 docAttachedCount(modal, key) {
@@ -3918,6 +3935,8 @@ async initApp() {
                         branch_status: 'ACTIVE',
                         building_type: 'owned',
                         building_condition: 'excellent',
+                        operational_admin_staff: '',
+                        operational_academic_staff: '',
                         manager_name: '',
                         manager_phone: '',
                         manager_email: '',
@@ -3949,6 +3968,8 @@ async initApp() {
                         branch_status: branch.branch_status || 'ACTIVE',
                         building_type: branch.building_type || 'owned',
                         building_condition: branch.building_condition || 'excellent',
+                        operational_admin_staff: branch.operational_admin_staff ?? '',
+                        operational_academic_staff: branch.operational_academic_staff ?? '',
                         manager_name: branch.manager_name || '',
                         manager_phone: branch.manager_phone || '',
                         manager_email: branch.manager_email || '',
@@ -6280,7 +6301,10 @@ async loadBranchOperations() {
                     if (!modal || !modal.requestId) return;
                     modal.submitting = true;
                     try {
-                        const payload = modal.step === 'central_memo' ? {
+                        const payload = modal.step === 'hq_final' ? {
+                            step: 'hq_final',
+                            notes: modal.notes
+                        } : modal.step === 'central_memo' ? {
                             step: 'central_memo',
                             memo: modal.memo,
                             action: modal.action
@@ -6792,6 +6816,7 @@ async loadBranchOperations() {
                     const labels = {
                         NATIONAL_ID_CARD: 'صورة من الرقم الوطني أو إثبات الهوية',
                         BIRTH_CERT: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد',
+                        FOREIGN_BIRTH_CERT: 'شهادة ميلاد لغير الليبيين',
                         BASIC_EDUCATION_CERT: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب',
                         HEALTH_CERT: 'الشهادة الصحية أو الكشف الطبي',
                         DISABILITY_MEDICAL_REP: 'التقرير الطبي الخاص بالإعاقة',
