@@ -14,19 +14,17 @@ use App\Models\StudyYear;
 use App\Models\User;
 use App\Services\AdminSettingsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * The official stamp is linked to the signature slots in the central settings: it prints at an active slot whose
- * stamp switch is on, and nowhere else. Disabling, stopping or editing a slot changes the printed document at once.
+ * The signature directory drives the printed documents: a stopped slot disappears, an edited slot changes the next print,
+ * a branch position never signs with another branch's holder, and the official stamp no longer exists anywhere.
  */
-class SignatoryStampsTest extends TestCase
+class SignatoryDirectoryTest extends TestCase
 {
     use RefreshDatabase;
-
-    private const STAMP_URL = '/storage/branding/stamp.png';
 
     private User $admin;
     private Branch $branch;
@@ -37,10 +35,6 @@ class SignatoryStampsTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
-        Storage::disk('public')->put('branding/stamp.png', 'png');
-        AdminSettingsService::setSetting('stamp_url', self::STAMP_URL, 'branding', 'الختم الرسمي للمعهد', 'image');
-
         $superRole = Role::create(['name' => 'super_admin', 'display_name' => 'المدير العام', 'scope_type' => 'GLOBAL_SCOPE']);
         $this->admin = User::factory()->create(['role_id' => $superRole->id]);
 
@@ -48,11 +42,11 @@ class SignatoryStampsTest extends TestCase
         AdminSettingsService::syncRolePositions();
         $this->branchPosition = JobPosition::where('role_id', $registrarRole->id)->firstOrFail();
 
-        $this->branch = Branch::create(['name' => 'فرع الختم', 'code' => 'STP-01', 'city' => 'طرابلس', 'branch_status' => 'ACTIVE']);
+        $this->branch = Branch::create(['name' => 'فرع التوقيع', 'code' => 'STP-01', 'city' => 'طرابلس', 'branch_status' => 'ACTIVE']);
 
         foreach (['enrollment_cert', 'conduct_cert'] as $code) {
-            $this->slot($code, 'prepared_by', ['show_stamp' => false, 'custom_title_override' => 'مسجل شؤون الطلبة المعتمد']);
-            $this->slot($code, 'approved_by', ['show_stamp' => true, 'custom_title_override' => 'مدير عام المعهد']);
+            $this->slot($code, 'prepared_by', ['custom_title_override' => 'مسجل شؤون الطلبة المعتمد']);
+            $this->slot($code, 'approved_by', ['custom_title_override' => 'مدير عام المعهد']);
         }
         AdminSettingsService::clearCache();
 
@@ -96,82 +90,14 @@ class SignatoryStampsTest extends TestCase
     }
 
     #[DataProvider('certificateKinds')]
-    public function test_stamp_prints_at_the_approving_slot_only(string $kind, string $code): void
-    {
-        $cert = $this->certificate($kind);
-
-        $this->assertSame(self::STAMP_URL, $cert['signatories']['approved_by']['stamp_url']);
-        $this->assertSame('', $cert['signatories']['prepared_by']['stamp_url']);
-        $this->assertSame(self::STAMP_URL, $cert['stamp_url']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_stamp_follows_the_slot_switch(string $kind, string $code): void
-    {
-        $this->slot($code, 'approved_by', ['show_stamp' => false]);
-        $this->slot($code, 'prepared_by', ['show_stamp' => true]);
-        AdminSettingsService::clearCache();
-
-        $cert = $this->certificate($kind);
-
-        $this->assertSame('', $cert['signatories']['approved_by']['stamp_url']);
-        $this->assertSame(self::STAMP_URL, $cert['signatories']['prepared_by']['stamp_url']);
-        $this->assertSame(self::STAMP_URL, $cert['stamp_url']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_no_stamp_is_printed_when_every_stamp_switch_is_off(string $kind, string $code): void
-    {
-        OfficialDocumentSignatory::where('document_code', $code)->update(['show_stamp' => false]);
-
-        $cert = $this->certificate($kind);
-
-        $this->assertSame('', $cert['stamp_url']);
-        $this->assertSame('', $cert['signatories']['approved_by']['stamp_url']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_a_stopped_slot_drops_its_signature_and_its_stamp(string $kind, string $code): void
+    public function test_a_stopped_slot_drops_its_signature(string $kind, string $code): void
     {
         $this->slot($code, 'approved_by', ['is_active' => false]);
 
         $cert = $this->certificate($kind);
 
         $this->assertArrayNotHasKey('approved_by', $cert['signatories']);
-        $this->assertSame('', $cert['stamp_url']);
         $this->assertArrayHasKey('prepared_by', $cert['signatories']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_no_stamp_is_printed_when_none_was_uploaded(string $kind, string $code): void
-    {
-        AdminSettingsService::setSetting('stamp_url', '', 'branding');
-
-        $cert = $this->certificate($kind);
-
-        $this->assertSame('', $cert['stamp_url']);
-        $this->assertSame('', $cert['signatories']['approved_by']['stamp_url']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_a_missing_stamp_file_is_never_printed_as_a_broken_image(string $kind, string $code): void
-    {
-        Storage::disk('public')->delete('branding/stamp.png');
-
-        $cert = $this->certificate($kind);
-
-        $this->assertSame('', $cert['stamp_url']);
-    }
-
-    #[DataProvider('certificateKinds')]
-    public function test_replacing_the_stamp_takes_effect_on_the_next_print(string $kind, string $code): void
-    {
-        $this->certificate($kind);
-
-        Storage::disk('public')->put('branding/new-stamp.png', 'png');
-        AdminSettingsService::setSetting('stamp_url', '/storage/branding/new-stamp.png', 'branding');
-
-        $this->assertSame('/storage/branding/new-stamp.png', $this->certificate($kind)['stamp_url']);
     }
 
     #[DataProvider('certificateKinds')]
@@ -185,48 +111,85 @@ class SignatoryStampsTest extends TestCase
             'is_active' => true,
             'show_name' => true,
             'show_title' => true,
-            'show_stamp' => $s->slot_key === 'prepared_by',
         ])->values()->all();
 
-        $this->actingAs($this->admin)->postJson('/api/v1/admin/settings/signatories/save', ['signatories' => $rows])
-            ->assertOk();
+        $this->actingAs($this->admin)->postJson('/api/v1/admin/settings/signatories/save', ['signatories' => $rows])->assertOk();
 
+        $this->assertSame('مدير المعهد بالإنابة', $this->certificate($kind)['signatories']['approved_by']['title']);
+    }
+
+    // ------------------------------------------------------------------
+    // The official stamp is gone from the whole system
+    // ------------------------------------------------------------------
+
+    #[DataProvider('certificateKinds')]
+    public function test_no_document_payload_carries_a_stamp(string $kind, string $code): void
+    {
         $cert = $this->certificate($kind);
 
-        $this->assertSame('مدير المعهد بالإنابة', $cert['signatories']['approved_by']['title']);
-        $this->assertSame('', $cert['signatories']['approved_by']['stamp_url']);
-        $this->assertSame(self::STAMP_URL, $cert['signatories']['prepared_by']['stamp_url']);
+        $this->assertArrayNotHasKey('stamp_url', $cert);
+        foreach ($cert['signatories'] as $slot) {
+            $this->assertArrayNotHasKey('stamp_url', $slot);
+            $this->assertArrayNotHasKey('show_stamp', $slot);
+        }
+
+        $report = $this->actingAs($this->admin)->getJson("/api/v1/students/{$this->student->id}/confidential-report")->assertOk();
+        $this->assertArrayNotHasKey('stamp_url', $report->json('report.header'));
     }
 
-    public function test_saving_without_the_stamp_field_keeps_each_slots_stamp_switch(): void
+    public function test_the_institute_profile_has_no_stamp_and_an_upload_is_ignored(): void
     {
+        $this->assertArrayNotHasKey('stamp_url', AdminSettingsService::getInstituteProfile());
+
+        $this->actingAs($this->admin)->post('/api/v1/admin/settings/institute-profile', [
+            'state_name' => 'دولة ليبيا', 'supervising_body' => 'الهيئة', 'supervising_department' => 'الإدارة', 'institute_name' => 'المعهد',
+            'stamp' => \Illuminate\Http\UploadedFile::fake()->create('stamp.png', 5, 'image/png'),
+        ], ['Accept' => 'application/json'])->assertSuccessful();
+
+        $this->assertNull(\App\Models\AdministrativeSetting::where('key', 'stamp_url')->first());
+        $this->assertArrayNotHasKey('stamp_url', AdminSettingsService::getInstituteProfile());
+    }
+
+    public function test_the_signatory_directory_has_no_stamp_switch(): void
+    {
+        $this->assertFalse(Schema::hasColumn('official_document_signatories', 'show_stamp'));
+
         $this->actingAs($this->admin)->postJson('/api/v1/admin/settings/signatories/save', ['signatories' => [[
-            'document_code' => 'enrollment_cert',
-            'slot_key' => 'approved_by',
-            'slot_label' => 'يعتمد',
-            'custom_title_override' => 'مدير عام المعهد',
-        ], [
-            'document_code' => 'enrollment_cert',
-            'slot_key' => 'issued_by',
-            'slot_label' => 'المستخرج',
+            'document_code' => 'enrollment_cert', 'slot_key' => 'approved_by', 'slot_label' => 'يعتمد', 'show_stamp' => true,
         ]]])->assertOk();
 
-        $this->assertTrue(OfficialDocumentSignatory::where('document_code', 'enrollment_cert')->where('slot_key', 'approved_by')->value('show_stamp'));
-        $this->assertFalse(OfficialDocumentSignatory::where('document_code', 'enrollment_cert')->where('slot_key', 'issued_by')->value('show_stamp'));
+        $this->assertArrayNotHasKey('show_stamp', OfficialDocumentSignatory::where('slot_key', 'approved_by')->first()->getAttributes());
     }
 
-    public function test_confidential_report_uses_the_same_stamp_rule(): void
+    public function test_the_migration_removes_a_saved_stamp_and_its_file_and_is_repeatable(): void
     {
-        $this->slot('secret_report', 'approved_by', ['show_stamp' => true]);
-        AdminSettingsService::clearCache();
+        \Illuminate\Support\Facades\Storage::fake('public');
+        \Illuminate\Support\Facades\Storage::disk('public')->put('branding/stamp.png', 'png');
+        \App\Models\AdministrativeSetting::create([
+            'key' => 'stamp_url', 'value' => '/storage/branding/stamp.png', 'label' => 'الختم', 'type' => 'image', 'setting_group' => 'branding',
+        ]);
 
-        $response = $this->actingAs($this->admin)->getJson("/api/v1/students/{$this->student->id}/confidential-report");
-        $response->assertOk();
-        $this->assertSame(self::STAMP_URL, $response->json('report.header.stamp_url'));
+        $migration = require database_path('migrations/2026_10_27_000002_remove_official_stamp.php');
+        $migration->up();
+        $migration->up();
 
-        $this->slot('secret_report', 'approved_by', ['show_stamp' => false]);
-        $response = $this->actingAs($this->admin)->getJson("/api/v1/students/{$this->student->id}/confidential-report");
-        $this->assertSame('', $response->json('report.header.stamp_url'));
+        $this->assertNull(\App\Models\AdministrativeSetting::where('key', 'stamp_url')->first());
+        \Illuminate\Support\Facades\Storage::disk('public')->assertMissing('branding/stamp.png');
+    }
+
+    public function test_the_screens_and_the_source_carry_no_stamp_feature(): void
+    {
+        $settings = file_get_contents(resource_path('views/dashboard/sections/admin_settings.blade.php'));
+        $scripts = file_get_contents(resource_path('views/dashboard/modals/scripts.blade.php'));
+        $students = file_get_contents(resource_path('views/dashboard/sections/students.blade.php'));
+
+        foreach ([$settings, $scripts, $students] as $source) {
+            $this->assertStringNotContainsString('stamp_url', $source);
+            $this->assertStringNotContainsString('stampPreviewUrl', $source);
+            $this->assertStringNotContainsString('show_stamp', $source);
+        }
+        $this->assertStringNotContainsString('handleStampUpload', $settings . $scripts);
+        $this->assertStringNotContainsString('Official Stamp', $settings);
     }
 
     private function placeHolder(string $name, int $branchId): User

@@ -115,7 +115,6 @@ class AdminSettingsController extends Controller
             'header_title'           => 'nullable|string|max:255',
             'footer_text'            => 'nullable|string|max:500',
             'logo'                   => 'nullable|image|max:4096',
-            'stamp'                  => 'nullable|image|max:4096',
         ]);
 
         $userId = auth()->id() ?? 1;
@@ -124,11 +123,6 @@ class AdminSettingsController extends Controller
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('branding', 'public');
             AdminSettingsService::setSetting('logo_url', '/storage/' . $path, 'branding', 'شعار المعهد المركزي', 'image', $userId);
-        }
-
-        if ($request->hasFile('stamp')) {
-            $path = $request->file('stamp')->store('branding', 'public');
-            AdminSettingsService::setSetting('stamp_url', '/storage/' . $path, 'branding', 'الختم الرسمي للمعهد', 'image', $userId);
         }
 
         foreach (['state_name', 'supervising_body', 'supervising_department', 'institute_name', 'branch_label', 'phone', 'email', 'address', 'website', 'pobox', 'header_title', 'footer_text'] as $field) {
@@ -452,7 +446,6 @@ class AdminSettingsController extends Controller
             'signatories.*.is_active'             => 'nullable|boolean',
             'signatories.*.show_name'             => 'nullable|boolean',
             'signatories.*.show_title'            => 'nullable|boolean',
-            'signatories.*.show_stamp'            => 'nullable|boolean',
         ]);
 
         $userId = auth()->id() ?? 1;
@@ -474,11 +467,6 @@ class AdminSettingsController extends Controller
                     'is_active'             => $sigData['is_active'] ?? true,
                     'show_name'             => $sigData['show_name'] ?? true,
                     'show_title'            => $sigData['show_title'] ?? true,
-                    // Absent means "unchanged" for an existing slot; a brand-new slot prints the stamp only if it approves.
-                    'show_stamp'            => $sigData['show_stamp']
-                        ?? OfficialDocumentSignatory::where('document_code', $sigData['document_code'])
-                            ->where('slot_key', $sigData['slot_key'])->value('show_stamp')
-                        ?? ($sigData['slot_key'] === 'approved_by'),
                 ]
             );
         }

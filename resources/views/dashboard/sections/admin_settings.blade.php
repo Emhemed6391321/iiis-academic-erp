@@ -228,9 +228,8 @@
                 <div class="p-6 rounded-[20px] border space-y-6"
                     :class="darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-[#e8ebf2] shadow-sm'">
                     <div class="border-b pb-4" :class="darkMode ? 'border-slate-800' : 'border-slate-100'">
-                        <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-slate-800'">🎨 الشعار
-                            والختم الرسمي</h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">يتم تحميلهما مركزياً في جميع المستندات والكشوف</p>
+                        <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-slate-800'">🎨 الشعار المركزي</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">يُحمَّل مركزياً في جميع المستندات والكشوف</p>
                     </div>
 
                     <!-- Central Logo Upload & Preview -->
@@ -250,31 +249,6 @@
                         </div>
                     </div>
 
-                    <!-- Central Stamp Upload & Preview -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-extrabold text-slate-400">الختم الرسمي المعتمد (Official
-                            Stamp)</label>
-                        <div class="p-4 rounded-[16px] border text-center flex flex-col items-center justify-center gap-3 transition-all"
-                            :class="darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'">
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url"
-                                    class="w-20 h-20 object-contain rounded-xl p-1 bg-white shadow-sm border border-slate-200"
-                                    alt="الختم الرسمي">
-                            </template>
-                            <template x-if="!adminSettings.stampPreviewUrl && !adminSettings.profile?.stamp_url">
-                                <div
-                                    class="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 text-xs">
-                                    لا يوجد ختم
-                                </div>
-                            </template>
-                            <label
-                                class="cursor-pointer px-4 py-2 rounded-[10px] text-xs font-bold border transition-colors"
-                                :class="darkMode ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'">
-                                <span>رفع صورة الختم</span>
-                                <input type="file" @change="handleStampUpload($event)" accept="image/*" class="hidden">
-                            </label>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -579,17 +553,6 @@
                 </button>
             </div>
 
-            <!-- حالة الختم الرسمي: يُرفع من تبويب بيانات وشعار المعهد ويُربط بالخانات من البطاقات أدناه -->
-            <div class="p-3 rounded-[12px] border text-xs font-bold flex items-center gap-3"
-                :class="adminSettings.profile?.stamp_url ? (darkMode ? 'bg-emerald-950/30 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800') : (darkMode ? 'bg-amber-950/30 border-amber-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800')">
-                <template x-if="adminSettings.profile?.stamp_url">
-                    <img :src="adminSettings.profile.stamp_url" class="w-12 h-12 object-contain bg-white rounded border" alt="الختم الرسمي">
-                </template>
-                <span x-text="adminSettings.profile?.stamp_url
-                    ? 'الختم الرسمي مرفوع. يُطبع في المستندات عند كل خانة مفعّلة يُشغَّل فيها مفتاح الختم، ويتوقف عند تعطيل الخانة أو إيقاف مفتاحه.'
-                    : 'لم يُرفع ختم رسمي بعد، فلن يُطبع ختم في أي مستند. ارفعه من تبويب «بيانات وشعار المعهد المركزية» ثم فعّله عند الخانات المطلوبة.'"></span>
-            </div>
-
             <!-- Signatories Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <template x-for="(sig, idx) in adminSettings.signatories" :key="sig.id || idx">
@@ -643,10 +606,6 @@
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" x-model="sig.show_name" class="rounded w-4 h-4 text-amber-600">
                                 <span>إظهار الاسم في المستند</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" x-model="sig.show_stamp" class="rounded w-4 h-4 text-amber-600">
-                                <span>🔏 طباعة الختم الرسمي عند هذه الخانة</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" x-model="sig.is_active" class="rounded w-4 h-4 text-amber-600">

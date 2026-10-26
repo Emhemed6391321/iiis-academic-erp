@@ -939,9 +939,7 @@
                     isSaving: false,
                     profile: @json($instituteProfile ?? \App\Services\AdminSettingsService::getInstituteProfile()),
                     logoPreviewUrl: null,
-                    stampPreviewUrl: null,
                     logoFile: null,
-                    stampFile: null,
                     orgUnits: [],
                     positions: [],
                     placements: [],
@@ -2186,12 +2184,12 @@
                 getSignatoryInfo(docCode, slotKey, defaultLabel, defaultName, resolved = null) {
                     if (resolved) {
                         const r = resolved[slotKey];
-                        return r ? { label: r.slot_label || '', title: r.title || '', name: r.name || '', stamp: r.stamp_url || '' } : { label: '', title: '', name: '', stamp: '' };
+                        return r ? { label: r.slot_label || '', title: r.title || '', name: r.name || '' } : { label: '', title: '', name: '' };
                     }
                     const list = (this.adminSettings && this.adminSettings.signatories) || [];
                     const sig = list.find(s => s.document_code === docCode && s.slot_key === slotKey && s.is_active !== false);
                     if (!sig) {
-                        return { label: '', title: '', name: '', stamp: '' };
+                        return { label: '', title: '', name: '' };
                     }
                     const title = sig.show_title === false ? '' : (sig.custom_title_override || (sig.job_position ? sig.job_position.title : ''));
                     let name = sig.user ? sig.user.name : '';
@@ -2209,7 +2207,7 @@
                     } else if (!name && placement && placement.user) {
                         name = placement.user.name;
                     }
-                    return { label: sig.slot_label || '', title: title || '', name: name || '', stamp: '' };
+                    return { label: sig.slot_label || '', title: title || '', name: name || '' };
                 },
 
                 async openOfficialRegistryPrint() {
@@ -8563,14 +8561,6 @@ async loadBranchOperations() {
                     }
                 },
 
-                handleStampUpload(event) {
-                    const file = event.target.files[0];
-                    if (file) {
-                        this.adminSettings.stampFile = file;
-                        this.adminSettings.stampPreviewUrl = URL.createObjectURL(file);
-                    }
-                },
-
                 async saveAdminInstituteProfile() {
                     this.adminSettings.isSaving = true;
                     try {
@@ -8582,9 +8572,6 @@ async loadBranchOperations() {
                         }
                         if (this.adminSettings.logoFile) {
                             formData.append('logo', this.adminSettings.logoFile);
-                        }
-                        if (this.adminSettings.stampFile) {
-                            formData.append('stamp', this.adminSettings.stampFile);
                         }
 
                         const res = await fetch('/api/v1/admin/settings/institute-profile', {
@@ -8603,9 +8590,7 @@ async loadBranchOperations() {
                                 this.adminSettings.profile = { ...this.adminSettings.profile, ...json.profile };
                             }
                             this.adminSettings.logoFile = null;
-                            this.adminSettings.stampFile = null;
                             this.adminSettings.logoPreviewUrl = null;
-                            this.adminSettings.stampPreviewUrl = null;
                             await this.loadAdminSettingsMaster();
                         } else {
                             const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;

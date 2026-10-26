@@ -10,7 +10,6 @@ use App\Models\OrganizationalUnit;
 use App\Models\SystemAuditTrail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class AdminSettingsService
 {
@@ -42,7 +41,6 @@ class AdminSettingsService
                 'website'                => $settings['website'] ?? 'https://islamic-institute.edu.ly',
                 'pobox'                  => $settings['pobox'] ?? 'ص.ب 12345',
                 'logo_url'               => $settings['logo_url'] ?? '/images/logo.png',
-                'stamp_url'              => $settings['stamp_url'] ?? '',
                 'header_title'           => $settings['header_title'] ?? 'المعهد التخصصي للعلوم الشرعية',
                 'footer_text'            => $settings['footer_text'] ?? 'المعهد التخصصي للعلوم الشرعية - إدارة التعليم الأصيل',
             ];
@@ -139,7 +137,6 @@ class AdminSettingsService
                 $personName = '';
             }
 
-            // The stamp is printed at this slot only when the slot is active, its stamp switch is on and the stamp file exists.
             $result[$sig->slot_key] = [
                 'slot_key'   => $sig->slot_key,
                 'slot_label' => $sig->slot_label,
@@ -147,44 +144,12 @@ class AdminSettingsService
                 'name'       => $personName,
                 'show_name'  => (bool) $sig->show_name,
                 'show_title' => (bool) $sig->show_title,
-                'show_stamp' => (bool) $sig->show_stamp,
-                'stamp_url'  => $sig->show_stamp ? self::getStampUrl() : '',
             ];
         }
 
         return $result;
     }
 
-    /**
-     * The saved official stamp, or '' when none was uploaded or its file is gone (so a broken image is never printed).
-     */
-    public static function getStampUrl(): string
-    {
-        $url = trim((string) (self::getInstituteProfile()['stamp_url'] ?? ''));
-        if ($url === '') {
-            return '';
-        }
-
-        if (str_starts_with($url, '/storage/')) {
-            return Storage::disk('public')->exists(substr($url, strlen('/storage/'))) ? $url : '';
-        }
-
-        return $url;
-    }
-
-    /**
-     * The stamp a document prints: the first slot of the resolved signatories that carries one, otherwise none.
-     */
-    public static function stampFromSignatories(array $signatories): string
-    {
-        foreach ($signatories as $slot) {
-            if (!empty($slot['stamp_url'])) {
-                return $slot['stamp_url'];
-            }
-        }
-
-        return '';
-    }
 
     /**
      * التسكين الحالي الذي يحدد صاحب الصفة في خانة التوقيع (إن وُجد).

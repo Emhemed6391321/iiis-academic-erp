@@ -29,7 +29,6 @@ class AdminSettingsSeeder extends Seeder
             ['key' => 'website', 'value' => 'https://islamic-institute.edu.ly', 'label' => 'الموقع الإلكتروني', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'pobox', 'value' => 'ص.ب 80800', 'label' => 'صندوق البريد', 'type' => 'string', 'setting_group' => 'institute_profile'],
             ['key' => 'logo_url', 'value' => '/images/logo.png', 'label' => 'شعار المعهد المركزي', 'type' => 'image', 'setting_group' => 'branding'],
-            ['key' => 'stamp_url', 'value' => '', 'label' => 'الختم الرسمي للمعهد', 'type' => 'image', 'setting_group' => 'branding'],
             ['key' => 'header_title', 'value' => 'المعهد التخصصي للعلوم الشرعية', 'label' => 'ترويسة المستندات والتقارير', 'type' => 'string', 'setting_group' => 'branding'],
             ['key' => 'footer_text', 'value' => 'المعهد التخصصي للعلوم الشرعية - إدارة التعليم الأصيل', 'label' => 'تذييل المطبوعات الرسمية', 'type' => 'string', 'setting_group' => 'branding'],
         ];
