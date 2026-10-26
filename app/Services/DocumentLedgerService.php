@@ -41,7 +41,7 @@ class DocumentLedgerService
         ];
 
         // Generate tamper-evident HMAC-SHA256 signature with secure application key
-        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'iiis-secure-hmac-key-2026';
+        $secretKey = $this->signatureKey();
         $hashMaterial = $documentUuid . '|' . $documentType . '|' . $student->id . '|' . $branchId . '|' . $issueDate . '|' . json_encode($sanitizedMetadata, JSON_UNESCAPED_UNICODE);
         $hashSignature = hash_hmac('sha256', $hashMaterial, $secretKey);
 
@@ -57,6 +57,21 @@ class DocumentLedgerService
             'signatory_position' => $signatoryPosition,
             'status'             => 'VALID',
         ]);
+    }
+
+    /**
+     * The HMAC secret comes from the environment only (DOCUMENT_SIGNATURE_KEY). There is no built-in fallback:
+     * a document signed with a key that lives in the source code could be forged by anyone who reads it.
+     */
+    private function signatureKey(): string
+    {
+        $key = config('app.document_signature_key');
+
+        if (!is_string($key) || trim($key) === '') {
+            throw new \RuntimeException('DOCUMENT_SIGNATURE_KEY is not defined in the environment; official documents cannot be signed or verified.');
+        }
+
+        return $key;
     }
 
     /**
@@ -78,7 +93,7 @@ class DocumentLedgerService
         }
 
         // 1. Verify HMAC-SHA256 signature (with legacy SHA-256 fallback)
-        $secretKey = config('app.document_signing_key') ?: config('app.key') ?: 'iiis-secure-hmac-key-2026';
+        $secretKey = $this->signatureKey();
         $hashMaterial = $verification->document_uuid . '|' . $verification->document_type . '|' . $verification->student_id . '|' . $verification->branch_id . '|' . Carbon::parse($verification->issue_date)->format('Y-m-d') . '|' . json_encode($verification->metadata_payload, JSON_UNESCAPED_UNICODE);
 
         $computedHmac = hash_hmac('sha256', $hashMaterial, $secretKey);

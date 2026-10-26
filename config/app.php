@@ -126,4 +126,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Official Document Signature Key
+    |--------------------------------------------------------------------------
+    |
+    | HMAC-SHA256 secret that signs the official documents the institute issues.
+    | It must be defined in the environment; the signing service refuses to run without it.
+    |
+    */
+
+    'document_signature_key' => env('DOCUMENT_SIGNATURE_KEY'),
+
 ];

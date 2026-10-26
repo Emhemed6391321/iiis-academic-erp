@@ -579,6 +579,14 @@ class StudentWorkflowController extends Controller
         $transfer = StudentTransfer::findOrFail($id);
         $user = Auth::user();
 
+        // A transfer between two other branches is invisible to this user: refused before any stage logic runs,
+        // so the stage and state of a foreign transfer are never disclosed.
+        if (!$user->hasGlobalAccessScope()
+            && (int) $user->branch_id !== (int) $transfer->from_branch_id
+            && (int) $user->branch_id !== (int) $transfer->to_branch_id) {
+            return response()->json(['status' => 'error', 'message' => 'غير مصرح: طلب النقل لا يخص فرعك.'], 403);
+        }
+
         try {
             if ($step === 'CENTRAL_MEMO' || $step === \App\Services\StudentTransferWorkflow::STAGE_ACADEMIC_REVIEWED) {
                 $transfer = $workflow->reviewAcademicAffairs($transfer, $notes ?: 'تمت دراسة الطلب وإحالته للفرع المستقبل لضم الطالب.', $status === 'APPROVED', $user);

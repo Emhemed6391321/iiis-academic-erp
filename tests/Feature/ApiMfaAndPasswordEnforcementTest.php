@@ -35,7 +35,7 @@ class ApiMfaAndPasswordEnforcementTest extends TestCase
 
     public function test_api_blocks_admin_without_mfa_verification_when_mfa_enabled(): void
     {
-        config(['auth.mfa_enabled' => true]);
+        config(['auth.mfa_enabled' => true, 'auth.mfa_enforce_hq' => true]);
         $user = $this->admin();
 
         $this->actingAs($user)->getJson('/api/v1/students')

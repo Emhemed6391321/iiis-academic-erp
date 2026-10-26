@@ -21,6 +21,7 @@ class ShieldedFeatureMiddleware
         if (!app()->environment('local', 'testing')) {
             return response()->json([
                 'status'  => 'shielded',
+                'code'    => 'MODULE_CLOSED',
                 'message' => 'هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».',
                 'feature' => 'STUDY_AND_EXAMS_SHIELDED',
             ], 423);
@@ -33,6 +34,7 @@ class ShieldedFeatureMiddleware
         if (!$canBypass) {
             return response()->json([
                 'status'  => 'shielded',
+                'code'    => 'MODULE_CLOSED',
                 'message' => 'هذه الوحدة قيد التطوير والترقية حالياً وستكون متاحة قريباً وفق خطة التطوير الشاملة لمنظومة «المعهد التخصصي للعلوم الشرعية».',
                 'feature' => 'STUDY_AND_EXAMS_SHIELDED',
             ], 423);

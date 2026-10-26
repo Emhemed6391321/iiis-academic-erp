@@ -61,23 +61,27 @@ class CheckOperationalWindow
 
         if (!$window) {
             return $this->reject(
+                $request,
+                $windowType,
                 'NOT_CONFIGURED',
                 'الفترة التشغيلية لهذه العملية غير مهيأة. يجب أن تضبطها الإدارة العامة قبل إجرائها.'
             );
         }
 
         if (!$window->is_active) {
-            return $this->reject('DISABLED', 'هذه الفترة التشغيلية موقوفة من الإدارة العامة.', $window);
+            return $this->reject($request, $windowType, 'DISABLED', 'هذه الفترة التشغيلية موقوفة من الإدارة العامة.', $window);
         }
 
         $branchId = $user ? $user->branch_id : null;
 
         if (!$window->isOpenForBranch($branchId)) {
             if (Carbon::now()->lt($window->start_at)) {
-                return $this->reject('NOT_STARTED', 'لم تبدأ الفترة التشغيلية لهذه العملية بعد.', $window);
+                return $this->reject($request, $windowType, 'NOT_STARTED', 'لم تبدأ الفترة التشغيلية لهذه العملية بعد.', $window);
             }
 
             return $this->reject(
+                $request,
+                $windowType,
                 'CLOSED',
                 'عفواً، انتهت الفترة المحددة نظاماً لهذه العملية. بانقضاء الموعد المحدد، لا يُسمح للمعهد بإدخال الدرجات أو التسجيل، ويتحمل مدير المعهد المسؤولية عن ذلك، وفق اللوائح والتعليمات المعتمدة.',
                 $window
@@ -87,8 +91,31 @@ class CheckOperationalWindow
         return $next($request);
     }
 
-    private function reject(string $status, string $message, ?OperationalWindow $window = null): Response
+    private function reject(Request $request, string $windowType, string $status, string $message, ?OperationalWindow $window = null): Response
     {
+        // A refused attempt to act outside the window is a forensic event, the same as a refused permission.
+        $user = Auth::user();
+        SystemAuditTrail::log(
+            'UNAUTHORIZED_ACCESS_ATTEMPT',
+            "محاولة تنفيذ عملية خارج النافذة التشغيلية ({$windowType}) - الحالة [{$status}] - المسار [{$request->path()}]",
+            [
+                'url' => $request->fullUrl(),
+                'method' => $request->method(),
+                'window_type' => $windowType,
+                'window_status' => $status,
+                'user_role' => $user?->role?->name,
+                'branch_id' => $user?->branch_id,
+            ],
+            $user?->id,
+            $user?->branch_id,
+            null,
+            null,
+            [],
+            [],
+            'WARNING',
+            $request
+        );
+
         $payload = [
             'success' => false,
             'window_status' => $status,
