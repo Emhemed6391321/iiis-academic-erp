@@ -4801,6 +4801,32 @@ async loadBranchOperations() {
                     }
                 },
 
+                // حذف حساب نهائياً (المدير العام وحده): تأكيد صريح ثم كلمة مرور المدير العام
+                async deleteUser(u) {
+                    if (!u) return;
+                    if (!confirm(`سيُحذف حساب المستخدم (${u.name}) نهائياً ولا يمكن التراجع. هل تريد المتابعة؟`)) return;
+                    const password = prompt('أدخل كلمة مرور المدير العام لتأكيد الحذف:');
+                    if (!password) return;
+                    try {
+                        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                        const res = await fetch(`/api/v1/users/${u.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                            body: JSON.stringify({ password })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.showToast(data.message || 'تم حذف الحساب');
+                            await this.loadUsers();
+                        } else {
+                            alert(data.message || 'تعذر حذف الحساب');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('حدث خطأ أثناء الاتصال بالخادم');
+                    }
+                },
+
                 openResetPasswordModal(u) {
                     this.resetPasswordTarget = u;
                     this.resetPasswordForm = { password: '', password_confirmation: '' };

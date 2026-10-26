@@ -335,6 +335,86 @@ class UserController extends Controller
     }
 
     /**
+     * حذف حساب مستخدم نهائياً — للمدير العام وحده.
+     * يُشترط تأكيد كلمة مرور المدير العام، ولا يُحذف حسابه الشخصي ولا آخر مدير عام.
+     * الحساب المرتبط بسجلات لا تقبل حذفه (دفعات درجات، طلبات نقل، مستندات...) يُرفض حذفه ويُعطَّل بدلاً من ذلك.
+     */
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        $actor = Auth::user();
+
+        if (!$actor || !$actor->isSuperAdmin()) {
+            SystemAuditTrail::log(
+                'UNAUTHORIZED_ACCESS_ATTEMPT',
+                'محاولة حذف حساب مستخدم من غير المدير العام: ' . $user->email,
+                ['target_user_id' => $user->id, 'path' => $request->path()],
+                $actor?->id,
+                $actor?->branch_id,
+                null, null, [], [], 'WARNING', $request
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حذف الحسابات محصور بالمدير العام.',
+            ], 403);
+        }
+
+        $validated = $request->validate(['password' => 'required|string']);
+
+        if (!Hash::check($validated['password'], $actor->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'كلمة مرور المدير العام غير صحيحة، فلم يُحذف الحساب.',
+            ], 422);
+        }
+
+        if ($actor->id === $user->id) {
+            return response()->json(['success' => false, 'message' => 'لا يمكنك حذف حسابك الشخصي.'], 422);
+        }
+
+        if ($user->isSuperAdmin()) {
+            $superAdmins = User::whereHas('role', fn ($q) => $q->where('name', 'super_admin'))->count();
+            if ($superAdmins <= 1) {
+                return response()->json(['success' => false, 'message' => 'لا يمكن حذف آخر حساب مدير عام في المنظومة.'], 422);
+            }
+        }
+
+        $snapshot = [
+            'user_id'   => $user->id,
+            'name'      => $user->name,
+            'email'     => $user->email,
+            'role'      => $user->role?->name,
+            'branch_id' => $user->branch_id,
+        ];
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+                $user->directPermissions()->detach();
+                EmployeePlacement::where('user_id', $user->id)->delete();
+                \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+                $user->delete();
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن حذف هذا الحساب لارتباطه بسجلات في النظام (مثل الدرجات أو طلبات النقل أو المستندات). عطّل الحساب بدلاً من حذفه.',
+            ], 422);
+        }
+
+        $this->logAudit(
+            'USER_DELETED',
+            "حذف حساب المستخدم نهائياً: {$snapshot['name']} ({$snapshot['email']})",
+            $snapshot['branch_id'],
+            $snapshot
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف الحساب نهائياً.',
+        ]);
+    }
+
+    /**
      * إعادة ضبط كلمة المرور للمستخدم
      */
     public function resetPassword(Request $request, User $user): JsonResponse
