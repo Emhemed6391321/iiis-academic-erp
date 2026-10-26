@@ -25,8 +25,9 @@ class PublicVerificationController extends Controller
         }
 
         return view('verify_document', [
-            'uuid'   => $uuid,
-            'result' => $result,
+            'uuid'          => $uuid,
+            'result'        => $result,
+            'instituteName' => \App\Services\AdminSettingsService::getInstituteProfile()['institute_name'],
         ]);
     }
 }

@@ -97,6 +97,17 @@ class ConductCertificateAndVerificationLinkTest extends TestCase
             ->assertOk();
     }
 
+    public function test_the_public_verification_page_carries_the_institute_name_from_the_central_settings(): void
+    {
+        \App\Services\AdminSettingsService::setSetting('institute_name', 'المعهد التخصصي للدراسات الإسلامية', 'institute_profile');
+
+        $html = $this->get('/verify/00000000-0000-0000-0000-000000000000')->assertOk()->getContent();
+
+        $this->assertStringContainsString('المعهد التخصصي للدراسات الإسلامية', $html);
+        $this->assertStringNotContainsString('للعلوم والمهن', $html);
+        $this->assertStringNotContainsString('للعلوم الشرعية', $html);
+    }
+
     public static function certificateKinds(): array
     {
         return [['enrollment'], ['conduct']];

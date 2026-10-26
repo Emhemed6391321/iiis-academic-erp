@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منظومة التحقق الرقمي الرسمي — المعهد التخصصي للعلوم والمهن</title>
+    <title>منظومة التحقق الرقمي الرسمي — {{ $instituteName }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -291,7 +291,7 @@
     <div class="container">
         <header class="header-brand">
             <div class="logo-badge">🏛️</div>
-            <h1>المعهد التخصصي للعلوم والمهن</h1>
+            <h1>{{ $instituteName }}</h1>
             <p>بوابة التحقق والتصديق الرقمي اللامركزي للوثائق الأكاديمية</p>
         </header>
 
@@ -444,7 +444,7 @@
             @endif
 
             <footer class="card-footer">
-                <div>منظومة المعهد التخصصي للعلوم الشرعية — الإصدار 2.0</div>
+                <div>منظومة {{ $instituteName }} — الإصدار 2.0</div>
                 <div style="font-family: 'JetBrains Mono', monospace;">UUID:
                     {{ substr($uuid, 0, 8) }}...{{ substr($uuid, -4) }}</div>
             </footer>
