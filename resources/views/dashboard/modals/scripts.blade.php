@@ -4683,7 +4683,24 @@ async loadBranchOperations() {
                     }
                 },
 
+                // The user form's role, branch and position lists are loaded once with the users screen, so a position added
+                // later in the admin settings would be missing. Refresh only those lists whenever the form opens.
+                async refreshUserFormOptions() {
+                    try {
+                        const res = await fetch('/api/v1/users', { headers: { 'Accept': 'application/json' } });
+                        const data = await res.json();
+                        if (data.success) {
+                            if (data.roles) this.rolesList = data.roles;
+                            if (data.branches) this.usersBranchesList = data.branches;
+                            if (data.job_positions) this.usersJobPositionsList = data.job_positions;
+                        }
+                    } catch (e) {
+                        console.error('Error refreshing user form options:', e);
+                    }
+                },
+
                 openCreateUserModal() {
+                    this.refreshUserFormOptions();
                     this.userModalMode = 'create';
                     this.userForm = {
                         id: null,
@@ -4702,6 +4719,7 @@ async loadBranchOperations() {
                 },
 
                 openEditUserModal(u) {
+                    this.refreshUserFormOptions();
                     this.userModalMode = 'edit';
                     this.userForm = {
                         id: u.id,
@@ -8684,6 +8702,7 @@ async loadBranchOperations() {
                             this.showToast(json.message || 'تم حفظ الصفة الوظيفية');
                             this.adminSettings.showPositionModal = false;
                             await this.loadAdminSettingsMaster();
+                            this.refreshUserFormOptions();
                         } else {
                             const errs = json.errors ? Object.values(json.errors).flat().join(' | ') : null;
                             this.showToast(errs || json.message || 'تعذر حفظ الصفة الوظيفية');
@@ -8708,6 +8727,7 @@ async loadBranchOperations() {
                         if (res.ok && (json.status === 'success' || json.success)) {
                             this.showToast(json.message || 'تم حذف الصفة الوظيفية');
                             await this.loadAdminSettingsMaster();
+                            this.refreshUserFormOptions();
                         } else {
                             this.showToast(json.message || 'تعذر الحذف');
                         }

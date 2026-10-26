@@ -37,6 +37,10 @@ class JobPositionIsNotARoleTest extends TestCase
         $roles = $this->actingAs($admin)->getJson('/api/v1/users')->assertOk()->json('roles');
         $this->assertNotContains('وحدة اختبارية', array_column($roles, 'display_name'));
 
+        // It is offered in the new-user form's position list, which is what the form refreshes when it opens.
+        $positions = $this->actingAs($admin)->getJson('/api/v1/users')->json('job_positions');
+        $this->assertContains('UNIT_TEST_POS', array_column($positions, 'code'));
+
         $matrix = $this->actingAs($admin)->getJson('/api/v1/permissions/matrix')->assertOk();
         $this->assertStringNotContainsString('وحدة اختبارية', $matrix->getContent());
     }
