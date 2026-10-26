@@ -609,7 +609,7 @@
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" x-model="sig.is_active" class="rounded w-4 h-4 text-amber-600">
-                                <span>الخانة مفعّلة (إيقافها يُسقطها من المستند بتوقيعها وختمها)</span>
+                                <span>الخانة مفعّلة (إيقافها يُسقطها من المستند بتوقيعها)</span>
                             </label>
                         </div>
                     </div>

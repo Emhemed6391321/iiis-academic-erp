@@ -29,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Account administration (delete, reset password) has its own bucket per user. The anonymous form throttle:10,1
+        // shares one counter with every other throttled route of the same user, so ordinary dashboard traffic used it up.
+        \Illuminate\Support\Facades\RateLimiter::for('account-admin', function (\Illuminate\Http\Request $request) {
+            return \Illuminate\Cache\RateLimiting\Limit::perMinute(10)->by('account-admin|' . ($request->user()?->id ?? $request->ip()));
+        });
+
         // Production hard-gate: the shield bypass secret must never exist in production.
         if ($this->app->environment('production') && !empty(config('app.dev_bypass_secret'))) {
             throw new \RuntimeException('CRITICAL SECURITY VIOLATION: DEV_BYPASS is strictly prohibited in production environment.');

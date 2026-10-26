@@ -160,9 +160,9 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.manage');
     Route::match(['put', 'patch', 'post'], '/users/{user}', [UserController::class, 'update'])->middleware('permission:users.manage');
     Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.manage');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware(['throttle:10,1', 'permission:users.manage']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware(['throttle:account-admin', 'permission:users.manage']);
     // MED-7: Tighter rate limit on password reset (max 10 per minute)
-    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->middleware(['throttle:10,1', 'permission:users.manage']);
+    Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->middleware(['throttle:account-admin', 'permission:users.manage']);
     Route::get('/users/{user}/permissions', [UserController::class, 'getUserPermissions'])->middleware('permission:MANAGE_USER_PERMISSIONS');
     Route::post('/users/{user}/permissions', [UserController::class, 'updateUserPermissions'])->middleware('permission:MANAGE_USER_PERMISSIONS');
 

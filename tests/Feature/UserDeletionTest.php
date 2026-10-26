@@ -149,6 +149,30 @@ class UserDeletionTest extends TestCase
         $this->assertFalse(SystemAuditTrail::where('event_type', 'USER_DELETED')->exists());
     }
 
+    public function test_ordinary_dashboard_traffic_does_not_use_up_the_deletion_limit(): void
+    {
+        $victim = $this->victim();
+
+        // A busy session: far more than ten ordinary requests in the same minute.
+        foreach (range(1, 25) as $i) {
+            $this->actingAs($this->admin)->getJson('/api/v1/users')->assertOk();
+        }
+
+        $this->removeAccount($this->admin, $victim)->assertOk();
+        $this->assertNull(User::find($victim->id));
+    }
+
+    public function test_repeated_deletion_attempts_are_limited_to_ten_a_minute(): void
+    {
+        $target = $this->victim();
+
+        foreach (range(1, 10) as $i) {
+            $this->removeAccount($this->admin, $target, 'wrong-password')->assertStatus(422);
+        }
+
+        $this->removeAccount($this->admin, $target, 'wrong-password')->assertStatus(429);
+        $this->assertNotNull(User::find($target->id));
+    }
     public function test_the_delete_button_is_rendered_only_for_the_super_admin(): void
     {
         $view = file_get_contents(resource_path('views/dashboard/sections/users.blade.php'));
