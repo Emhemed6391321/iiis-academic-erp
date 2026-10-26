@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ApiMfaAndPasswordEnforcementTest extends TestCase
+class ApiPasswordEnforcementTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -33,20 +33,8 @@ class ApiMfaAndPasswordEnforcementTest extends TestCase
             ->assertJsonPath('code', 'PASSWORD_CHANGE_REQUIRED');
     }
 
-    public function test_api_blocks_admin_without_mfa_verification_when_mfa_enabled(): void
-    {
-        config(['auth.mfa_enabled' => true, 'auth.mfa_enforce_hq' => true]);
-        $user = $this->admin();
-
-        $this->actingAs($user)->getJson('/api/v1/students')
-            ->assertStatus(403)
-            ->assertJsonPath('code', 'MFA_SETUP_REQUIRED');
-    }
-
     public function test_api_allows_normal_user_when_requirements_met(): void
     {
-        config(['auth.mfa_enabled' => false]);
-
         $this->actingAs($this->admin())->getJson('/api/v1/students')->assertOk();
     }
 

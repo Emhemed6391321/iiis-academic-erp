@@ -1076,7 +1076,7 @@
                 usersList: [],
                 usersBranchesList: [],
                 usersJobPositionsList: [],
-                usersStats: { total_users: 0, active_users: 0, inactive_users: 0, two_factor_users: 0, branches_count: 0 },
+                usersStats: { total_users: 0, active_users: 0, inactive_users: 0, branches_count: 0 },
                 userSearchQuery: '',
                 userRoleFilter: '',
                 userBranchFilter: '',
@@ -1096,7 +1096,6 @@
                     role_id: '',
                     branch_id: '',
                     job_position_id: '',
-                    two_factor_enabled: false,
                     is_active: true,
                 },
                 userFormSubmitting: false,
@@ -4710,7 +4709,6 @@ async loadBranchOperations() {
                         role_id: this.rolesList.length ? this.rolesList[0].id : '',
                         branch_id: '',
                         job_position_id: '',
-                        two_factor_enabled: false,
                         is_active: true,
                     };
                     this.showUserModal = true;
@@ -4729,7 +4727,6 @@ async loadBranchOperations() {
                         role_id: u.role_id,
                         branch_id: u.branch_id || '',
                         job_position_id: u.current_placement ? u.current_placement.job_position_id : '',
-                        two_factor_enabled: !!u.two_factor_enabled,
                         is_active: !!u.is_active,
                     };
                     this.showUserModal = true;

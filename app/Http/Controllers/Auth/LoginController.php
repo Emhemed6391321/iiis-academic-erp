@@ -113,16 +113,6 @@ class LoginController extends Controller
         // Forensic audit logging
         $this->logAuditAttempt($request, $user->id, 'LOGIN_SUCCESS', 'تسجيل دخول آمن وناجح للمنظومة.');
 
-        // 6. Mandatory MFA enforcement for users who enabled it OR required by policy
-        if ($user->hasConfirmedMfa() || $user->requiresMfa()) {
-            if (!$user->hasConfirmedMfa()) {
-                return redirect()->route('mfa.setup');
-            }
-            // Require 2FA challenge
-            $request->session()->put('mfa_verified', false);
-            return redirect()->route('mfa.challenge');
-        }
-
         // 7. Mandatory first-time password change
         if ($user->must_change_password) {
             return redirect()->route('password.change');

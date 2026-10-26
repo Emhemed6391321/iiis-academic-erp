@@ -190,90 +190,56 @@ class SecurityHardeningTest extends TestCase
     }
 
     // ------------------------------------------------------------------
-    // 3) التحقق بخطوتين (معطّل افتراضياً، ويُفعَّل بمتغيرات البيئة)
+    // 3) التحقق بخطوتين أُلغي من النظام بالكامل
     // ------------------------------------------------------------------
 
-    private function enforceMfa(bool $generalSwitch = false): void
+    public function test_two_step_verification_no_longer_exists_in_the_routes_or_the_middleware(): void
     {
-        config(['auth.mfa_enforce_hq' => true, 'auth.mfa_enabled' => $generalSwitch]);
-    }
-
-    public function test_head_office_accounts_must_use_mfa_when_their_switch_is_on_even_if_the_general_switch_is_off(): void
-    {
-        $this->enforceMfa(false);
-
-        $roles = Role::all()->filter(fn ($r) => str_starts_with($r->name, 'hq_') || $r->name === 'super_admin');
-        $this->assertGreaterThan(10, $roles->count());
-
-        foreach ($roles as $role) {
-            $user = $this->userWithRole($role->name);
-            $this->assertTrue($user->requiresMfa(), $role->name . ' must require MFA.');
-
-            $this->actingAs($user)->getJson('/api/v1/students')
-                ->assertStatus(403)
-                ->assertJsonPath('code', 'MFA_SETUP_REQUIRED');
+        foreach (['mfa.setup', 'mfa.confirm', 'mfa.challenge', 'mfa.verify'] as $name) {
+            $this->assertFalse(\Illuminate\Support\Facades\Route::has($name), "$name must be gone");
         }
-    }
-
-    public function test_branch_accounts_are_not_forced_into_mfa_by_the_head_office_rule(): void
-    {
-        $this->enforceMfa(false);
-        $branch = Branch::where('code', '01')->firstOrFail();
-
-        foreach (['branch_manager', 'branch_registrar', 'branch_exams_officer', 'course_instructor'] as $roleName) {
-            $this->assertFalse($this->userWithRole($roleName, $branch)->requiresMfa(), $roleName);
+        foreach (['/mfa/setup', '/mfa/challenge'] as $path) {
+            $this->actingAs($this->userWithRole('super_admin'))->get($path)->assertNotFound();
         }
-        $this->actingAs($this->userWithRole('branch_manager', $branch))->getJson('/api/v1/students')->assertOk();
+
+        $this->assertArrayNotHasKey('enforce.mfa', app('router')->getMiddleware());
+        $this->assertFalse(class_exists(\App\Services\TotpService::class));
+        $this->assertFalse(method_exists(User::class, 'requiresMfa'));
+        $this->assertNull(config('auth.mfa_enabled'));
+        $this->assertNull(config('auth.mfa_enforce_hq'));
     }
 
-    public function test_the_general_switch_widens_the_rule_to_the_other_global_scope_roles(): void
+    public function test_the_users_table_no_longer_carries_two_factor_columns_and_the_migration_is_repeatable(): void
     {
-        $director = $this->userWithRole('branches_director');
+        foreach (['two_factor_secret', 'two_factor_enabled', 'two_factor_confirmed_at', 'two_factor_recovery_codes'] as $column) {
+            $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('users', $column), $column);
+        }
 
-        $this->enforceMfa(false);
-        $this->assertFalse($director->requiresMfa(), 'branches_director is not head office; the general switch is off.');
+        $migration = require database_path('migrations/2026_10_27_000003_remove_two_factor_authentication.php');
+        $migration->up();
+        $migration->up();
 
-        $this->enforceMfa(true);
-        $this->assertTrue($director->requiresMfa());
-        $this->assertFalse($this->userWithRole('branch_manager', Branch::where('code', '01')->firstOrFail())->requiresMfa());
+        $this->assertFalse(\Illuminate\Support\Facades\Schema::hasColumn('users', 'two_factor_enabled'));
     }
 
-    public function test_a_confirmed_account_must_pass_the_challenge_in_every_session(): void
+    public function test_every_role_signs_in_straight_to_the_dashboard_and_the_api(): void
     {
-        $this->enforceMfa(false);
-        $admin = $this->userWithRole('super_admin');
-        $admin->forceFill(['two_factor_enabled' => true, 'two_factor_confirmed_at' => Carbon::now()])->save();
-
-        $this->actingAs($admin)->getJson('/api/v1/students')
-            ->assertStatus(403)
-            ->assertJsonPath('code', 'MFA_CHALLENGE_REQUIRED');
-
-        $this->actingAs($admin)->withSession(['mfa_verified' => true])->getJson('/api/v1/students')->assertOk();
-    }
-
-    public function test_the_web_pages_redirect_an_unenrolled_head_office_account_to_mfa_setup(): void
-    {
-        $this->enforceMfa(false);
-
-        $this->actingAs($this->userWithRole('hq_student_affairs'))->get('/')->assertRedirect(route('mfa.setup'));
-    }
-
-    public function test_two_step_verification_is_off_by_default_and_each_switch_still_works(): void
-    {
-        $this->assertMatchesRegularExpression(
-            "/'mfa_enforce_hq'\s*=>\s*env\('MFA_ENFORCE_HQ',\s*false\)/",
-            file_get_contents(config_path('auth.php'))
-        );
-        $env = file_get_contents(base_path('.env.example'));
-        $this->assertStringContainsString('MFA_ENFORCE_HQ=false', $env);
-        $this->assertStringContainsString('MFA_ENABLED=false', $env);
-
-        // With both switches off no account is sent to the setup screen.
-        config(['auth.mfa_enforce_hq' => false, 'auth.mfa_enabled' => false]);
         foreach (['super_admin', 'hq_student_affairs', 'branches_director'] as $roleName) {
-            $this->assertFalse($this->userWithRole($roleName)->requiresMfa(), $roleName);
+            $user = $this->userWithRole($roleName);
+            $this->actingAs($user)->get('/')->assertOk();
+            $this->actingAs($user)->getJson('/api/v1/users/' . $user->id . '/permissions')->assertStatus(in_array($roleName, ['super_admin']) ? 200 : 403);
         }
-        $this->actingAs($this->userWithRole('super_admin'))->getJson('/api/v1/students')->assertOk();
+    }
+
+    public function test_a_real_login_never_redirects_to_a_challenge(): void
+    {
+        $user = $this->userWithRole('super_admin');
+        $user->forceFill(['password' => \Illuminate\Support\Facades\Hash::make('Plain-Login-2026!')])->save();
+
+        $response = $this->post('/login', ['email' => $user->email, 'password' => 'Plain-Login-2026!']);
+
+        $response->assertRedirect('/');
+        $this->assertAuthenticatedAs($user);
     }
 
     // ------------------------------------------------------------------

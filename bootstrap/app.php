@@ -37,7 +37,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.window'          => CheckOperationalWindow::class,
             'academic.year.active'  => EnsureActiveAcademicYear::class,
-            'enforce.mfa'           => \App\Http\Middleware\EnforceMfaMiddleware::class,
             'force.password_change' => \App\Http\Middleware\ForcePasswordChangeMiddleware::class,
             'security.headers'      => \App\Http\Middleware\SecurityHeadersMiddleware::class,
             'permission'            => \App\Http\Middleware\CheckPermission::class,

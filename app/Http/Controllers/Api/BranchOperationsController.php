@@ -1611,7 +1611,7 @@ class BranchOperationsController extends Controller
             ['title' => 'إيجارات المقرات وعقود الصيانة', 'category' => 'إدارة الفروع', 'icon' => 'file-contract', 'action' => 'branch_contracts', 'shortcut' => 'عقود'],
             ['title' => 'مصفوفة الصلاحيات الديناميكية التفاعلية', 'category' => 'إدارة الوصول', 'icon' => 'key', 'action' => 'rbac', 'shortcut' => 'صلاحيات'],
             ['title' => 'سجل التدقيق الجنائي والأمان (Audit Trail)', 'category' => 'الأمان والرقابة', 'icon' => 'shield-halved', 'action' => 'audit', 'shortcut' => 'تدقيق'],
-            ['title' => 'الملف الشخصي وإعدادات الأمان 2FA', 'category' => 'المستخدم', 'icon' => 'user-gear', 'action' => 'profile', 'shortcut' => 'ملفي'],
+            ['title' => 'الملف الشخصي وإعدادات الأمان', 'category' => 'المستخدم', 'icon' => 'user-gear', 'action' => 'profile', 'shortcut' => 'ملفي'],
             ['title' => 'الهوية البصرية وتخصيص الثيمات والخطوط', 'category' => 'الإعدادات', 'icon' => 'palette', 'action' => 'themes', 'shortcut' => 'مظهر'],
         ];
     }

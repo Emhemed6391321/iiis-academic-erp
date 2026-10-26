@@ -17,7 +17,7 @@
                                     </span>
                                 </div>
                                 <h2 class="text-lg md:text-xl font-black text-slate-900 dark:text-slate-100 mt-1">سجل حسابات المستخدمين والموظفين وضبط الصلاحيات</h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">إدارة حسابات مسؤولي الفروع، أعضاء الكنترول، التسكين الإداري، وإعادة تعيين كلمات المرور والمصادقة الثنائية</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">إدارة حسابات مسؤولي الفروع، أعضاء الكنترول، التسكين الإداري، وإعادة تعيين كلمات المرور</p>
                             </div>
                         </div>
 
@@ -37,7 +37,7 @@
                     </div>
 
                     <!-- المؤشرات الإحصائية السريعة لـ IAM -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
                         <div class="p-4 rounded-[18px] border flex items-center justify-between transition-all"
                              :class="darkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-[#f8fafc] border-[#e8ebf2]'">
                             <div>
@@ -68,17 +68,6 @@
                             </div>
                             <div class="w-10 h-10 rounded-[12px] bg-rose-500/10 text-rose-600 flex items-center justify-center font-black">
                                 ⛔
-                            </div>
-                        </div>
-
-                        <div class="p-4 rounded-[18px] border flex items-center justify-between transition-all"
-                             :class="darkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-[#f8fafc] border-[#e8ebf2]'">
-                            <div>
-                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">محمية بالمصادقة الثنائية 2FA</span>
-                                <span class="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono mt-1 block" x-text="usersStats.two_factor_users || usersList.filter(u => u.two_factor_enabled).length"></span>
-                            </div>
-                            <div class="w-10 h-10 rounded-[12px] bg-indigo-500/10 text-indigo-600 flex items-center justify-center font-black">
-                                🔐
                             </div>
                         </div>
                     </div>
@@ -139,7 +128,6 @@
                                     <th class="p-4 font-black">البريد الإلكتروني</th>
                                     <th class="p-4 font-black">الدور والتسكين الإداري</th>
                                     <th class="p-4 font-black">الفرع المخصص</th>
-                                    <th class="p-4 text-center font-black">المصادقة الثنائية</th>
                                     <th class="p-4 text-center font-black">حالة الحساب</th>
                                     <th class="p-4 text-center font-black">إجراءات الحساب</th>
                                 </tr>
@@ -149,7 +137,7 @@
                                 <!-- مؤشر التحميل -->
                                 <template x-if="loadingUsers">
                                     <tr>
-                                        <td colspan="7" class="p-12 text-center text-slate-400">
+                                        <td colspan="6" class="p-12 text-center text-slate-400">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <svg class="w-8 h-8 animate-spin text-[#2b78a5]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                                                 <span class="font-bold">جارٍ تحميل حسابات المستخدمين...</span>
@@ -161,7 +149,7 @@
                                 <!-- حالة عدم وجود نتائج -->
                                 <template x-if="!loadingUsers && usersList.length === 0">
                                     <tr>
-                                        <td colspan="7" class="p-12 text-center text-slate-400">
+                                        <td colspan="6" class="p-12 text-center text-slate-400">
                                             <div class="flex flex-col items-center justify-center gap-2">
                                                 <span class="text-3xl">🔍</span>
                                                 <span class="font-bold text-sm text-slate-600 dark:text-slate-300">لا توجد حسابات مستخدمين مطابقة لمعايير البحث أو التصفية</span>
@@ -215,15 +203,6 @@
                                             <span class="px-2.5 py-1 rounded-[8px] text-[10px] font-bold border"
                                                   :class="u.branch ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700' : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'"
                                                   x-text="u.branch ? u.branch.name : 'الإدارة العامة (مركزي)'"></span>
-                                        </td>
-
-                                        <!-- المصادقة الثنائية 2FA -->
-                                        <td class="p-4 text-center">
-                                            <span class="px-2.5 py-1 rounded-[8px] text-[10px] font-black inline-flex items-center gap-1"
-                                                  :class="u.two_factor_enabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-400/20'">
-                                                <span class="w-1.5 h-1.5 rounded-full" :class="u.two_factor_enabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
-                                                <span x-text="u.two_factor_enabled ? 'مفعلة 🔐' : 'معطلة'"></span>
-                                            </span>
                                         </td>
 
                                         <!-- حالة الحساب -->
@@ -394,14 +373,6 @@
                         <div class="p-4 rounded-xl border space-y-3 mt-4"
                              :class="darkMode ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-200'">
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" x-model="userForm.two_factor_enabled" class="w-4 h-4 rounded text-[#2b78a5] focus:ring-0">
-                                <div>
-                                    <span class="font-bold block text-slate-800 dark:text-slate-200">إلزام الحساب بالمصادقة الثنائية (2FA)</span>
-                                    <span class="text-[10px] text-slate-500">يتطلب رمز تأكيد إضافي عند تسجيل الدخول لرفع مستوى الأمان</span>
-                                </div>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer pt-2 border-t" :class="darkMode ? 'border-slate-800' : 'border-slate-200'">
                                 <input type="checkbox" x-model="userForm.is_active" class="w-4 h-4 rounded text-emerald-600 focus:ring-0">
                                 <div>
                                     <span class="font-bold block text-slate-800 dark:text-slate-200">الحساب مفعل ونشط (Active)</span>

@@ -20,7 +20,6 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="DOCUMENT_SIGNATURE_KEY" value="testing-document-signature-key-not-a-secret"/>
-        <env name="MFA_ENFORCE_HQ" value="false"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

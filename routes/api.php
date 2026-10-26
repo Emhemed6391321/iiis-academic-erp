@@ -37,7 +37,7 @@ Route::prefix('v1')->middleware('throttle:30,1')->group(function () {
 // ============================================================
 
 // MED-7: Rate limiting — 60 requests per minute for all authenticated routes
-Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change', 'throttle:60,1'])->group(function () {
+Route::prefix('v1')->middleware(['auth', 'force.password_change', 'throttle:60,1'])->group(function () {
 
     // 0. Central Auth & User Context Payload for RBAC & SPA State
     Route::get('/auth/me', [\App\Http\Controllers\Api\UserProfileController::class, 'me']);
@@ -347,7 +347,6 @@ Route::prefix('v1')->middleware(['auth', 'enforce.mfa', 'force.password_change',
     Route::get('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'getProfile']);
     Route::post('/user/profile', [\App\Http\Controllers\Api\UserProfileController::class, 'updateProfile']);
     Route::post('/user/password', [\App\Http\Controllers\Api\UserProfileController::class, 'updatePassword']);
-    Route::post('/user/2fa/toggle', [\App\Http\Controllers\Api\UserProfileController::class, 'toggleTwoFactor']);
 
     // 20. Enterprise System Health & Ops Monitoring
     Route::get('/health', [\App\Http\Controllers\Api\SystemHealthController::class, 'check']);

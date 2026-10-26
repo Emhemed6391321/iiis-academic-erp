@@ -101,7 +101,6 @@ class UserController extends Controller
             'total_users'       => (clone $statsBase)->count(),
             'active_users'      => (clone $statsBase)->where('is_active', true)->count(),
             'inactive_users'    => (clone $statsBase)->where('is_active', false)->count(),
-            'two_factor_users'  => (clone $statsBase)->where('two_factor_enabled', true)->count(),
             'branches_count'    => Branch::where('is_active', true)->count(),
         ];
 
@@ -133,7 +132,6 @@ class UserController extends Controller
             'branch_id'          => 'nullable|exists:branches,id',
             // Only active, approved positions can be assigned; a deactivated position keeps its history but is not assignable.
             'job_position_id'    => ['nullable', Rule::exists('job_positions', 'id')->where('is_active', true)],
-            'two_factor_enabled' => 'boolean',
             'is_active'          => 'boolean',
         ]);
 
@@ -148,7 +146,6 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->boolean('is_active', true);
-        $validated['two_factor_enabled'] = $request->boolean('two_factor_enabled', false);
 
         $jobPositionId = $validated['job_position_id'] ?? null;
         unset($validated['job_position_id']);
@@ -213,7 +210,6 @@ class UserController extends Controller
             'branch_id'          => 'nullable|exists:branches,id',
             // Only active, approved positions can be assigned; a deactivated position keeps its history but is not assignable.
             'job_position_id'    => ['nullable', Rule::exists('job_positions', 'id')->where('is_active', true)],
-            'two_factor_enabled' => 'boolean',
             'is_active'          => 'boolean',
             'password'           => ['nullable', 'string', 'min:8'],
         ]);

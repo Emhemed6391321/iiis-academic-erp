@@ -19,22 +19,18 @@ Route::match(['get', 'post'], '/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 // ============================================================
-// Security & Verification Routes (MFA / Password Policy)
+// Security & Verification Routes (Password Policy)
 // ============================================================
 Route::middleware('auth')->group(function () {
-    Route::get('/mfa/setup', [\App\Http\Controllers\Auth\MfaController::class, 'showSetup'])->name('mfa.setup');
-    Route::post('/mfa/confirm', [\App\Http\Controllers\Auth\MfaController::class, 'confirmSetup'])->name('mfa.confirm');
-    Route::get('/mfa/challenge', [\App\Http\Controllers\Auth\MfaController::class, 'showChallenge'])->name('mfa.challenge');
-    Route::post('/mfa/verify', [\App\Http\Controllers\Auth\MfaController::class, 'verifyChallenge'])->name('mfa.verify');
 
     Route::get('/password/change', [\App\Http\Controllers\Auth\PasswordChangeController::class, 'showChangeForm'])->name('password.change');
     Route::post('/password/update', [\App\Http\Controllers\Auth\PasswordChangeController::class, 'updatePassword'])->name('password.update');
 });
 
 // ============================================================
-// Protected Application Routes (auth + MFA + password check)
+// Protected Application Routes (auth + password check)
 // ============================================================
-Route::middleware(['auth', 'enforce.mfa', 'force.password_change'])->group(function () {
+Route::middleware(['auth', 'force.password_change'])->group(function () {
 
     Route::get('/', function (Request $request) {
         $allAcademicYears = \App\Models\AcademicYear::orderBy('id', 'desc')->get();

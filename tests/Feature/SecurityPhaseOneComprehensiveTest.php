@@ -18,7 +18,6 @@ use App\Models\StudyYear;
 use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\SystemAuditTrail;
-use App\Services\TotpService;
 use App\Services\LoginSecurityService;
 use App\Services\SecureFileVaultService;
 use App\Services\DocumentLedgerService;
@@ -152,7 +151,7 @@ class SecurityPhaseOneComprehensiveTest extends TestCase
     }
 
     // =========================================================================
-    // 1.1: Passwords Policy & TOTP MFA
+    // 1.1: Passwords Policy
     // =========================================================================
 
     public function test_forced_password_change_middleware_redirects_user_until_password_is_changed(): void
@@ -173,41 +172,6 @@ class SecurityPhaseOneComprehensiveTest extends TestCase
         $changeResponse->assertRedirect('/');
         $this->assertFalse((bool) $this->branch1User->fresh()->must_change_password);
         $this->assertTrue(Hash::check('NewSecurePass@2026#X', $this->branch1User->fresh()->password));
-    }
-
-    public function test_totp_mfa_flow_with_valid_token_and_recovery_codes(): void
-    {
-        $totp = app(TotpService::class);
-        $secret = $totp->generateSecret();
-        $recoveryCodes = $totp->generateRecoveryCodes(4);
-
-        $this->superAdmin->update([
-            'two_factor_enabled' => true,
-            'two_factor_secret' => $secret,
-            'two_factor_confirmed_at' => Carbon::now(),
-            'two_factor_recovery_codes' => json_encode($recoveryCodes),
-        ]);
-
-        // 1. Attempt login with credentials
-        $loginResponse = $this->post('/login', [
-            'email' => 'hq_admin@iiis.sch.ly',
-            'password' => 'StrongPassword2026!',
-        ]);
-
-        // Must redirect to MFA challenge
-        $loginResponse->assertRedirect(route('mfa.challenge'));
-        $this->assertFalse(session('mfa_verified'));
-
-        // 2. Submit wrong TOTP code
-        $wrongMfa = $this->post('/mfa/verify', ['code' => '000000']);
-        $wrongMfa->assertSessionHasErrors('code');
-
-        // 3. Submit valid TOTP code
-        $validCode = $totp->getCode($secret);
-        $validMfa = $this->post('/mfa/verify', ['code' => $validCode]);
-        $validMfa->assertRedirect('/');
-        $this->assertTrue(session('mfa_verified'));
-        $this->assertAuthenticatedAs($this->superAdmin);
     }
 
     // =========================================================================

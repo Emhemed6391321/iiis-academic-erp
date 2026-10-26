@@ -25,10 +25,6 @@ class User extends Authenticatable
         'national_id',
         'phone',
         'is_active',
-        'two_factor_secret',
-        'two_factor_enabled',
-        'two_factor_confirmed_at',
-        'two_factor_recovery_codes',
         'last_login_at',
         'last_login_ip',
     ];
@@ -36,8 +32,6 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -48,8 +42,6 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
             'password_changed_at' => 'datetime',
-            'two_factor_enabled' => 'boolean',
-            'two_factor_confirmed_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
     }
@@ -106,44 +98,6 @@ class User extends Authenticatable
     public function hasGlobalAccessScope(): bool
     {
         return $this->isHQ();
-    }
-
-    /**
-     * هل يتطلب حساب المستخدم تفعيل التحقق بخطوتين (MFA/TOTP) إلزامياً؟
-     * معطّل افتراضياً. يُفعَّل لـ super_admin وأدوار hq_* بالمتغير MFA_ENFORCE_HQ، ولبقية أدوار GLOBAL_SCOPE بالمتغير MFA_ENABLED.
-     */
-    public function requiresMfa(): bool
-    {
-        // Head-office accounts (super_admin and hq_* roles) follow MFA_ENFORCE_HQ, independent of MFA_ENABLED.
-        if ($this->isHeadOfficeAccount()) {
-            return (bool) config('auth.mfa_enforce_hq', false);
-        }
-
-        if (!config('auth.mfa_enabled', false)) {
-            return false;
-        }
-
-        return $this->hasGlobalAccessScope();
-    }
-
-    /**
-     * super_admin or any hq_* role.
-     */
-    public function isHeadOfficeAccount(): bool
-    {
-        if ($this->isSuperAdmin()) {
-            return true;
-        }
-
-        return $this->role !== null && str_starts_with(strtolower((string) $this->role->name), 'hq_');
-    }
-
-    /**
-     * هل تم تفعيل وتأكيد التحقق بخطوتين لحساب المستخدم؟
-     */
-    public function hasConfirmedMfa(): bool
-    {
-        return (bool) $this->two_factor_enabled && !empty($this->two_factor_confirmed_at);
     }
 
     /**

@@ -109,7 +109,6 @@ class PrepareProductionLaunch extends Command
                 $admin->is_active = true;
                 $generatedAdminPassword = \Illuminate\Support\Str::password(20, true, true, true, false);
                 $admin->must_change_password = true;
-                $admin->two_factor_enabled = false;
                 $admin->password = $generatedAdminPassword;
                 $admin->save();
 

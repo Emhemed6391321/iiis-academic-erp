@@ -107,46 +107,9 @@ class UserProfileController extends Controller
                 'created_at' => $user->created_at?->format('Y-m-d') ?? '',
                 'last_login_at' => $user->last_login_at?->toIso8601String() ?? null,
                 'last_login_ip' => $user->last_login_ip ?? '127.0.0.1',
-                'two_factor_enabled' => (bool)$user->two_factor_enabled,
             ],
             'permissions' => $permissions,
             'recent_activities' => $recentActivities,
-        ]);
-    }
-
-    /**
-     * Toggle two-factor authentication.
-     */
-    public function toggleTwoFactor(Request $request): JsonResponse
-    {
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json(['success' => false, 'message' => 'غير مصرح'], 401);
-        }
-
-        $user->two_factor_enabled = !$user->two_factor_enabled;
-        if ($user->two_factor_enabled) {
-            $user->two_factor_confirmed_at = now();
-        } else {
-            $user->two_factor_confirmed_at = null;
-        }
-        $user->save();
-
-        \App\Models\SystemAuditTrail::create([
-            'user_id' => $user->id,
-            'branch_id' => $user->branch_id,
-            'event_type' => 'SECURITY_2FA_TOGGLED',
-            'description' => $user->two_factor_enabled 
-                ? 'تم تفعيل المصادقة الثنائية (2FA) لحساب المستخدم.' 
-                : 'تم تعطيل المصادقة الثنائية (2FA) لحساب المستخدم.',
-            'ip_address' => $request->ip(),
-            'payload' => ['two_factor_enabled' => $user->two_factor_enabled],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => $user->two_factor_enabled ? 'تم تفعيل المصادقة الثنائية وتأمين حسابك بنجاح.' : 'تم تعطيل المصادقة الثنائية للحساب.',
-            'two_factor_enabled' => (bool)$user->two_factor_enabled,
         ]);
     }
 

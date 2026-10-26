@@ -114,23 +114,4 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Multi-Factor Authentication (MFA / TOTP)
-    |--------------------------------------------------------------------------
-    | Toggle MFA requirement across global scope and super admin accounts.
-    | Set to false to disable mandatory 2FA.
-    */
-    'mfa_enabled' => env('MFA_ENABLED', false),
-
-    /*
-    |--------------------------------------------------------------------------
-    | MFA for head-office accounts
-    |--------------------------------------------------------------------------
-    | When true, super_admin and every hq_* role must use MFA whatever MFA_ENABLED says.
-    | Off by default: the institute decided not to require two-step verification for now.
-    | MFA_ENABLED widens the rule to the other global-scope accounts.
-    */
-    'mfa_enforce_hq' => env('MFA_ENFORCE_HQ', false),
-
 ];

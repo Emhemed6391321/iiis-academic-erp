@@ -3,7 +3,7 @@
 > **تاريخ الإعداد:** 2026-10-17
 > **الأساس:** قراءة مباشرة لملفات المستودع (الفرع `main` مع تعديلات غير مُلتزَمة في شجرة العمل). كل رقم أو اسم ملف مذكور هنا مأخوذ من الكود نفسه، وما لم يُتحقق منه صراحةً يُشار إليه.
 > **الجمهور المقصود:** مطوّرون وفريق تقني يتسلّم المنظومة أو يعدّل فيها.
-> **آخر تحديث:** 2026-10-27 بعد الحزمة الأمنية (نطاق مدير الفروع، مفتاح توقيع الوثائق، التحقق بخطوتين للإدارة العامة، تهيئة Redis). الحالة التفصيلية لكل متطلب ونتائج الاختبارات في القسم 20.
+> **آخر تحديث:** 2026-10-27 بعد الحزمة الأمنية (نطاق مدير الفروع، مفتاح توقيع الوثائق، إلغاء التحقق بخطوتين، تهيئة Redis). الحالة التفصيلية لكل متطلب ونتائج الاختبارات في القسم 20.
 
 ---
 
@@ -33,7 +33,6 @@
 | الخرائط | Leaflet.js | لعرض مواقع الفروع | قسم `branches_directory` |
 | ملفات Excel | `shuchkin/simplexlsx` و`shuchkin/simplexlsxgen` | `1.1.19` و`1.5.17` | `composer.lock`، `app/Support/` |
 | الاختبارات | PHPUnit | `^11.5.50` | `composer.json`، `phpunit.xml` |
-| المصادقة الثنائية | TOTP مكتوب داخلياً | `app/Services/TotpService.php` | |
 
 > **ملاحظة:** `package.json` يحتوي على `tailwindcss ^3.4.17` و`@tailwindcss/vite ^4.0.0` معاً. راجع القسم 18 (البند 2).
 
@@ -81,7 +80,6 @@ flowchart LR
 3. **وسطاء مجموعة `api`** بالترتيب: `RejectCrossSiteApiWrites`، ثم تهيئة الكوكيز والجلسة، ثم `CompressResponse`، و`SessionIdleTimeoutMiddleware`، و`SecurityHeadersMiddleware`.
 4. **وسطاء المسار** (تُطبَّق حسب المسار):
    - `auth`: يجب أن يكون المستخدم مسجلاً.
-   - `enforce.mfa`: فرض التحقق بخطوتين عند الحاجة.
    - `force.password_change`: إجبار تغيير كلمة المرور الأولى.
    - `throttle:60,1` على مسارات `v1` المحمية.
    - `permission:<code>`: فحص صلاحية محددة (يُستخدم في نحو 200 موضع في `routes/api.php`).
@@ -99,7 +97,7 @@ flowchart LR
 | الضابط | التنفيذ | الملف |
 |---|---|---|
 | قفل الدخول المتدرّج | 5 محاولات فاشلة ← قفل دقيقة، 8 ← 15 دقيقة، 12 ← 24 ساعة. يُطبَّق على الحساب وعلى عنوان IP معاً | `app/Services/LoginSecurityService.php` |
-| التحقق بخطوتين (TOTP) | **معطّل افتراضياً بقرار المعهد.** يُفعَّل بمتغيرين: `MFA_ENFORCE_HQ=true` لإلزام `super_admin` وكل أدوار `hq_*`، و`MFA_ENABLED=true` لتوسيعه إلى بقية الأدوار ذات النطاق الشامل. عند التفعيل يُحوَّل الحساب إلى إعداد التحقق (`MFA_SETUP_REQUIRED`) ثم إلى التحدّي في كل جلسة (`MFA_CHALLENGE_REQUIRED`). يتضمن رموز استرداد (8 رموز) | `app/Models/User.php` (`requiresMfa`، `isHeadOfficeAccount`)، `app/Http/Middleware/EnforceMfaMiddleware.php`، `app/Services/TotpService.php` |
+| التحقق بخطوتين | **أُلغي من النظام بالكامل** (2026-10-27): لا شاشة إعداد ولا تحدٍّ عند الدخول ولا خيار في الحسابات. حُذفت خدمة TOTP والوسيط والمسارات وأعمدة المستخدمين. | — |
 | إجبار تغيير كلمة المرور | يمنع الوصول إلى المسارات المحمية حتى يغيّر المستخدم كلمة المرور عند الحاجة | `ForcePasswordChangeMiddleware.php` |
 | مهلة الخمول | 30 دقيقة بلا نشاط ← تسجيل خروج تلقائي | `SessionIdleTimeoutMiddleware.php` |
 | منع الكتابة عبر المواقع | يرفض طلبات الكتابة (POST/PUT/DELETE) إذا كان `Sec-Fetch-Site` ليس `same-origin` أو كان `Origin` من نطاق آخر | `RejectCrossSiteApiWrites.php` |
@@ -328,7 +326,6 @@ erDiagram
 | `DocumentLedgerService` | إصدار الوثائق الرسمية والتحقق منها (HMAC-SHA256) |
 | `EnterpriseBackupService` | النسخ الاحتياطي المشفّر (القسم 13.4) |
 | `LoginSecurityService` | قفل الدخول المتدرّج (القسم 5) |
-| `TotpService` | توليد وتحقق رموز TOTP ورموز الاسترداد |
 | `OfflineAttendanceSyncService` | مزامنة الحضور المُسجَّل دون اتصال |
 | `BranchStaffService` | تسكين الموظفين في الفروع والوظائف |
 | `ContractFinancialEngineService` | الحساب المالي لعقود المقرات والأقساط |
@@ -356,7 +353,7 @@ erDiagram
 ### 13.2 أوامر Artisan المخصّصة (9 أوامر)
 
 - `iiis:backup-run`، `iiis:backup-restore`، `backup:enterprise-snapshot --verify`
-- `app:admin-credentials`: إنشاء أو إعادة تعيين بيانات مدير، مع خيار تعطيل TOTP
+- `app:admin-credentials`: إنشاء أو إعادة تعيين بيانات مدير
 - `attendance:monitor-absence-thresholds`، `contracts:monitor-expirations`، `branches:audit-contract-compliance`
 - `app:prepare-production-launch`، `app:reset-branches`: أوامر **مدمّرة** تُحمى بـ`GuardsDestructiveRuns` وتتطلب تأكيداً تفاعلياً ورفعاً صريحاً لوضع الإنتاج
 
@@ -398,14 +395,14 @@ erDiagram
 |---|---|
 | ضيف فقط (`guest`) | `GET/POST /login` |
 | عام | `GET/POST /logout` |
-| مصادقة فقط | `/mfa/setup`، `/mfa/confirm`، `/mfa/challenge`، `/mfa/verify`، `/password/change`، `/password/update` |
-| محمي (`auth` + `enforce.mfa` + `force.password_change`) | `/` (لوحة النظام)، وتحويلات الصفحات القديمة |
+| مصادقة فقط | `/password/change`، `/password/update` |
+| محمي (`auth` + `force.password_change`) | `/` (لوحة النظام)، وتحويلات الصفحات القديمة |
 | عام بدون مصادقة | `GET /verify/{uuid}` بحد 15 طلباً في الدقيقة للتحقق من وثيقة رسمية |
 
 ### 15.2 `routes/api.php`
 
 - **المجموعة العامة:** `/api/v1/...` بحد 30 طلباً في الدقيقة. تشمل التحقق من الوثائق، واستقبال أخطاء الواجهة، وقوالب الاستيراد.
-- **المجموعة المحمية:** `/api/v1/...` بالوسطاء `auth` و`enforce.mfa` و`force.password_change` وحد 60 طلباً في الدقيقة. وتحتوي على 219 تعريف مسار تقريباً، موزعة على 28 متحكماً.
+- **المجموعة المحمية:** `/api/v1/...` بالوسطاء `auth` و`force.password_change` وحد 60 طلباً في الدقيقة. وتحتوي على 219 تعريف مسار تقريباً، موزعة على 28 متحكماً.
 - **البادئات الفرعية:** `attendance`، `students/{student}/file`، `admin/settings`، `academic-structure`، `system-errors`، `backups`.
 - **مسارات أُضيفت للاعتماد الرسمي (2026-10-17):** `students/registry/official` (السجل الرسمي للطباعة مع التوقيعات المركزية، بحد 500 طالب)، و`admin-requests` (تقديم الطلب بصلاحية `students.create`، وقرار الاعتماد بصلاحية `students.approve_hq` للإدارة العامة فقط)، و`admin/settings/admission-rules` (القراءة بصلاحية الإعدادات، والحفظ بصلاحية `admin_settings.manage`).
 - **أكثر المتحكمات استخداماً في المسارات:** `SettingsController` (30)، و`StudentFileController` (24)، و`BranchOperationsController` (23)، و`PropertyContractController` (18)، و`StudentController` (16)، و`StudentAttendanceController` (14).
@@ -421,8 +418,6 @@ erDiagram
 | `APP_KEY` | مفتاح التشفير والتوقيع | مضبوط |
 | `DB_CONNECTION` | نوع قاعدة البيانات | `sqlite` |
 | `SESSION_DRIVER` / `CACHE_STORE` / `QUEUE_CONNECTION` | الجلسات والكاش والطوابير | `database` |
-| `MFA_ENFORCE_HQ` | إلزام التحقق بخطوتين لـ `super_admin` وأدوار `hq_*` | الافتراضي `false` (معطّل) |
-| `MFA_ENABLED` | توسيع الإلزام إلى بقية الأدوار ذات النطاق الشامل | غير مضبوط، والافتراضي `false` |
 | `DOCUMENT_SIGNATURE_KEY` | مفتاح HMAC لتوقيع الوثائق الرسمية. **إلزامي** | يجب تعريفه في كل بيئة (راجع ملاحظة الترقية في 18.1) |
 | `TRUSTED_PROXIES` | الوكلاء الموثوقون عند وجود Reverse Proxy | |
 | `MAIL_*`، `REDIS_*`، `AWS_*` | البريد والتخزين السحابي والكاش الموزّع | حسب البيئة |
@@ -475,7 +470,7 @@ npm run build
 
 - **(أ) النافذة التشغيلية لا تُعاد فتحها تلقائياً.** `CheckOperationalWindow` يرفض الطلب إن غابت النافذة أو عُطّلت ولا ينشئ بديلاً. يبقى تجاوز المدير العام للطوارئ، وكل تجاوز يغيّر البيانات يُسجَّل في سجل التدقيق. الاختبارات: `OperationalWindowGovernanceTest`.
 - **(ب) سكربت النشر.** أُعيد `deploy.ps1` من `HEAD` في 2026-10-17 فيعمل `composer run deploy` و`deploy.bat`.
-- **(ج) التحقق بخطوتين للإدارة العامة.** مدعوم برمجياً لـ `super_admin` وكل أدوار `hq_*` بمتغير `MFA_ENFORCE_HQ`، لكنه **معطّل** بقرار المعهد (2026-10-27). تفعيله لاحقاً لا يحتاج تعديل كود (قسم 5).
+- **(ج) التحقق بخطوتين أُلغي بالكامل بقرار المعهد (2026-10-27).** حُذف كوده ومساراته وأعمدته (الهجرة `2026_10_27_000003_remove_two_factor_authentication`)، ولا يوجد خيار لإعادته بمتغير بيئة. إعادته مستقبلاً تتطلب تطويراً جديداً.
 - **(د) المفتاح الاحتياطي الثابت للتوقيع.** حُذف من `DocumentLedgerService`، والمفتاح من البيئة حصراً.
 - **(هـ) نطاق مدير الفروع.** `branches_director` بنطاق `GLOBAL_SCOPE`، وأدوار `branch_*` و`course_instructor` بنطاق `BRANCH_SCOPE` (قسم 6.4)، تثبّتهما هجرة.
 - **(و) الختم الرسمي المعتمد أُزيل من النظام بالكلية.** لا رفع في الإعدادات، ولا مفتاح في خانات التوقيع، ولا يُطبع على أي مستند. تحذف الهجرة `2026_10_27_000002_remove_official_stamp` إعداده وصورته. أما خانات «التوقيع والختم» الفارغة في المطبوعات فبقيت مساحة للختم اليدوي. والختم الرقمي (رمز QR وتوقيع HMAC) قائم.
