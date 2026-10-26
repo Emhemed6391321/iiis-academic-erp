@@ -99,7 +99,7 @@ flowchart LR
 | الضابط | التنفيذ | الملف |
 |---|---|---|
 | قفل الدخول المتدرّج | 5 محاولات فاشلة ← قفل دقيقة، 8 ← 15 دقيقة، 12 ← 24 ساعة. يُطبَّق على الحساب وعلى عنوان IP معاً | `app/Services/LoginSecurityService.php` |
-| التحقق بخطوتين (TOTP) | **إلزامي دائماً** لحسابات `super_admin` وكل أدوار `hq_*` عبر `MFA_ENFORCE_HQ` (الافتراضي `true`) دون اعتماد على `MFA_ENABLED`. ويوسّع `MFA_ENABLED=true` الإلزام إلى بقية الأدوار ذات النطاق الشامل (مثل `branches_director`). عند أول دخول يُحوَّل الحساب إلى إعداد التحقق (`MFA_SETUP_REQUIRED`)، ثم إلى التحدّي في كل جلسة (`MFA_CHALLENGE_REQUIRED`). يتضمن رموز استرداد (8 رموز) | `app/Models/User.php` (`requiresMfa`، `isHeadOfficeAccount`)، `app/Http/Middleware/EnforceMfaMiddleware.php`، `app/Services/TotpService.php` |
+| التحقق بخطوتين (TOTP) | **معطّل افتراضياً بقرار المعهد.** يُفعَّل بمتغيرين: `MFA_ENFORCE_HQ=true` لإلزام `super_admin` وكل أدوار `hq_*`، و`MFA_ENABLED=true` لتوسيعه إلى بقية الأدوار ذات النطاق الشامل. عند التفعيل يُحوَّل الحساب إلى إعداد التحقق (`MFA_SETUP_REQUIRED`) ثم إلى التحدّي في كل جلسة (`MFA_CHALLENGE_REQUIRED`). يتضمن رموز استرداد (8 رموز) | `app/Models/User.php` (`requiresMfa`، `isHeadOfficeAccount`)، `app/Http/Middleware/EnforceMfaMiddleware.php`، `app/Services/TotpService.php` |
 | إجبار تغيير كلمة المرور | يمنع الوصول إلى المسارات المحمية حتى يغيّر المستخدم كلمة المرور عند الحاجة | `ForcePasswordChangeMiddleware.php` |
 | مهلة الخمول | 30 دقيقة بلا نشاط ← تسجيل خروج تلقائي | `SessionIdleTimeoutMiddleware.php` |
 | منع الكتابة عبر المواقع | يرفض طلبات الكتابة (POST/PUT/DELETE) إذا كان `Sec-Fetch-Site` ليس `same-origin` أو كان `Origin` من نطاق آخر | `RejectCrossSiteApiWrites.php` |
@@ -421,7 +421,7 @@ erDiagram
 | `APP_KEY` | مفتاح التشفير والتوقيع | مضبوط |
 | `DB_CONNECTION` | نوع قاعدة البيانات | `sqlite` |
 | `SESSION_DRIVER` / `CACHE_STORE` / `QUEUE_CONNECTION` | الجلسات والكاش والطوابير | `database` |
-| `MFA_ENFORCE_HQ` | إلزام التحقق بخطوتين لـ `super_admin` وأدوار `hq_*` | الافتراضي `true`؛ لا يُعطَّل إلا في الاختبارات (`phpunit.xml`) |
+| `MFA_ENFORCE_HQ` | إلزام التحقق بخطوتين لـ `super_admin` وأدوار `hq_*` | الافتراضي `false` (معطّل) |
 | `MFA_ENABLED` | توسيع الإلزام إلى بقية الأدوار ذات النطاق الشامل | غير مضبوط، والافتراضي `false` |
 | `DOCUMENT_SIGNATURE_KEY` | مفتاح HMAC لتوقيع الوثائق الرسمية. **إلزامي** | يجب تعريفه في كل بيئة (راجع ملاحظة الترقية في 18.1) |
 | `TRUSTED_PROXIES` | الوكلاء الموثوقون عند وجود Reverse Proxy | |
@@ -475,7 +475,7 @@ npm run build
 
 - **(أ) النافذة التشغيلية لا تُعاد فتحها تلقائياً.** `CheckOperationalWindow` يرفض الطلب إن غابت النافذة أو عُطّلت ولا ينشئ بديلاً. يبقى تجاوز المدير العام للطوارئ، وكل تجاوز يغيّر البيانات يُسجَّل في سجل التدقيق. الاختبارات: `OperationalWindowGovernanceTest`.
 - **(ب) سكربت النشر.** أُعيد `deploy.ps1` من `HEAD` في 2026-10-17 فيعمل `composer run deploy` و`deploy.bat`.
-- **(ج) التحقق بخطوتين للإدارة العامة.** صار إلزامياً لـ `super_admin` وكل أدوار `hq_*` دون اعتماد على `MFA_ENABLED` (قسم 5).
+- **(ج) التحقق بخطوتين للإدارة العامة.** مدعوم برمجياً لـ `super_admin` وكل أدوار `hq_*` بمتغير `MFA_ENFORCE_HQ`، لكنه **معطّل** بقرار المعهد (2026-10-27). تفعيله لاحقاً لا يحتاج تعديل كود (قسم 5).
 - **(د) المفتاح الاحتياطي الثابت للتوقيع.** حُذف من `DocumentLedgerService`، والمفتاح من البيئة حصراً.
 - **(هـ) نطاق مدير الفروع.** `branches_director` بنطاق `GLOBAL_SCOPE`، وأدوار `branch_*` و`course_instructor` بنطاق `BRANCH_SCOPE` (قسم 6.4)، تثبّتهما هجرة.
 

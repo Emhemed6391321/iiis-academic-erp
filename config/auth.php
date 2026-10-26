@@ -125,12 +125,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Mandatory MFA for head-office accounts
+    | MFA for head-office accounts
     |--------------------------------------------------------------------------
-    | super_admin and every hq_* role must use MFA whatever MFA_ENABLED says.
-    | MFA_ENABLED only widens the rule to the other global-scope accounts.
-    | The test suite turns this off so that actingAs() can reach the API; the MFA tests turn it back on.
+    | When true, super_admin and every hq_* role must use MFA whatever MFA_ENABLED says.
+    | Off by default: the institute decided not to require two-step verification for now.
+    | MFA_ENABLED widens the rule to the other global-scope accounts.
     */
-    'mfa_enforce_hq' => env('MFA_ENFORCE_HQ', true),
+    'mfa_enforce_hq' => env('MFA_ENFORCE_HQ', false),
 
 ];

@@ -110,13 +110,13 @@ class User extends Authenticatable
 
     /**
      * هل يتطلب حساب المستخدم تفعيل التحقق بخطوتين (MFA/TOTP) إلزامياً؟
-     * إلزامي دائماً لـ super_admin وأدوار hq_*، ولبقية أدوار GLOBAL_SCOPE عند تفعيل MFA_ENABLED.
+     * معطّل افتراضياً. يُفعَّل لـ super_admin وأدوار hq_* بالمتغير MFA_ENFORCE_HQ، ولبقية أدوار GLOBAL_SCOPE بالمتغير MFA_ENABLED.
      */
     public function requiresMfa(): bool
     {
-        // Head-office accounts (super_admin and hq_* roles) are never exempt: MFA_ENABLED=false does not release them.
+        // Head-office accounts (super_admin and hq_* roles) follow MFA_ENFORCE_HQ, independent of MFA_ENABLED.
         if ($this->isHeadOfficeAccount()) {
-            return (bool) config('auth.mfa_enforce_hq', true);
+            return (bool) config('auth.mfa_enforce_hq', false);
         }
 
         if (!config('auth.mfa_enabled', false)) {

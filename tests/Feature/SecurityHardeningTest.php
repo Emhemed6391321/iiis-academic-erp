@@ -190,7 +190,7 @@ class SecurityHardeningTest extends TestCase
     }
 
     // ------------------------------------------------------------------
-    // 3) التحقق بخطوتين
+    // 3) التحقق بخطوتين (معطّل افتراضياً، ويُفعَّل بمتغيرات البيئة)
     // ------------------------------------------------------------------
 
     private function enforceMfa(bool $generalSwitch = false): void
@@ -198,7 +198,7 @@ class SecurityHardeningTest extends TestCase
         config(['auth.mfa_enforce_hq' => true, 'auth.mfa_enabled' => $generalSwitch]);
     }
 
-    public function test_head_office_accounts_must_use_mfa_even_when_the_general_switch_is_off(): void
+    public function test_head_office_accounts_must_use_mfa_when_their_switch_is_on_even_if_the_general_switch_is_off(): void
     {
         $this->enforceMfa(false);
 
@@ -258,13 +258,22 @@ class SecurityHardeningTest extends TestCase
         $this->actingAs($this->userWithRole('hq_student_affairs'))->get('/')->assertRedirect(route('mfa.setup'));
     }
 
-    public function test_the_default_of_the_head_office_switch_is_on(): void
+    public function test_two_step_verification_is_off_by_default_and_each_switch_still_works(): void
     {
         $this->assertMatchesRegularExpression(
-            "/'mfa_enforce_hq'\s*=>\s*env\('MFA_ENFORCE_HQ',\s*true\)/",
+            "/'mfa_enforce_hq'\s*=>\s*env\('MFA_ENFORCE_HQ',\s*false\)/",
             file_get_contents(config_path('auth.php'))
         );
-        $this->assertStringContainsString('MFA_ENFORCE_HQ=true', file_get_contents(base_path('.env.example')));
+        $env = file_get_contents(base_path('.env.example'));
+        $this->assertStringContainsString('MFA_ENFORCE_HQ=false', $env);
+        $this->assertStringContainsString('MFA_ENABLED=false', $env);
+
+        // With both switches off no account is sent to the setup screen.
+        config(['auth.mfa_enforce_hq' => false, 'auth.mfa_enabled' => false]);
+        foreach (['super_admin', 'hq_student_affairs', 'branches_director'] as $roleName) {
+            $this->assertFalse($this->userWithRole($roleName)->requiresMfa(), $roleName);
+        }
+        $this->actingAs($this->userWithRole('super_admin'))->getJson('/api/v1/students')->assertOk();
     }
 
     // ------------------------------------------------------------------
