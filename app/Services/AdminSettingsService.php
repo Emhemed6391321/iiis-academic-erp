@@ -10,6 +10,7 @@ use App\Models\OrganizationalUnit;
 use App\Models\SystemAuditTrail;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminSettingsService
 {
@@ -138,6 +139,7 @@ class AdminSettingsService
                 $personName = '';
             }
 
+            // The stamp is printed at this slot only when the slot is active, its stamp switch is on and the stamp file exists.
             $result[$sig->slot_key] = [
                 'slot_key'   => $sig->slot_key,
                 'slot_label' => $sig->slot_label,
@@ -145,10 +147,43 @@ class AdminSettingsService
                 'name'       => $personName,
                 'show_name'  => (bool) $sig->show_name,
                 'show_title' => (bool) $sig->show_title,
+                'show_stamp' => (bool) $sig->show_stamp,
+                'stamp_url'  => $sig->show_stamp ? self::getStampUrl() : '',
             ];
         }
 
         return $result;
+    }
+
+    /**
+     * The saved official stamp, or '' when none was uploaded or its file is gone (so a broken image is never printed).
+     */
+    public static function getStampUrl(): string
+    {
+        $url = trim((string) (self::getInstituteProfile()['stamp_url'] ?? ''));
+        if ($url === '') {
+            return '';
+        }
+
+        if (str_starts_with($url, '/storage/')) {
+            return Storage::disk('public')->exists(substr($url, strlen('/storage/'))) ? $url : '';
+        }
+
+        return $url;
+    }
+
+    /**
+     * The stamp a document prints: the first slot of the resolved signatories that carries one, otherwise none.
+     */
+    public static function stampFromSignatories(array $signatories): string
+    {
+        foreach ($signatories as $slot) {
+            if (!empty($slot['stamp_url'])) {
+                return $slot['stamp_url'];
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -179,11 +214,18 @@ class AdminSettingsService
             ->where('is_current', true)
             ->where('status', 'active');
 
+        $holders = $query->get();
+
         if ($branchId) {
-            return (clone $query)->where('branch_id', $branchId)->first() ?: $query->first();
+            $own = $holders->firstWhere('branch_id', $branchId);
+            if ($own) {
+                return $own;
+            }
         }
 
-        return $query->first();
+        // A position held by one person for the whole institute is central. A position held in several branches
+        // is a branch position, and another branch's holder must never sign for this branch.
+        return $holders->count() === 1 ? $holders->first() : null;
     }
 
     /**

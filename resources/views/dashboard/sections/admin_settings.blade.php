@@ -579,6 +579,17 @@
                 </button>
             </div>
 
+            <!-- حالة الختم الرسمي: يُرفع من تبويب بيانات وشعار المعهد ويُربط بالخانات من البطاقات أدناه -->
+            <div class="p-3 rounded-[12px] border text-xs font-bold flex items-center gap-3"
+                :class="adminSettings.profile?.stamp_url ? (darkMode ? 'bg-emerald-950/30 border-emerald-800 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800') : (darkMode ? 'bg-amber-950/30 border-amber-800 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-800')">
+                <template x-if="adminSettings.profile?.stamp_url">
+                    <img :src="adminSettings.profile.stamp_url" class="w-12 h-12 object-contain bg-white rounded border" alt="الختم الرسمي">
+                </template>
+                <span x-text="adminSettings.profile?.stamp_url
+                    ? 'الختم الرسمي مرفوع. يُطبع في المستندات عند كل خانة مفعّلة يُشغَّل فيها مفتاح الختم، ويتوقف عند تعطيل الخانة أو إيقاف مفتاحه.'
+                    : 'لم يُرفع ختم رسمي بعد، فلن يُطبع ختم في أي مستند. ارفعه من تبويب «بيانات وشعار المعهد المركزية» ثم فعّله عند الخانات المطلوبة.'"></span>
+            </div>
+
             <!-- Signatories Cards Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <template x-for="(sig, idx) in adminSettings.signatories" :key="sig.id || idx">
@@ -632,6 +643,14 @@
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" x-model="sig.show_name" class="rounded w-4 h-4 text-amber-600">
                                 <span>إظهار الاسم في المستند</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" x-model="sig.show_stamp" class="rounded w-4 h-4 text-amber-600">
+                                <span>🔏 طباعة الختم الرسمي عند هذه الخانة</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" x-model="sig.is_active" class="rounded w-4 h-4 text-amber-600">
+                                <span>الخانة مفعّلة (إيقافها يُسقطها من المستند بتوقيعها وختمها)</span>
                             </label>
                         </div>
                     </div>

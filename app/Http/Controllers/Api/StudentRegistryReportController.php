@@ -338,7 +338,7 @@ class StudentRegistryReportController extends Controller
         }
 
         $refNumber = 'تعريف-' . date('Y') . '-' . substr($verification->document_uuid, 0, 8);
-        $qrCodeUrl = url("/verify/doc/{$verification->document_uuid}");
+        $qrCodeUrl = route('document.verify', ['uuid' => $verification->document_uuid]);
 
         // النص الرسمي المعتمد لتعريف الطالب
         $officialText = "تشهد إدارة {$instituteName} – فرع ({$branchName}) بأن الطالب: ({$student->full_name})، مواليد ({$birthPlace} - {$birthDateFormatted})، جنسيته ({$nationality})، ورقمه الوطني ({$nationalId})، المقيد بالمعهد بالمرحلة الدراسية ({$stageName})، بشعبة ({$sectionName})، وبصفة قيد ({$studyType})، تحت رقم قيد ({$academicNumber})، وذلك عن العام الدراسي ({$academicYearName}). وقد أُعطي له هذا التعريف بناءً على طلبه لتقديمه إلى الجهات ذات العلاقة دون أدنى مسؤولية أو التزام مالي على المعهد.";
@@ -348,7 +348,7 @@ class StudentRegistryReportController extends Controller
             'supervising_body'   => $supervisingBody,
             'department_body'    => $departmentBody,
             'logo_url'           => $profile['logo_url'],
-            'stamp_url'          => $profile['stamp_url'],
+            'stamp_url'          => \App\Services\AdminSettingsService::stampFromSignatories($signatories),
             'certificate_type'   => 'تعريف طالب مقيد',
             'ref_number'         => $refNumber,
             'document_uuid'      => $verification->document_uuid,
@@ -412,6 +412,14 @@ class StudentRegistryReportController extends Controller
         $severeViolationsCount = $student->behaviors->whereIn('warning_level', ['LEVEL_3', 'LEVEL_4', 'EXPULSION'])->count();
         $hasCleanRecord = ($severeViolationsCount === 0);
 
+        // The certificate attests good conduct, so it is never issued (and no document is registered) over a severe violation.
+        if (!$hasCleanRecord) {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن إصدار شهادة حسن سيرة وسلوك: يوجد في سجل الطالب السلوكي مخالفة جسيمة مسجلة.',
+            ], 422);
+        }
+
         $profile = \App\Services\AdminSettingsService::getInstituteProfile();
         $instituteName = $profile['institute_name'];
         $supervisingBody = $profile['supervising_body'];
@@ -443,7 +451,7 @@ class StudentRegistryReportController extends Controller
         }
 
         $refNumber = 'سلوك-' . date('Y') . '-' . substr($verification->document_uuid, 0, 8);
-        $qrCodeUrl = url("/verify/doc/{$verification->document_uuid}");
+        $qrCodeUrl = route('document.verify', ['uuid' => $verification->document_uuid]);
 
         // النص الرسمي المعتمد لشهادة حسن السيرة والسلوك
         $officialText = "تشهد إدارة {$instituteName} – فرع ({$branchName}) بأن الطالب: ({$student->full_name})، ورقمه الوطني ({$nationalId})، ورقم قيده الأكاديمي ({$academicNumber})، المقيد بالمعهد بالمرحلة الدراسية ({$stageName}) بشعبة ({$sectionName}) وبصفة قيد ({$studyType}) عن العام الدراسي ({$academicYearName})، كان خلال فترة دراسته بالمعهد مثالاً للطالب الملتزم، وحسن السيرة والسلوك، ولم يصدر منه طيلة فترة قيده ما يخل بأنظمة المعهد وقوانينه ولوائحه المعمول بها. وقد مُنح هذه الشهادة بناءً على طلبه لاستعمالها فيما يسمح به القانون دون أدنى مسؤولية على المعهد.";
@@ -453,7 +461,7 @@ class StudentRegistryReportController extends Controller
             'supervising_body'   => $supervisingBody,
             'department_body'    => $departmentBody,
             'logo_url'           => $profile['logo_url'],
-            'stamp_url'          => $profile['stamp_url'],
+            'stamp_url'          => \App\Services\AdminSettingsService::stampFromSignatories($signatories),
             'certificate_type'   => 'شهادة حسن سيرة وسلوك',
             'ref_number'         => $refNumber,
             'document_uuid'      => $verification->document_uuid,
@@ -595,7 +603,7 @@ class StudentRegistryReportController extends Controller
                 'supervising_body'  => $profile['supervising_body'],
                 'department_body'   => $profile['supervising_department'],
                 'logo_url'          => $profile['logo_url'],
-                'stamp_url'         => $profile['stamp_url'],
+                'stamp_url'         => \App\Services\AdminSettingsService::stampFromSignatories($signatories),
                 'report_title'      => 'التقرير التفصيلي الشامل لملف الطالب',
                 'report_code'       => 'CONF-DOSSIER-' . date('Y') . '-' . str_pad($student->id, 6, '0', STR_PAD_LEFT),
                 'extracted_at'      => Carbon::now()->format('Y-m-d H:i:s'),

@@ -452,6 +452,7 @@ class AdminSettingsController extends Controller
             'signatories.*.is_active'             => 'nullable|boolean',
             'signatories.*.show_name'             => 'nullable|boolean',
             'signatories.*.show_title'            => 'nullable|boolean',
+            'signatories.*.show_stamp'            => 'nullable|boolean',
         ]);
 
         $userId = auth()->id() ?? 1;
@@ -473,6 +474,11 @@ class AdminSettingsController extends Controller
                     'is_active'             => $sigData['is_active'] ?? true,
                     'show_name'             => $sigData['show_name'] ?? true,
                     'show_title'            => $sigData['show_title'] ?? true,
+                    // Absent means "unchanged" for an existing slot; a brand-new slot prints the stamp only if it approves.
+                    'show_stamp'            => $sigData['show_stamp']
+                        ?? OfficialDocumentSignatory::where('document_code', $sigData['document_code'])
+                            ->where('slot_key', $sigData['slot_key'])->value('show_stamp')
+                        ?? ($sigData['slot_key'] === 'approved_by'),
                 ]
             );
         }

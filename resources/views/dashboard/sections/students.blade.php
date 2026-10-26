@@ -2151,7 +2151,10 @@
                     <!-- التوقيعات والاعتماد الرسمي وتأكيد اسم الموظف المستخرج -->
                     <div class="mt-10 pt-6 border-t-2 border-slate-900 grid grid-cols-3 gap-6 text-center text-xs font-bold relative z-10">
                         
-                        <div class="space-y-6">
+                        <div class="space-y-6 relative">
+                            <template x-if="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
+                            </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
@@ -2159,7 +2162,10 @@
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
-                        <div class="space-y-6">
+                        <div class="space-y-6 relative">
+                            <template x-if="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
+                            </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
@@ -2168,11 +2174,8 @@
                         </div>
 
                         <div class="space-y-6 relative">
-                            <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert?.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || enrollmentCertModal.cert?.stamp_url" 
-                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
-                                     alt="الختم الرسمي">
+                            <template x-if="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
                             </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
@@ -2291,7 +2294,10 @@
                     <!-- التوقيعات والاعتماد الرسمي مع اسم الموظف المستخرج -->
                     <div class="mt-12 pt-6 border-t-2 border-emerald-900 grid grid-cols-3 gap-6 text-center text-xs font-bold">
                         
-                        <div class="space-y-6">
+                        <div class="space-y-6 relative">
+                            <template x-if="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
+                            </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
@@ -2299,7 +2305,10 @@
                             <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
-                        <div class="space-y-6">
+                        <div class="space-y-6 relative">
+                            <template x-if="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
+                            </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
@@ -2308,11 +2317,8 @@
                         </div>
 
                         <div class="space-y-6 relative">
-                            <!-- الختم الرسمي إن وجد -->
-                            <template x-if="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || goodConductCertModal.cert.stamp_url">
-                                <img :src="adminSettings.stampPreviewUrl || adminSettings.profile?.stamp_url || goodConductCertModal.cert.stamp_url" 
-                                     class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" 
-                                     alt="الختم الرسمي">
+                            <template x-if="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).stamp">
+                                <img :src="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).stamp" class="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-20 object-contain opacity-80 pointer-events-none" alt="الختم الرسمي">
                             </template>
                             <div>
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).label"></div>

@@ -73,6 +73,7 @@ class OfficialSignatoriesSeeder extends Seeder
                     'is_active' => true,
                     'show_name' => true,
                     'show_title' => true,
+                    'show_stamp' => $slot['slot'] === 'approved_by',
                 ]
             );
 

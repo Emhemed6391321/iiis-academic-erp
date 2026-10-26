@@ -17,12 +17,14 @@ class OfficialDocumentSignatory extends Model
         'is_active',
         'show_name',
         'show_title',
+        'show_stamp',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'show_name' => 'boolean',
         'show_title' => 'boolean',
+        'show_stamp' => 'boolean',
     ];
 
     public function jobPosition(): BelongsTo

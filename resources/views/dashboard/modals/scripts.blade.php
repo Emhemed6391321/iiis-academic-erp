@@ -2186,12 +2186,12 @@
                 getSignatoryInfo(docCode, slotKey, defaultLabel, defaultName, resolved = null) {
                     if (resolved) {
                         const r = resolved[slotKey];
-                        return r ? { label: r.slot_label || '', title: r.title || '', name: r.name || '' } : { label: '', title: '', name: '' };
+                        return r ? { label: r.slot_label || '', title: r.title || '', name: r.name || '', stamp: r.stamp_url || '' } : { label: '', title: '', name: '', stamp: '' };
                     }
                     const list = (this.adminSettings && this.adminSettings.signatories) || [];
                     const sig = list.find(s => s.document_code === docCode && s.slot_key === slotKey && s.is_active !== false);
                     if (!sig) {
-                        return { label: '', title: '', name: '' };
+                        return { label: '', title: '', name: '', stamp: '' };
                     }
                     const title = sig.show_title === false ? '' : (sig.custom_title_override || (sig.job_position ? sig.job_position.title : ''));
                     let name = sig.user ? sig.user.name : '';
@@ -2209,7 +2209,7 @@
                     } else if (!name && placement && placement.user) {
                         name = placement.user.name;
                     }
-                    return { label: sig.slot_label || '', title: title || '', name: name || '' };
+                    return { label: sig.slot_label || '', title: title || '', name: name || '', stamp: '' };
                 },
 
                 async openOfficialRegistryPrint() {
@@ -2975,6 +2975,7 @@
                         if (res.ok && data.success && cert) {
                             this.goodConductCertModal.cert = cert;
                         } else {
+                            this.goodConductCertModal.open = false;
                             this.showToast(data.message || 'تعذر جلب شهادة السلوك');
                         }
                     } catch (e) {
