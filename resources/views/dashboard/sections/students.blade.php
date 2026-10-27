@@ -1988,7 +1988,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).name || getSignatoryInfo('student_registry', slot, '', '', officialRegistryPrintModal.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
                     </template>
                 </div>
@@ -2156,7 +2155,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'issued_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
                         <div class="space-y-6 relative">
@@ -2164,7 +2162,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'prepared_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
 
                         <div class="space-y-6 relative">
@@ -2172,7 +2169,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).name || getSignatoryInfo('enrollment_cert', 'approved_by', '', '', enrollmentCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم المعتمد: ............................</div>
                         </div>
 
                     </div>
@@ -2290,7 +2286,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'issued_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
                         <div class="space-y-6 relative">
@@ -2298,7 +2293,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'prepared_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
 
                         <div class="space-y-6 relative">
@@ -2306,7 +2300,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).name || getSignatoryInfo('conduct_cert', 'approved_by', '', '', goodConductCertModal.cert?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم الرسمي: ............................</div>
                         </div>
 
                     </div>
@@ -2558,7 +2551,6 @@
                                 <div class="font-black text-rose-900 mt-1" x-text="confidentialReportModal.report?.header.extracted_by"></div>
                                 <div class="text-[9px] text-slate-400 font-mono" x-text="confidentialReportModal.report?.header.extracted_at"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع: ............................</div>
                         </div>
 
                         <div class="space-y-6">
@@ -2566,7 +2558,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'prepared_by', '', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم: ............................</div>
                         </div>
 
                         <div class="space-y-6">
@@ -2574,7 +2565,6 @@
                                 <div class="text-slate-500 text-[10px]" x-text="getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).label"></div>
                                 <div class="font-black text-slate-900 mt-1" x-text="getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).name || getSignatoryInfo('secret_report', 'approved_by', '', '', confidentialReportModal.report?.signatories).title"></div>
                             </div>
-                            <div class="text-slate-400 text-[10px]">التوقيع والختم السري: ............................</div>
                         </div>
 
                     </div>
