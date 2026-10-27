@@ -3060,8 +3060,32 @@
                     document.body.appendChild(iframe);
 
                     const isCard = elementId === 'printableStudentCardWrapper';
-                    const pageSizeCss = isCard ? 'size: A6 portrait; margin: 4mm;' : 'size: A4 portrait; margin: 8mm;';
-                    const pagePadding = isCard ? 'padding: 2mm;' : 'padding: 8mm;';
+                    // الشهادتان تُطبعان على ورقة A4 كاملة: الإطار على حدود الورقة (هامش 5مم يتحمله كل طابعة)
+                    // والتوقيعات والتذييل في أسفل الصفحة.
+                    const isFullPageCert = elementId === 'printableEnrollmentCertificate' || elementId === 'printableGoodConductCertificate';
+                    let pageSizeCss = isCard ? 'size: A6 portrait; margin: 4mm;' : 'size: A4 portrait; margin: 8mm;';
+                    let pagePadding = isCard ? 'padding: 2mm;' : 'padding: 8mm;';
+                    let fullPageCss = '';
+                    if (isFullPageCert) {
+                        pageSizeCss = 'size: A4 portrait; margin: 5mm;';
+                        pagePadding = 'padding: 0;';
+                        fullPageCss = `
+                                #${elementId} {
+                                    box-sizing: border-box !important;
+                                    width: 200mm !important;
+                                    height: 286mm !important;
+                                    margin: 0 !important;
+                                    border-radius: 0 !important;
+                                    box-shadow: none !important;
+                                    overflow: hidden;
+                                    display: flex !important;
+                                    flex-direction: column;
+                                    page-break-inside: avoid;
+                                    page-break-after: avoid;
+                                }
+                                #${elementId} > :nth-last-child(2) { margin-top: auto !important; }
+                                #${elementId} > :last-child { margin-top: 1.5rem !important; }`;
+                    }
 
                     const frameDoc = iframe.contentWindow.document;
                     frameDoc.open();
@@ -3085,6 +3109,7 @@
                                 }
                                 @page { ${pageSizeCss} }
                                 .no-print { display: none !important; }
+                                ${fullPageCss}
                                 table { page-break-inside: auto; width: 100%; border-collapse: collapse; }
                                 tr { page-break-inside: avoid; page-break-after: auto; }
                                 .print-card-front, .print-card-back {
