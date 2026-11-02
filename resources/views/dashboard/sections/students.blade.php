@@ -361,7 +361,7 @@
                                         </td>
 
                                         <!-- الميلاد (السن) -->
-                                        <td x-show="studentRegistry.columns.birth_date" class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap" x-text="(st.birth_date_formatted || st.birth_date || '—') + ' (السن: ' + (st.age !== null && st.age !== undefined ? st.age + ' سنة' : '—') + ')'"></td>
+                                        <td x-show="studentRegistry.columns.birth_date" class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap" x-text="(st.birth_date_formatted || (st.birth_date ? String(st.birth_date).slice(0, 10) : '—')) + ' (السن: ' + (st.age !== null && st.age !== undefined ? st.age + ' سنة' : '—') + ')'"></td>
 
                                         <!-- مكان الميلاد -->
                                         <td x-show="studentRegistry.columns.birth_place" class="p-3 text-slate-600 dark:text-slate-300" x-text="st.birth_place || '—'"></td>

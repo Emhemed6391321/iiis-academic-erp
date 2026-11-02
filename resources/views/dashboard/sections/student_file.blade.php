@@ -123,7 +123,7 @@
                                             </div>
                                             <div>
                                                 <div class="text-slate-400">تاريخ الميلاد</div>
-                                                <div class="font-mono text-slate-600 dark:text-slate-300" x-text="studentFile.student.birth_date + ' (' + (studentFile.student.age || '—') + ' سنة)'"></div>
+                                                <div class="font-mono text-slate-600 dark:text-slate-300" x-text="(studentFile.student.birth_date ? String(studentFile.student.birth_date).slice(0, 10) : '—') + ' (' + (studentFile.student.age || '—') + ' سنة)'"></div>
                                             </div>
                                             <div>
                                                 <div class="text-slate-400">الجنس</div>
@@ -258,7 +258,7 @@
                                         <div><div class="text-slate-400 mb-0.5">رقم المنظومة الوزارية</div><div class="font-mono font-semibold text-slate-700 dark:text-slate-300" x-text="studentFile.student.ministry_student_id || '—'"></div></div>
                                         <div><div class="text-slate-400 mb-0.5">رقم جواز السفر</div><div class="font-mono font-semibold text-slate-700 dark:text-slate-300" x-text="studentFile.student.passport_number || '—'"></div></div>
                                         <div><div class="text-slate-400 mb-0.5">مكان الميلاد</div><div class="font-semibold text-slate-800 dark:text-slate-200" x-text="studentFile.student.birth_place"></div></div>
-                                        <div><div class="text-slate-400 mb-0.5">تاريخ الميلاد والسن</div><div class="font-semibold text-slate-800 dark:text-slate-200" x-text="studentFile.student.birth_date + ' (' + (studentFile.student.age || '—') + ' سنة)'"></div></div>
+                                        <div><div class="text-slate-400 mb-0.5">تاريخ الميلاد والسن</div><div class="font-semibold text-slate-800 dark:text-slate-200" x-text="(studentFile.student.birth_date ? String(studentFile.student.birth_date).slice(0, 10) : '—') + ' (' + (studentFile.student.age || '—') + ' سنة)'"></div></div>
                                         <div><div class="text-slate-400 mb-0.5">الجنسية والديانة</div><div class="font-semibold text-slate-800 dark:text-slate-200" x-text="(studentFile.student.nationality || 'ليبي') + ' / ' + (studentFile.student.religion || 'مسلم')"></div></div>
                                     </div>
                                 </div>
