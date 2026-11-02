@@ -84,6 +84,15 @@ class StudentStateMachineService
             ];
         }
 
+        // First enrolment approval from a draft/pending file requires complete data and mandatory documents.
+        // Renewals (e.g. SUSPENDED → ENROLLED_ACTIVE) of already-approved students are unaffected.
+        if ($targetStatus === 'ENROLLED_ACTIVE' && in_array($current, ['NEW_DRAFT', 'PENDING_HQ', 'REJECTED_REVISION'], true)) {
+            $blockMessage = app(StudentDocumentService::class)->approvalBlockMessage($student, 'state-machine');
+            if ($blockMessage !== null) {
+                return ['allowed' => false, 'reason' => $blockMessage];
+            }
+        }
+
         // Scope Authorization (Option B):
         // Branch users can only promote NEW_DRAFT/REJECTED_REVISION to PENDING_HQ.
         // Direct transition to ENROLLED_ACTIVE, SUSPENDED, GRADUATED, EXPELLED requires HQ Central Authority.

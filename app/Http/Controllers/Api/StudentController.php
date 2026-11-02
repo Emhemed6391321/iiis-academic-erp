@@ -1424,14 +1424,16 @@ class StudentController extends Controller
         }
 
         // Final approval is refused while a mandatory document for the student's nationality category is missing.
-        $missing = app(\App\Services\StudentDocumentService::class)->missingRequiredTypes($student);
-        if (!empty($missing)) {
-            $labels = array_map(fn ($type) => \App\Models\StudentDocument::DOCUMENT_TYPES[$type] ?? $type, $missing);
-
+        // Also refused while a mandatory field is empty or an attached file is no longer readable in the vault.
+        $docService = app(\App\Services\StudentDocumentService::class);
+        $blockMessage = $docService->approvalBlockMessage($student, 'approve-hq');
+        if ($blockMessage !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'لا يُعتمد الطالب نهائياً قبل استكمال المستندات الإلزامية: ' . implode('، ', $labels) . '.',
-                'missing_documents' => $missing,
+                'message' => $blockMessage,
+                'missing_documents' => $docService->missingRequiredTypes($student),
+                'blockers' => $docService->approvalBlockers($student),
+                'redirect_student_id' => $student->id,
             ], 422);
         }
 

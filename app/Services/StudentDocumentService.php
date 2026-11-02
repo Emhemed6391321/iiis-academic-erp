@@ -88,6 +88,97 @@ class StudentDocumentService
         return array_values(array_diff($this->requiredTypesFor($student), $uploaded));
     }
 
+    /** الحقول الإلزامية في ملف الطالب قبل الاعتماد → عنوانها للمستخدم */
+    public const APPROVAL_REQUIRED_FIELDS = [
+        'first_name' => 'الاسم الأول',
+        'father_name' => 'اسم الأب',
+        'grandfather_name' => 'اسم الجد',
+        'family_name' => 'اللقب',
+        'mother_name' => 'اسم الأم',
+        'gender' => 'الجنس',
+        'birth_date' => 'تاريخ الميلاد',
+        'birth_place' => 'مكان الميلاد',
+        'phone' => 'رقم الهاتف',
+        'guardian_phone' => 'هاتف ولي الأمر',
+        'department_id' => 'القسم',
+        'study_type' => 'نوع الدراسة',
+        'branch_id' => 'الفرع',
+        'nationality_category' => 'تصنيف الجنسية',
+    ];
+
+    /**
+     * كل ما يمنع اعتماد الطالب: حقول فارغة، ومستندات إلزامية غير مرفقة أو ملفاتها غير موجودة في الخزنة.
+     * هذا هو المرجع الوحيد لشروط الاعتماد، وتستدعيه كل مسارات الاعتماد في الخادم.
+     *
+     * @return array{missing_fields: string[], missing_documents: string[], unreadable_documents: string[]}
+     */
+    public function approvalBlockers(Student $student): array
+    {
+        $missingFields = [];
+        foreach (self::APPROVAL_REQUIRED_FIELDS as $field => $label) {
+            if (blank($student->{$field})) {
+                $missingFields[] = $label;
+            }
+        }
+        if ($student->nationality_category === 'LIBYAN' && blank($student->national_id)) {
+            $missingFields[] = 'الرقم الوطني';
+        }
+
+        $docs = StudentDocument::where('student_id', $student->id)->get()->keyBy('document_type');
+        $missingDocs = [];
+        $unreadable = [];
+        foreach ($this->requiredTypesFor($student) as $type) {
+            $label = StudentDocument::DOCUMENT_TYPES[$type] ?? $type;
+            $doc = $docs->get($type);
+            if (!$doc) {
+                $missingDocs[] = $label;
+            } elseif (blank($doc->file_path) || !Storage::disk('local')->exists($doc->file_path)) {
+                $unreadable[] = $label;
+            }
+        }
+
+        return [
+            'missing_fields' => $missingFields,
+            'missing_documents' => $missingDocs,
+            'unreadable_documents' => $unreadable,
+        ];
+    }
+
+    /**
+     * رسالة عربية بالنواقص، أو null إذا كان الملف مستوفياً. تُسجَّل المحاولة المرفوضة في سجل التدقيق.
+     */
+    public function approvalBlockMessage(Student $student, string $path): ?string
+    {
+        $b = $this->approvalBlockers($student);
+        if (!array_filter($b)) {
+            return null;
+        }
+
+        $parts = [];
+        if ($b['missing_fields']) {
+            $parts[] = 'بيانات ناقصة: ' . implode('، ', $b['missing_fields']);
+        }
+        if ($b['missing_documents']) {
+            $parts[] = 'مستندات غير مرفقة: ' . implode('، ', $b['missing_documents']);
+        }
+        if ($b['unreadable_documents']) {
+            $parts[] = 'مستندات مرفقة تعذر الوصول لملفها (أعد رفعها): ' . implode('، ', $b['unreadable_documents']);
+        }
+
+        \App\Models\SystemAuditTrail::log(
+            eventType: 'STUDENT_APPROVAL_BLOCKED',
+            description: "منع اعتماد الطالب (المرجع {$student->id}) لعدم استكمال المتطلبات عبر {$path}.",
+            payload: $b + ['path' => $path],
+            userId: \Illuminate\Support\Facades\Auth::id(),
+            branchId: $student->branch_id,
+            modelType: Student::class,
+            modelId: $student->id,
+            severity: 'WARNING'
+        );
+
+        return 'تعذر اعتماد ملف الطالب لعدم استكمال المتطلبات الإلزامية. يرجى مراجعة البيانات والمستندات الناقصة واستكمالها قبل إعادة الاعتماد. — ' . implode(' | ', $parts) . '.';
+    }
+
     /**
      * يحفظ المستند في الخزنة ثم يربطه بالطالب.
      * عند وجود مستند من النوع نفسه يُستبدل، ولا يُحذف القديم إلا بعد نجاح حفظ الجديد.

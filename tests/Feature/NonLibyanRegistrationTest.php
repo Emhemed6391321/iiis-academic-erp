@@ -32,6 +32,7 @@ class NonLibyanRegistrationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Illuminate\Support\Facades\Storage::fake('local');
         $this->seed(AcademicSystemSeeder::class);
         User::query()->update(['must_change_password' => false]);
 
@@ -87,6 +88,7 @@ class NonLibyanRegistrationTest extends TestCase
     private function attachEveryRequiredDocument(Student $student): void
     {
         foreach (app(StudentDocumentService::class)->requiredTypesFor($student) as $type) {
+            \Illuminate\Support\Facades\Storage::disk('local')->put('secure_vault/test/' . $student->id . '/' . $type . '.enc', 'x');
             StudentDocument::create([
                 'student_id' => $student->id,
                 'document_type' => $type,

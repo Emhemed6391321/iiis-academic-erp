@@ -30,6 +30,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Illuminate\Support\Facades\Storage::fake('local');
 
         $superRole = Role::create(['name' => 'super_admin', 'display_name' => 'المدير العام', 'scope_type' => 'GLOBAL_SCOPE']);
         $this->admin = User::factory()->create(['role_id' => $superRole->id]);
@@ -58,6 +59,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
 
     private function upload(Student $student, string $type): void
     {
+        \Illuminate\Support\Facades\Storage::disk('local')->put('secure_vault/test/' . $type . '.enc', 'x');
         StudentDocument::create([
             'student_id' => $student->id,
             'document_type' => $type,

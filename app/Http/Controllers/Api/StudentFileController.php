@@ -613,6 +613,17 @@ class StudentFileController extends Controller
             return response()->json(['success' => false, 'message' => 'البيانات معتمدة مسبقاً.'], 422);
         }
 
+        $docService = app(\App\Services\StudentDocumentService::class);
+        $blockMessage = $docService->approvalBlockMessage($student, 'approve-data');
+        if ($blockMessage !== null) {
+            return response()->json([
+                'success' => false,
+                'message' => $blockMessage,
+                'blockers' => $docService->approvalBlockers($student),
+                'redirect_student_id' => $student->id,
+            ], 422);
+        }
+
         $student->update([
             'approved_by' => Auth::id(),
             'approved_at' => now(),
@@ -658,15 +669,15 @@ class StudentFileController extends Controller
 
     public function verifyData(Student $student): JsonResponse
     {
-        // التحقق من وجود المستندات الإلزامية
-        $hasEducationDoc = StudentDocument::where('student_id', $student->id)
-            ->where('document_type', 'BASIC_EDUCATION_CERT')
-            ->exists();
-
-        if (!$hasEducationDoc) {
+        // التحقق من اكتمال البيانات والمستندات الإلزامية بحسب جنسية الطالب
+        $docService = app(\App\Services\StudentDocumentService::class);
+        $blockMessage = $docService->approvalBlockMessage($student, 'verify-data');
+        if ($blockMessage !== null) {
             return response()->json([
                 'success' => false,
-                'message' => 'لا يمكن توثيق الطالب — يجب رفع شهادة التعليم الأساسي أولاً.',
+                'message' => $blockMessage,
+                'blockers' => $docService->approvalBlockers($student),
+                'redirect_student_id' => $student->id,
             ], 422);
         }
 
