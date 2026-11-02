@@ -1846,24 +1846,48 @@
                         return;
                     }
 
+                    // 3. لا يُقيَّد الطالب قبل رفع كل المستندات الإلزامية
+                    const missingDocs = this.missingRequiredDocs(this.createStudentModal);
+                    if (missingDocs.length) {
+                        this.createStudentModal.activeTab = 'documents';
+                        this.createStudentModal.errorMessage = 'لا يمكن قيد الطالب قبل رفع المستندات الإلزامية: ' + missingDocs.map(s => s.label).join(' — ');
+                        this.createStudentModal.submitting = false;
+                        this.showToast('يرجى رفع المستندات الإلزامية أولاً');
+                        return;
+                    }
+
                     try {
-                        // المستندات تُرفع بعد قيد الطالب عبر مسار الملف الموحد (ملفات حقيقية بدل نصوص Base64 ضخمة)
+                        // المستندات الإلزامية تُرسل مع طلب القيد نفسه؛ الخادم يرفض القيد دونها ويلغيه إن تعذر حفظ أي منها
                         const payload = { ...this.createStudentModal.form };
                         delete payload.disability_report_base64;
+                        const fd = new FormData();
+                        for (const [key, value] of Object.entries(payload)) {
+                            if (value === null || value === undefined) continue;
+                            if (Array.isArray(value)) value.forEach(v => fd.append(key + '[]', v));
+                            else if (typeof value === 'boolean') fd.append(key, value ? '1' : '0');
+                            else fd.append(key, value);
+                        }
+                        const extraDocs = [];
+                        const sentTypes = new Set();
+                        for (const doc of this.createStudentModal.attachedDocs) {
+                            if (doc && doc.file && doc.type !== 'OTHER' && !sentTypes.has(doc.type)) {
+                                fd.append('documents[' + doc.type + ']', doc.file);
+                                sentTypes.add(doc.type);
+                            } else if (doc && doc.file) {
+                                extraDocs.push(doc);
+                            }
+                        }
                         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                         const res = await fetch('/api/v1/students', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken
-                            },
-                            body: JSON.stringify(payload)
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                            body: fd
                         });
                         const data = await res.json();
                         if (res.ok && (data.status === 'success' || data.success)) {
                             const newStudent = data.data || data.student;
-                            const docFailures = newStudent ? await this.uploadAdmissionDocuments(newStudent.id, this.createStudentModal.attachedDocs) : [];
+                            // المستندات الإضافية (اختيارية) تُرفع بعد القيد
+                            const docFailures = newStudent ? await this.uploadAdmissionDocuments(newStudent.id, extraDocs) : [];
                             this.createStudentModal.open = false;
                             this.stopCamera();
                             // غير الليبي: يُرفع الملف للاعتماد المركزي بعد إرفاق مستنداته، ولا يصدر رقم القيد إلا بالاعتماد

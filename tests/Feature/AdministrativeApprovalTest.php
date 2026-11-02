@@ -16,6 +16,7 @@ use Tests\TestCase;
 class AdministrativeApprovalTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private User $hq;
     private User $registrar;
@@ -41,7 +42,7 @@ class AdministrativeApprovalTest extends TestCase
 
     private function registration(array $overrides = []): array
     {
-        return array_merge([
+        return $this->withAdmissionDocuments(array_merge([
             'nationality_category' => 'LIBYAN',
             'national_id' => '120' . random_int(100000000, 999999999),
             'first_name' => 'محمد',
@@ -58,7 +59,7 @@ class AdministrativeApprovalTest extends TestCase
             'current_study_year_id' => StudyYear::where('level_order', 1)->firstOrFail()->id,
             'study_type' => 'REGULAR',
             'branch_id' => $this->branch->id,
-        ], $overrides);
+        ], $overrides));
     }
 
     private function submitRequest(array $data): \Illuminate\Testing\TestResponse

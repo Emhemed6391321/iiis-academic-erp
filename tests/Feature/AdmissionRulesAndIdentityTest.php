@@ -17,6 +17,7 @@ use Tests\TestCase;
 class AdmissionRulesAndIdentityTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private User $hq;
     private Branch $branch;
@@ -41,7 +42,7 @@ class AdmissionRulesAndIdentityTest extends TestCase
 
     private function registration(array $overrides = []): array
     {
-        return array_merge([
+        return $this->withAdmissionDocuments(array_merge([
             'nationality_category' => 'LIBYAN',
             'national_id' => '120' . random_int(100000000, 999999999),
             'first_name' => 'محمد',
@@ -58,7 +59,7 @@ class AdmissionRulesAndIdentityTest extends TestCase
             'current_study_year_id' => StudyYear::first()->id,
             'study_type' => 'REGULAR',
             'branch_id' => $this->branch->id,
-        ], $overrides);
+        ], $overrides));
     }
 
     private function saveRules(array $rules, ?array $cities = null)

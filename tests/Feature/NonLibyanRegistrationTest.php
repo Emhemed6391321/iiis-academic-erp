@@ -24,6 +24,7 @@ use Tests\TestCase;
 class NonLibyanRegistrationTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private User $hq;
     private User $registrar;
@@ -54,7 +55,7 @@ class NonLibyanRegistrationTest extends TestCase
 
     private function nonLibyanPayload(array $overrides = []): array
     {
-        return array_merge([
+        return $this->withAdmissionDocuments(array_merge([
             'nationality_category' => 'OTHER',
             'passport_number' => 'P' . random_int(1000000, 9999999),
             'nationality' => 'مصري',
@@ -72,7 +73,7 @@ class NonLibyanRegistrationTest extends TestCase
             'current_study_year_id' => \App\Models\StudyYear::first()->id,
             'study_type' => 'REGULAR',
             'branch_id' => $this->branch->id,
-        ], $overrides);
+        ], $overrides));
     }
 
     /** يُنشئ طالباً غير ليبي من مسار الإدخال ويعيده مع معرّفه. */
@@ -185,6 +186,8 @@ class NonLibyanRegistrationTest extends TestCase
     public function test_submission_is_refused_until_every_required_document_is_attached(): void
     {
         $student = $this->createNonLibyanDraft();
+        // Creation now requires the documents, so an incomplete draft is simulated by removing them.
+        \App\Models\StudentDocument::where('student_id', $student->id)->delete();
 
         $response = $this->actingAs($this->hq)->postJson("/api/v1/students/{$student->id}/submit-hq");
 
@@ -243,7 +246,7 @@ class NonLibyanRegistrationTest extends TestCase
 
     public function test_libyan_registration_still_receives_its_academic_number_immediately(): void
     {
-        $response = $this->actingAs($this->hq)->postJson('/api/v1/students', [
+        $response = $this->actingAs($this->hq)->postJson('/api/v1/students', $this->withAdmissionDocuments([
             'nationality_category' => 'LIBYAN',
             'national_id' => '1' . random_int(10000000000, 99999999999),
             'first_name' => 'محمد', 'father_name' => 'علي', 'grandfather_name' => 'أحمد', 'family_name' => 'الورفلي',
@@ -252,7 +255,7 @@ class NonLibyanRegistrationTest extends TestCase
             'department_id' => \App\Models\Department::first()->id,
             'current_study_year_id' => \App\Models\StudyYear::first()->id,
             'study_type' => 'REGULAR', 'branch_id' => $this->branch->id,
-        ]);
+        ]));
 
         $response->assertStatus(201);
         $this->assertNotEmpty($response->json('student.academic_number'));

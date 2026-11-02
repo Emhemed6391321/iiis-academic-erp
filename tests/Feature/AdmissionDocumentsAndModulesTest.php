@@ -19,6 +19,7 @@ use Tests\TestCase;
 class AdmissionDocumentsAndModulesTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private const PDF = "%PDF-1.4\nadmission document\n%%EOF";
 
@@ -58,16 +59,17 @@ class AdmissionDocumentsAndModulesTest extends TestCase
     {
         $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
         $payload = $this->admissionPayload($manager->branch_id, '119912340001');
-        $payload['attached_documents'] = [
-            ['type' => 'شهادة إتمام المرحلة الأساسية', 'name' => 'basic.pdf', 'base64' => 'data:application/pdf;base64,' . base64_encode(self::PDF)],
-        ];
+        // The Arabic title sent by the admission form resolves to the canonical type.
+        $payload['attached_documents'] = array_map(
+            fn (array $d) => $d['type'] === 'BASIC_EDUCATION_CERT' ? array_merge($d, ['type' => 'شهادة إتمام المرحلة الأساسية']) : $d,
+            $payload['attached_documents']
+        );
 
         $studentId = $this->actingAs($manager)->postJson('/api/v1/students', $payload)
             ->assertCreated()
             ->json('data.id');
 
-        $doc = StudentDocument::where('student_id', $studentId)->firstOrFail();
-        $this->assertSame('BASIC_EDUCATION_CERT', $doc->document_type);
+        $doc = StudentDocument::where('student_id', $studentId)->where('document_type', 'BASIC_EDUCATION_CERT')->firstOrFail();
         $this->assertStringStartsWith('secure_vault/', $doc->file_path);
         Storage::disk('local')->assertExists($doc->file_path);
         $this->assertNotEmpty($doc->file_url);
@@ -123,7 +125,7 @@ class AdmissionDocumentsAndModulesTest extends TestCase
             'document' => UploadedFile::fake()->create('huge.pdf', 11 * 1024, 'application/pdf'),
         ])->assertStatus(422);
 
-        $this->assertSame(0, StudentDocument::where('student_id', $studentId)->count());
+        $this->assertSame(0, StudentDocument::where('student_id', $studentId)->where('document_type', 'OTHER')->count());
     }
 
     public function test_closed_modules_are_locked_for_everyone_including_general_director(): void
@@ -226,7 +228,7 @@ class AdmissionDocumentsAndModulesTest extends TestCase
 
     private function admissionPayload(?int $branchId, string $nationalId): array
     {
-        return [
+        return $this->withAdmissionDocuments([
             'nationality_category' => 'LIBYAN',
             'first_name' => 'اختبار', 'father_name' => 'أب', 'grandfather_name' => 'جد', 'family_name' => 'عائلة',
             'mother_name' => 'أم', 'national_id' => $nationalId, 'ministry_student_id' => '',
@@ -236,6 +238,6 @@ class AdmissionDocumentsAndModulesTest extends TestCase
             'current_study_year_id' => StudyYear::orderBy('level_order')->value('id'),
             'study_type' => 'REGULAR', 'blood_type' => 'O+', 'has_disability' => false,
             'chronic_diseases_list' => [], 'chronic_diseases' => '', 'notes' => '',
-        ];
+        ]);
     }
 }

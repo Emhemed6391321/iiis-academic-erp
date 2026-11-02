@@ -19,6 +19,7 @@ use Tests\TestCase;
 class BranchManagerFunctionsTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private User $manager;
     private Branch $ownBranch;
@@ -113,7 +114,7 @@ class BranchManagerFunctionsTest extends TestCase
     {
         $start = AcademicYear::where('is_current', true)->firstOrFail()->start_date;
 
-        $this->actingAs($this->manager)->postJson('/api/v1/students', [
+        $this->actingAs($this->manager)->postJson('/api/v1/students', $this->withAdmissionDocuments([
             'nationality_category' => 'LIBYAN',
             'national_id' => '120555000111',
             'first_name' => 'محمد', 'father_name' => 'علي', 'grandfather_name' => 'أحمد', 'family_name' => 'الورفلي',
@@ -126,7 +127,7 @@ class BranchManagerFunctionsTest extends TestCase
             'current_study_year_id' => StudyYear::firstOrFail()->id,
             'study_type' => 'REGULAR',
             'branch_id' => $this->otherBranch->id,
-        ])->assertSuccessful();
+        ]))->assertSuccessful();
 
         $this->assertDatabaseHas('students', ['national_id' => '120555000111', 'branch_id' => $this->ownBranch->id]);
     }

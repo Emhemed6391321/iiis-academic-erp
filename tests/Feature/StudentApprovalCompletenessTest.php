@@ -22,6 +22,7 @@ use Tests\TestCase;
 class StudentApprovalCompletenessTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     private User $admin;
     private Branch $branch;
@@ -188,5 +189,74 @@ class StudentApprovalCompletenessTest extends TestCase
         $s = $this->student('LIBYAN', ['academic_status' => 'SUSPENDED']);
         $check = app(StudentStateMachineService::class)->canTransition($s, 'ENROLLED_ACTIVE', $this->admin);
         $this->assertTrue($check['allowed']);
+    }
+
+    // ---- القيد: لا يُنشأ الطالب دون مستنداته الإلزامية ----
+
+    private function entry(string $category, array $overrides = []): array
+    {
+        return array_merge([
+            'nationality_category' => $category,
+            'national_id' => $category === 'LIBYAN' ? '1' . random_int(10000000000, 99999999999) : null,
+            'passport_number' => $category === 'OTHER' ? 'P' . random_int(1000000, 9999999) : null,
+            'nationality' => $category === 'OTHER' ? 'مصري' : 'ليبي',
+            'first_name' => 'محمد', 'father_name' => 'علي', 'grandfather_name' => 'أحمد', 'family_name' => 'الورفلي',
+            'mother_name' => 'فاطمة محمود', 'gender' => 'MALE', 'birth_date' => '2010-03-03', 'birth_place' => 'طرابلس',
+            'phone' => '091-1112233', 'guardian_phone' => '091-2223344',
+            'department_id' => $this->department->id, 'current_study_year_id' => $this->studyYear->id,
+            'study_type' => 'REGULAR', 'branch_id' => $this->branch->id,
+        ], $overrides);
+    }
+
+    public function test_libyan_cannot_be_registered_without_documents(): void
+    {
+        $res = $this->actingAs($this->admin)->postJson('/api/v1/students', $this->entry('LIBYAN'));
+        $res->assertStatus(422);
+        $this->assertContains('BASIC_EDUCATION_CERT', $res->json('missing_documents'));
+        $this->assertContains('BIRTH_CERT', $res->json('missing_documents'));
+        $this->assertSame(0, Student::count());
+    }
+
+    public function test_libyan_missing_one_document_is_not_registered(): void
+    {
+        $payload = $this->withAdmissionDocuments($this->entry('LIBYAN'));
+        $payload['attached_documents'] = array_values(array_filter($payload['attached_documents'], fn ($d) => $d['type'] !== 'BIRTH_CERT'));
+
+        $res = $this->actingAs($this->admin)->postJson('/api/v1/students', $payload)->assertStatus(422);
+        $this->assertSame(['BIRTH_CERT'], $res->json('missing_documents'));
+        $this->assertSame(0, Student::count());
+    }
+
+    public function test_non_libyan_missing_passport_and_residence_is_not_registered(): void
+    {
+        $payload = $this->withAdmissionDocuments($this->entry('OTHER'));
+        $payload['attached_documents'] = array_values(array_filter($payload['attached_documents'], fn ($d) => !in_array($d['type'], ['PASSPORT_COPY', 'RESIDENCE_PERMIT'], true)));
+
+        $res = $this->actingAs($this->admin)->postJson('/api/v1/students', $payload)->assertStatus(422);
+        $this->assertEqualsCanonicalizing(['PASSPORT_COPY', 'RESIDENCE_PERMIT'], $res->json('missing_documents'));
+        $this->assertSame(0, Student::count());
+    }
+
+    public function test_registration_with_all_documents_as_multipart_files_succeeds(): void
+    {
+        $service = app(StudentDocumentService::class);
+        $files = [];
+        foreach ($service->requiredTypesFor(new Student(['nationality_category' => 'LIBYAN'])) as $type) {
+            $files[$type] = \Illuminate\Http\UploadedFile::fake()->createWithContent($type . '.pdf', "%PDF-1.4\nx\n%%EOF");
+        }
+
+        $res = $this->actingAs($this->admin)->post('/api/v1/students', $this->entry('LIBYAN') + ['documents' => $files], ['Accept' => 'application/json']);
+        $res->assertStatus(201);
+        $this->assertSame(count($files), StudentDocument::where('student_id', $res->json('student.id'))->count());
+    }
+
+    public function test_unstorable_document_cancels_the_whole_registration(): void
+    {
+        $payload = $this->withAdmissionDocuments($this->entry('LIBYAN'));
+        $payload['attached_documents'][0]['base64'] = 'data:text/plain;base64,' . base64_encode('not a pdf or image');
+
+        $this->actingAs($this->admin)->postJson('/api/v1/students', $payload)->assertStatus(422);
+        $this->assertSame(0, Student::count());
+        $this->assertSame(0, StudentDocument::count());
     }
 }

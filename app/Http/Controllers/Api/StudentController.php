@@ -196,6 +196,31 @@ class StudentController extends Controller
             }
         }
 
+        // No student is created unless every mandatory document for the nationality category comes with the request.
+        $docService = app(StudentDocumentService::class);
+        $missingAtEntry = array_values(array_diff(
+            $docService->requiredTypesFor(new Student($validated)),
+            $this->incomingDocumentTypes($request)
+        ));
+        if (!empty($missingAtEntry)) {
+            $labels = array_map(fn ($type) => StudentDocument::DOCUMENT_TYPES[$type] ?? $type, $missingAtEntry);
+
+            SystemAuditTrail::log(
+                eventType: 'STUDENT_CREATION_BLOCKED',
+                description: 'منع قيد طالب جديد لعدم إرفاق المستندات الإلزامية: ' . implode('، ', $labels) . '.',
+                payload: ['missing_documents' => $missingAtEntry, 'nationality_category' => $validated['nationality_category']],
+                userId: $user?->id,
+                branchId: $validated['branch_id'] ?? $user?->branch_id,
+                severity: 'WARNING'
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن قيد الطالب قبل رفع المستندات الإلزامية: ' . implode('، ', $labels) . '.',
+                'missing_documents' => $missingAtEntry,
+            ], 422);
+        }
+
         $currentYear = AcademicYear::where('is_current', true)->first() ?? AcademicYear::latest('id')->first();
         $validated['enrolled_academic_year_id'] = $currentYear ? $currentYear->id : 1;
 
@@ -251,7 +276,7 @@ class StudentController extends Controller
 
         // 4. Create Student and Auto-Generate Enrollment Number in Transaction
         try {
-            $student = DB::transaction(function () use ($validated, $currentYear, $ageExemption, $gradeExemption, $nonLibyan) {
+            $student = DB::transaction(function () use ($validated, $currentYear, $ageExemption, $gradeExemption, $nonLibyan, $request, $user) {
                 // Each approved request is spent exactly once, in the same transaction as the enrollment.
                 $service = app(AdministrativeRequestService::class);
                 foreach (array_filter([$ageExemption, $gradeExemption]) as $approvedRequest) {
@@ -262,21 +287,23 @@ class StudentController extends Controller
                     }
                 }
 
-                if ($nonLibyan) {
-                    return Student::create($validated);
+                if (!$nonLibyan) {
+                    // Instantiate temporary model to calculate number
+                    $tempStudent = new Student($validated);
+                    if ($currentYear) {
+                        $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
+                    }
+
+                    // Auto generate sequential number: [Gender(1)][Year(26)][Seq(0001)]
+                    $validated['academic_number'] = $this->numberGenerator->generate($tempStudent);
                 }
 
-                // Instantiate temporary model to calculate number
-                $tempStudent = new Student($validated);
-                if ($currentYear) {
-                    $tempStudent->setRelation('enrolledAcademicYear', $currentYear);
-                }
+                $created = Student::create($validated);
 
-                // Auto generate sequential number: [Gender(1)][Year(26)][Seq(0001)]
-                $academicNumber = $this->numberGenerator->generate($tempStudent);
-                $validated['academic_number'] = $academicNumber;
+                // The documents are saved in the same transaction: if one cannot be stored, no student is created.
+                $this->handleAttachedDocuments($request, $created, $user);
 
-                return Student::create($validated);
+                return $created;
             });
         } catch (QueryException $e) {
             // The unique indexes are the final guard against two concurrent registrations of one identity.
@@ -285,9 +312,6 @@ class StudentController extends Controller
             }
             throw $e;
         }
-
-        // 5. Save Attached Documents if any
-        $this->handleAttachedDocuments($request, $student, $user);
 
         $message = $nonLibyan
             ? 'تم حفظ بيانات الطالب غير الليبي كمسودة دون رقم قيد. ارفع المستندات المطلوبة ثم أرسل الطلب للإدارة العامة.'
@@ -1878,25 +1902,72 @@ class StudentController extends Controller
     /**
      * Helper to attach various registration documents.
      */
+    private const DOC_FILE_INPUTS = [
+        'doc_basic_education' => ['BASIC_EDUCATION_CERT', null],
+        'doc_birth_certificate' => ['BIRTH_CERT', null],
+        'doc_medical_report' => ['DISABILITY_MEDICAL_REP', null],
+        'doc_family_book' => ['OTHER', 'صورة كتيب العائلة'],
+        'doc_good_conduct' => ['OTHER', 'شهادة حسن سيرة وسلوك'],
+        'doc_guardian_pledge' => ['OTHER', 'إقرار وتعهد ولي الأمر'],
+    ];
+
+    /**
+     * أنواع المستندات المرسلة فعلياً مع الطلب (ملفات، أو documents[TYPE]، أو Base64 في attached_documents).
+     *
+     * @return string[]
+     */
+    private function incomingDocumentTypes(Request $request): array
+    {
+        $types = [];
+
+        foreach (self::DOC_FILE_INPUTS as $inputKey => [$docType]) {
+            if ($request->hasFile($inputKey)) {
+                $types[] = $docType;
+            }
+        }
+
+        foreach ((array) $request->file('documents', []) as $docType => $file) {
+            if ($file instanceof \Illuminate\Http\UploadedFile && $file->isValid() && array_key_exists($docType, StudentDocument::DOCUMENT_TYPES)) {
+                $types[] = $docType;
+            }
+        }
+
+        foreach ((array) $request->input('attached_documents', []) as $item) {
+            if (is_array($item) && !empty($item['base64']) && is_string($item['base64'])) {
+                $types[] = StudentDocumentService::resolveType($item['type'] ?? '')[0];
+            }
+        }
+
+        return array_values(array_unique($types));
+    }
+
     private function handleAttachedDocuments(Request $request, Student $student, $user): void
     {
         $service = app(StudentDocumentService::class);
         $uploadedBy = $user ? $user->id : 1;
 
-        // ملفات مرفوعة مباشرة بأسماء الحقول المعتمدة
-        $fileInputs = [
-            'doc_basic_education' => ['BASIC_EDUCATION_CERT', null],
-            'doc_birth_certificate' => ['BIRTH_CERT', null],
-            'doc_medical_report' => ['DISABILITY_MEDICAL_REP', null],
-            'doc_family_book' => ['OTHER', 'صورة كتيب العائلة'],
-            'doc_good_conduct' => ['OTHER', 'شهادة حسن سيرة وسلوك'],
-            'doc_guardian_pledge' => ['OTHER', 'إقرار وتعهد ولي الأمر'],
-        ];
+        // A document that cannot be stored aborts the whole operation (the caller runs inside a transaction on creation).
+        $save = function (string $docType, $input, string $name, ?string $notes) use ($service, $student, $uploadedBy) {
+            $result = $service->store($student, $docType, $input, $name, $notes, $uploadedBy);
+            if (!($result['success'] ?? false)) {
+                throw ValidationException::withMessages([
+                    'documents' => (StudentDocument::DOCUMENT_TYPES[$docType] ?? $docType) . ': ' . ($result['message'] ?? 'تعذر حفظ المستند.'),
+                ]);
+            }
+        };
 
-        foreach ($fileInputs as $inputKey => [$docType, $notes]) {
+        // ملفات مرفوعة مباشرة بأسماء الحقول المعتمدة
+        foreach (self::DOC_FILE_INPUTS as $inputKey => [$docType, $notes]) {
             if ($request->hasFile($inputKey)) {
                 $file = $request->file($inputKey);
-                $service->store($student, $docType, $file, $file->getClientOriginalName(), $notes, $uploadedBy);
+                $save($docType, $file, $file->getClientOriginalName(), $notes);
+            }
+        }
+
+        // documents[TYPE] = ملف (نموذج القيد في الواجهة)
+        foreach ((array) $request->file('documents', []) as $docType => $file) {
+            if ($file instanceof \Illuminate\Http\UploadedFile && array_key_exists($docType, StudentDocument::DOCUMENT_TYPES)) {
+                $save($docType, $file, $file->getClientOriginalName(), null);
             }
         }
 
@@ -1913,7 +1984,7 @@ class StudentController extends Controller
             }
             [$docType, $notes] = StudentDocumentService::resolveType($item['type'] ?? '');
             $name = is_string($item['name'] ?? null) && $item['name'] !== '' ? $item['name'] : 'document_' . time();
-            $service->store($student, $docType, $item['base64'], $name, $notes, $uploadedBy);
+            $save($docType, $item['base64'], $name, $notes);
         }
     }
 

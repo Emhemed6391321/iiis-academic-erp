@@ -15,6 +15,7 @@ use Carbon\Carbon;
 class MinimumAdmissionAgeTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\AttachesAdmissionDocuments;
 
     protected function setUp(): void
     {
@@ -66,7 +67,7 @@ class MinimumAdmissionAgeTest extends TestCase
         // Born 2010-01-01 -> age > 16 on 2026-09-01.
         $validBirthDate = '2010-01-01';
 
-        $response = $this->actingAs($admin)->postJson('/api/v1/students', [
+        $response = $this->actingAs($admin)->postJson('/api/v1/students', $this->withAdmissionDocuments([
             'nationality_category' => 'LIBYAN',
             'national_id' => '120100000088',
             'first_name' => 'عبد الله',
@@ -83,7 +84,7 @@ class MinimumAdmissionAgeTest extends TestCase
             'current_study_year_id' => $studyYear->id,
             'study_type' => 'REGULAR',
             'branch_id' => $branch->id,
-        ]);
+        ]));
 
         $response->assertStatus(201);
         $response->assertJsonPath('success', true);
