@@ -127,7 +127,10 @@
                     :class="studentWorkflow.activeTab === 'nonlibyan'
                         ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-600/20'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'">
-                <span>🌍 تسجيل غير الليبيين للاعتماد</span>
+                <span>🎓 تسجيل الطلاب للاعتماد (ليبيون وغير ليبيين)</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-black"
+                      :class="studentWorkflow.activeTab === 'nonlibyan' ? 'bg-white/20 text-white' : 'bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400'"
+                      x-text="studentWorkflow.counters.registration_pending_count || 0"></span>
             </button>
         </div>
 
@@ -546,10 +549,10 @@
     <div x-show="studentWorkflow.activeTab === 'nonlibyan'" class="space-y-4">
         <div class="p-6 rounded-2xl border space-y-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between">
-                <h3 class="font-black text-sm text-slate-900 dark:text-white">ملفات الطلاب غير الليبيين بانتظار الاعتماد</h3>
+                <h3 class="font-black text-sm text-slate-900 dark:text-white">ملفات تسجيل الطلاب بانتظار الاعتماد</h3>
                 <span class="text-[11px] font-bold text-slate-400" x-show="studentWorkflow.nonLibyan.loading">جارٍ التحميل…</span>
             </div>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">الاعتماد يصدر رقم القيد الرسمي. الرفض يحذف بيانات الطالب ومستنداته نهائياً، ويبقى المرجع وسبب الرفض في سجل التدقيق.</p>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">الاعتماد يصدر رقم القيد الرسمي. رفض ملف الطالب الليبي يعيده للفرع للتصحيح، أما رفض ملف غير الليبي فيحذف بياناته ومستنداته نهائياً ويبقى المرجع وسبب الرفض في سجل التدقيق.</p>
         </div>
 
         <p x-show="studentWorkflow.nonLibyan.loaded && studentWorkflow.nonLibyan.students.length === 0"
@@ -560,8 +563,8 @@
                 <div class="text-xs space-y-1">
                     <div class="font-black text-sm text-slate-900 dark:text-white" x-text="ns.full_name"></div>
                     <div class="text-slate-500 dark:text-slate-400">
-                        <span x-text="'الجنسية: ' + ns.nationality"></span>
-                        · <span x-text="'رقم الجواز: ' + (ns.passport_number || '—')"></span>
+                        <span x-text="'الجنسية: ' + (ns.nationality || '—')"></span>
+                        · <span x-text="ns.is_libyan ? ('الرقم الوطني: ' + (ns.national_id || '—')) : ('رقم الجواز: ' + (ns.passport_number || '—'))"></span>
                         · <span x-text="'الفرع: ' + (ns.branch || '—')"></span>
                     </div>
                 </div>
@@ -584,9 +587,9 @@
                         <input type="text" maxlength="500" x-model="studentWorkflow.nonLibyan.decisionNotes[ns.id]"
                                class="w-full p-2 rounded-lg border text-xs bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700">
                     </div>
-                    <button @click="rejectNonLibyan(ns.id)" :disabled="studentWorkflow.nonLibyan.decidingId === ns.id"
-                            class="px-4 py-2.5 rounded-xl font-black text-xs text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950 disabled:opacity-50">
-                        رفض وحذف الملف نهائياً
+                    <button @click="rejectNonLibyan(ns.id, ns.is_libyan)" :disabled="studentWorkflow.nonLibyan.decidingId === ns.id"
+                            class="px-4 py-2.5 rounded-xl font-black text-xs text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950 disabled:opacity-50"
+                            x-text="ns.is_libyan ? 'رفض وإعادة الملف للفرع' : 'رفض وحذف الملف نهائياً'">
                     </button>
                     <button @click="approveNonLibyan(ns.id)" :disabled="studentWorkflow.nonLibyan.decidingId === ns.id"
                             class="px-4 py-2.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-700 disabled:opacity-50">

@@ -44,6 +44,9 @@ class StudentWorkflowController extends Controller
             $waitingReceivingQuery->where('to_branch_id', $userBranchId);
         }
 
+        // طلبات اعتماد تسجيل الطلاب: القاعدة نفسها لقائمة الاعتماد (PENDING_HQ، BranchScope يقيّد فرع المستخدم)
+        $registrationPending = \App\Models\Student::where('academic_status', 'PENDING_HQ')->count();
+
         $statusPending = $statusQuery->count();
         $systemPending = $systemQuery->count();
         $transferPending = $transferQuery->count();
@@ -56,7 +59,8 @@ class StudentWorkflowController extends Controller
                 'status_pending_count' => $statusPending,
                 'system_pending_count' => $systemPending,
                 'transfer_pending_count' => $transferPending,
-                'total_pending_workflow' => $statusPending + $systemPending + $transferPending,
+                'registration_pending_count' => $registrationPending,
+                'total_pending_workflow' => $statusPending + $systemPending + $transferPending + $registrationPending,
                 'transfer_kpis' => [
                     'waiting_central_affairs' => $waitingCentral,
                     'waiting_receiving_branch' => $waitingReceiving,

@@ -105,13 +105,13 @@
                 // nationality: 'LIBYAN' للطلاب الليبيين (الفئات غير OTHER)، و'OTHER' لغير الليبيين. بدونها تظهر للجميع.
                 // يطابق requiredTypesFor في الخادم، فالخانة المطلوبة هنا هي نفسها المطلوبة عند الاعتماد.
                 docSlots: [
-                    { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: true, nationality: 'LIBYAN' },
+                    { key: 'NATIONAL_ID_CARD', label: 'صورة من الرقم الوطني أو إثبات الهوية', required: false, nationality: 'LIBYAN' },
                     { key: 'BIRTH_CERT', label: 'شهادة الميلاد أو مستخرج رسمي من شهادة الميلاد', required: true, nationality: 'LIBYAN' },
                     { key: 'BASIC_EDUCATION_CERT', label: 'شهادة إتمام مرحلة التعليم الأساسي أو المؤهل المطلوب (أو الشهادة الإعدادية أو معادلتها)', required: true },
                     { key: 'FOREIGN_BIRTH_CERT', label: 'شهادة ميلاد لغير الليبيين', required: true, nationality: 'OTHER' },
                     { key: 'PASSPORT_COPY', label: 'صورة ملونة من جواز السفر', required: true, nationality: 'OTHER' },
                     { key: 'RESIDENCE_PERMIT', label: 'إقامة سارية', required: true, nationality: 'OTHER' },
-                    { key: 'HEALTH_CERT', label: 'الشهادة الصحية أو الكشف الطبي', required: true },
+                    { key: 'HEALTH_CERT', label: 'الشهادة الصحية أو الكشف الطبي', required: false },
                     { key: 'DISABILITY_MEDICAL_REP', label: 'التقرير الطبي الخاص بالإعاقة', required: false, conditional: 'has_disability' },
                     { key: 'PERSONAL_PHOTO', label: 'صورة شخصية للطالب', required: false },
                     { key: 'OTHER', label: 'مستندات إضافية', required: false }
@@ -8383,7 +8383,7 @@ async loadBranchOperations() {
                     const nl = this.studentWorkflow.nonLibyan;
                     nl.loading = true;
                     try {
-                        const res = await fetch('/api/v1/students/non-libyan/pending', { headers: { 'Accept': 'application/json' } });
+                        const res = await fetch('/api/v1/students/pending-registrations', { headers: { 'Accept': 'application/json' } });
                         const data = await res.json();
                         if (res.ok && data.success) {
                             nl.students = data.students || [];
@@ -8406,13 +8406,16 @@ async loadBranchOperations() {
                     await this.decideNonLibyan(studentId, 'approve-hq', null);
                 },
 
-                async rejectNonLibyan(studentId) {
+                async rejectNonLibyan(studentId, isLibyan = false) {
                     const reason = (this.studentWorkflow.nonLibyan.decisionNotes[studentId] || '').trim();
                     if (reason.length < 5) {
                         this.showToast('اكتب سبب الرفض (5 أحرف على الأقل) قبل الرفض');
                         return;
                     }
-                    if (!window.confirm('الرفض يحذف بيانات الطالب ومستنداته نهائياً ولا يمكن التراجع. هل تتابع؟')) {
+                    const confirmText = isLibyan
+                        ? 'سيُعاد ملف الطالب للفرع لتصحيح النواقص. هل تتابع؟'
+                        : 'الرفض يحذف بيانات الطالب ومستنداته نهائياً ولا يمكن التراجع. هل تتابع؟';
+                    if (!window.confirm(confirmText)) {
                         return;
                     }
                     await this.decideNonLibyan(studentId, 'reject-hq', reason);
@@ -8433,6 +8436,7 @@ async loadBranchOperations() {
                             this.showToast(data.message || 'تم تنفيذ القرار');
                             delete nl.decisionNotes[studentId];
                             await this.loadNonLibyanPending();
+                            await this.loadWorkflowSummary();
                         } else {
                             this.showToast(data.message || 'تعذر تنفيذ القرار');
                         }

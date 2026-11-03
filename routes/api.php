@@ -98,6 +98,7 @@ Route::prefix('v1')->middleware(['auth', 'force.password_change', 'throttle:60,1
     Route::post('/students', [StudentController::class, 'store'])->middleware(['academic.year.active', 'check.window:REGISTRATION', 'permission:students.create']);
     Route::post('/students/import-batch', [StudentController::class, 'importBatch'])->middleware(['academic.year.active', 'permission:students.create']);
     // Declared before /students/{student} so the literal path is not read as a student id.
+    Route::get('/students/pending-registrations', [StudentController::class, 'pendingRegistrations'])->middleware('permission:students.approve_hq');
     Route::get('/students/non-libyan/pending', [StudentController::class, 'nonLibyanPending'])->middleware('permission:students.approve_hq');
 
     // Branch notices: outcomes of HQ decisions on the branch's files. Each user sees only its own branch's notices.

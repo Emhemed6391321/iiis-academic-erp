@@ -147,6 +147,13 @@ class BranchManagerPermissionsTest extends TestCase
     {
         $draft = $this->makeStudent($this->ownBranch, '119900000303', Department::firstOrFail(), StudyYear::firstOrFail(), AcademicYear::where('is_current', true)->firstOrFail());
         $draft->update(['academic_status' => 'NEW_DRAFT']);
+        foreach (['BIRTH_CERT', 'BASIC_EDUCATION_CERT'] as $type) {
+            \App\Models\StudentDocument::create([
+                'student_id' => $draft->id, 'document_type' => $type, 'original_name' => $type . '.pdf', 'file_size' => 1024,
+                'mime_type' => 'application/pdf', 'is_required' => true, 'file_path' => 'secure_vault/test/' . $type . '.enc',
+                'file_hash' => 'x', 'uploaded_by' => $this->manager->id,
+            ]);
+        }
 
         $this->actingAs($this->manager)
             ->postJson("/api/v1/students/{$draft->id}/submit-hq")

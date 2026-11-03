@@ -79,7 +79,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
         $service = app(StudentDocumentService::class);
 
         $this->assertEqualsCanonicalizing(
-            ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'HEALTH_CERT'],
+            ['BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
             $service->missingRequiredTypes($student)
         );
     }
@@ -90,7 +90,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
         $service = app(StudentDocumentService::class);
 
         $this->assertEqualsCanonicalizing(
-            ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'],
+            ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
             $service->missingRequiredTypes($student)
         );
     }
@@ -98,7 +98,7 @@ class MandatoryDocumentsByStatusTest extends TestCase
     public function test_non_libyan_final_approval_waits_for_the_foreign_birth_certificate(): void
     {
         $student = $this->createStudent('OTHER');
-        $required = ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'HEALTH_CERT'];
+        $required = ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'];
 
         $refused = $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq");
         $refused->assertStatus(422);
@@ -125,17 +125,49 @@ class MandatoryDocumentsByStatusTest extends TestCase
         $refused = $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq");
         $refused->assertStatus(422);
         $this->assertEqualsCanonicalizing(
-            ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'HEALTH_CERT'],
+            ['BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
             $refused->json('missing_documents')
         );
         $this->assertNull($student->fresh()->academic_number);
 
-        foreach (['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'HEALTH_CERT'] as $type) {
+        foreach (['BIRTH_CERT', 'BASIC_EDUCATION_CERT'] as $type) {
             $this->upload($student, $type);
         }
 
         $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/approve-hq")
             ->assertOk();
         $this->assertNotNull($student->fresh()->academic_number);
+    }
+
+    public function test_hq_queue_lists_libyan_and_non_libyan_files_and_matches_the_counter(): void
+    {
+        $this->createStudent('LIBYAN');
+        $this->createStudent('OTHER');
+
+        $queue = $this->actingAs($this->admin)->getJson('/api/v1/students/pending-registrations')->assertOk();
+        $this->assertCount(2, $queue->json('students'));
+
+        $summary = $this->actingAs($this->admin)->getJson('/api/v1/student-workflow/summary')->assertOk();
+        $this->assertSame(2, $summary->json('data.registration_pending_count'));
+
+        $libyanOnly = $this->actingAs($this->admin)->getJson('/api/v1/students/pending-registrations?nationality_group=LIBYAN');
+        $this->assertCount(1, $libyanOnly->json('students'));
+    }
+
+    public function test_libyan_file_cannot_be_submitted_without_mandatory_documents_and_leaves_queue_after_decision(): void
+    {
+        $student = $this->createStudent('LIBYAN');
+        $student->update(['academic_status' => 'NEW_DRAFT']);
+
+        $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/submit-hq")->assertStatus(422);
+
+        $this->upload($student, 'BIRTH_CERT');
+        $this->upload($student, 'BASIC_EDUCATION_CERT');
+        $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/submit-hq")->assertOk();
+        $this->assertSame('PENDING_HQ', $student->fresh()->academic_status);
+
+        $this->actingAs($this->admin)->postJson("/api/v1/students/{$student->id}/reject-hq", ['rejection_reason' => 'بيانات غير مكتملة'])->assertOk();
+        $this->assertSame('REJECTED_REVISION', $student->fresh()->academic_status);
+        $this->assertCount(0, $this->actingAs($this->admin)->getJson('/api/v1/students/pending-registrations')->json('students'));
     }
 }

@@ -1416,8 +1416,32 @@ class StudentController extends Controller
             ], 422);
         }
 
+        $missing = app(StudentDocumentService::class)->missingRequiredTypes($student);
+        if (!empty($missing)) {
+            $labels = array_map(fn ($type) => StudentDocument::DOCUMENT_TYPES[$type] ?? $type, $missing);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يُرفع الطلب قبل إرفاق المستندات الإلزامية: ' . implode('، ', $labels) . '.',
+                'missing_documents' => $missing,
+            ], 422);
+        }
+
+        $previousStatus = $student->academic_status;
         $student->academic_status = 'PENDING_HQ';
         $student->save();
+
+        SystemAuditTrail::log(
+            eventType: 'ENROLLMENT_SUBMITTED',
+            description: "رُفع طلب تسجيل الطالب (المرجع {$student->id}) إلى الإدارة العامة",
+            payload: ['student_id' => $student->id, 'branch_id' => $student->branch_id],
+            userId: Auth::id(),
+            branchId: $student->branch_id,
+            modelType: 'Student',
+            modelId: $student->id,
+            oldValues: ['academic_status' => $previousStatus],
+            newValues: ['academic_status' => 'PENDING_HQ'],
+        );
 
         return response()->json([
             'success' => true,
@@ -1657,14 +1681,33 @@ class StudentController extends Controller
      */
     public function nonLibyanPending(): JsonResponse
     {
+        return $this->pendingRegistrations(request()->merge(['nationality_group' => 'OTHER']));
+    }
+
+    /**
+     * كل طلبات اعتماد التسجيل بانتظار قرار الإدارة العامة (ليبيون وغير ليبيين).
+     * المصدر نفسه الذي يعدّه مؤشر الإحصائيات (academic_status = PENDING_HQ)، فلا يختلف العدد عن القائمة.
+     * nationality_group: LIBYAN | OTHER | (فارغ = الكل). فرع المستخدم يحدده BranchScope تلقائياً.
+     */
+    public function pendingRegistrations(Request $request): JsonResponse
+    {
+        $group = $request->input('nationality_group');
+        $docService = app(StudentDocumentService::class);
+
         $students = Student::query()
-            ->where('nationality_category', 'OTHER')
             ->where('academic_status', 'PENDING_HQ')
+            ->when($group === 'OTHER', fn ($q) => $q->where('nationality_category', 'OTHER'))
+            ->when($group === 'LIBYAN', fn ($q) => $q->where(fn ($w) => $w->where('nationality_category', '!=', 'OTHER')->orWhereNull('nationality_category')))
             ->with(['branch:id,name', 'department:id,name', 'documents'])
             ->orderBy('updated_at')
             ->get()
             ->map(fn (Student $student) => [
                 'id' => $student->id,
+                'nationality_category' => $student->nationality_category,
+                'is_libyan' => $student->nationality_category !== 'OTHER',
+                'national_id' => $student->national_id,
+                'academic_number' => $student->academic_number,
+                'blockers' => $docService->approvalBlockers($student),
                 'full_name' => $student->full_name,
                 'nationality' => $student->nationality,
                 'passport_number' => $student->passport_number,

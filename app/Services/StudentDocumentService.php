@@ -54,26 +54,25 @@ class StudentDocumentService
 
     /**
      * المستندات الإلزامية بحسب تصنيف جنسية الطالب (الخادم هو المرجع).
-     * - ليبي / ليبي بدون رقم وطني: شهادة الميلاد، والشهادة الإعدادية، والبطاقة أو إثبات الهوية.
-     * - غير الليبي: شهادة ميلاد لغير الليبيين، والشهادة الإعدادية أو معادلتها، وصورة الجواز الملونة، والإقامة السارية.
-     * - الشهادة الصحية مطلوبة لجميع الطلاب وفق الإجراء القائم.
+     * - الليبي: الشهادة الإعدادية، وشهادة الميلاد بالرقم الوطني.
+     * - غير الليبي: الشهادة الإعدادية، وصورة الجواز، وصورة الإقامة، وشهادة الميلاد.
+     * بقية الأنواع (الشهادة الصحية، الصورة الشخصية، صورة الرقم الوطني، …) متاحة للرفع كمستندات اختيارية.
+     * التقرير الطبي مطلوب فقط لمن سُجّلت له إعاقة.
      *
      * @return string[] مفاتيح DOCUMENT_TYPES
      */
     public function requiredTypesFor(Student $student): array
     {
-        $common = ['HEALTH_CERT'];
-
-        $byCategory = match ($student->nationality_category) {
-            'OTHER' => ['FOREIGN_BIRTH_CERT', 'BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT'],
-            default => ['NATIONAL_ID_CARD', 'BIRTH_CERT', 'BASIC_EDUCATION_CERT'],
+        $required = match ($student->nationality_category) {
+            'OTHER' => ['BASIC_EDUCATION_CERT', 'PASSPORT_COPY', 'RESIDENCE_PERMIT', 'FOREIGN_BIRTH_CERT'],
+            default => ['BASIC_EDUCATION_CERT', 'BIRTH_CERT'],
         };
 
         if ($student->has_disability) {
-            $common[] = 'DISABILITY_MEDICAL_REP';
+            $required[] = 'DISABILITY_MEDICAL_REP';
         }
 
-        return array_values(array_unique(array_merge($byCategory, $common)));
+        return array_values(array_unique($required));
     }
 
     /**
