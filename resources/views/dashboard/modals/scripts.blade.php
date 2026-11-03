@@ -3627,7 +3627,10 @@ async initApp() {
                 // بطاقات مستندات غير الليبيين في ملف الطالب: الخانات المخصصة لهم فقط، وللطالب غير الليبي فقط.
                 foreignRequiredDocSlots() {
                     const isForeign = !!(this.studentFile && this.studentFile.student && this.studentFile.student.nationality_category === 'OTHER');
-                    return isForeign ? this.docSlots.filter(s => s.nationality === 'OTHER') : [];
+                    if (!isForeign) return [];
+                    // الشهادة الإعدادية مشتركة بين الفئتين، فتظهر لغير الليبي أولاً مع خانات الجواز والإقامة وشهادة الميلاد
+                    const basic = this.docSlots.filter(s => s.key === 'BASIC_EDUCATION_CERT');
+                    return basic.concat(this.docSlots.filter(s => s.nationality === 'OTHER'));
                 },
 
                 docSlotsFor(form) {

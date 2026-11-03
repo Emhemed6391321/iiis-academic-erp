@@ -738,7 +738,7 @@
                                                     </div>
                                                     <div>
                                                         <h6 class="font-black text-xs text-slate-900 dark:text-white">صورة من الرقم الوطني أو إثبات الهوية</h6>
-                                                        <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">مستند إلزامي للقبول *</span>
+                                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">مستند اختياري</span>
                                                     </div>
                                                 </div>
                                                 <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
@@ -952,7 +952,7 @@
                                                     </div>
                                                     <div>
                                                         <h6 class="font-black text-xs text-slate-900 dark:text-white">الشهادة الصحية / الكشف الطبي</h6>
-                                                        <span class="text-[10px] font-bold text-rose-600 dark:text-rose-400">مستند إلزامي للقبول *</span>
+                                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400">مستند اختياري</span>
                                                     </div>
                                                 </div>
                                                 <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
