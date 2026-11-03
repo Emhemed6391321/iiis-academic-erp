@@ -219,6 +219,25 @@ class AdmissionDocumentsAndModulesTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_registration_stores_the_detailed_address_and_contact_fields(): void
+    {
+        $manager = User::where('email', 'manager.tip@iiis.sch.ly')->firstOrFail();
+        $payload = $this->admissionPayload($manager->branch_id, '119901234567') + [
+            'address' => 'سبها - حي الجديد - شارع المدرسة - بجوار المسجد',
+            'guardian_name' => 'ولي الأمر', 'guardian_relationship' => 'أب',
+            'emergency_contact' => '0930000000', 'email' => 'student@example.com',
+        ];
+        $payload['birth_place'] = 'غات';
+
+        $id = $this->actingAs($manager)->postJson('/api/v1/students', $payload)->assertCreated()->json('data.id');
+
+        $student = \App\Models\Student::withoutGlobalScopes()->findOrFail($id);
+        $this->assertSame('سبها - حي الجديد - شارع المدرسة - بجوار المسجد', $student->address);
+        $this->assertSame('غات', $student->birth_place);
+        $this->assertSame('ولي الأمر', $student->guardian_name);
+        $this->assertSame('student@example.com', $student->email);
+    }
+
     private function createStudent(User $actor, string $nationalId): int
     {
         return $this->actingAs($actor)->postJson('/api/v1/students', $this->admissionPayload($actor->branch_id, $nationalId))
