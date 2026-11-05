@@ -52,7 +52,9 @@ class AntivirusScanService
         }
 
         // Embedded PHP code tags inside image/document
-        if (preg_match('/<\?php|<\?=\s*|<script\b/i', $buffer)) {
+        // ملاحظة: النمط السابق `<?=` كان يطابق أي 3 بايتات عشوائية داخل بيانات الصور/PDF المضغوطة،
+        // فيحظر صورًا سليمة كبيرة (احتمال ~30% لصورة 5MB). نشترط الآن شكل الشيفرة الحقيقي فقط.
+        if (preg_match('/<\?php[\s;]|<\?=\s*\$|<script[\s>]/i', $buffer)) {
             return 'Embedded Script Execution Payload';
         }
 

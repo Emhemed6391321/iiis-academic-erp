@@ -1,4 +1,43 @@
     <script>
+        // ─── كشف السبب الحقيقي عند ردّ الخادم بغير JSON ───
+        // عندما يردّ الخادم بصفحة خطأ (413 حجم كبير، 419 انتهاء الجلسة، 500، 502/504...) يفشل res.json()
+        // فكانت الشاشة تعرض "تعذر الاتصال بالخادم" مع أن الخادم ردّ فعلاً. نُرجع هنا كائناً يحمل السبب الفعلي.
+        (function installReadableJsonErrors() {
+            if (window.__erpJsonPatched || typeof Response === 'undefined') return;
+            window.__erpJsonPatched = true;
+            const origJson = Response.prototype.json;
+            const reasons = {
+                401: 'انتهت الجلسة، أعد تسجيل الدخول.',
+                403: 'ليس لديك صلاحية لتنفيذ هذا الإجراء.',
+                404: 'المسار المطلوب غير موجود على الخادم.',
+                413: 'حجم الملفات المرفوعة أكبر من الحد الذي يسمح به الخادم. صغّر حجم الصور/الملفات وأعد المحاولة.',
+                419: 'انتهت صلاحية الصفحة (CSRF). حدّث الصفحة (Ctrl+F5) وأعد المحاولة.',
+                429: 'طلبات كثيرة في وقت قصير، انتظر قليلاً ثم أعد المحاولة.',
+                500: 'خطأ داخلي في الخادم.',
+                502: 'الخادم متوقف أو يُعاد تشغيله حالياً (502).',
+                503: 'الخدمة غير متاحة مؤقتاً (503).',
+                504: 'انتهت مهلة الخادم قبل إكمال العملية (504).'
+            };
+            Response.prototype.json = async function () {
+                const copy = this.clone();
+                try {
+                    return await origJson.call(this);
+                } catch (parseErr) {
+                    let snippet = '';
+                    try { snippet = (await copy.text()).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200); } catch (e) {}
+                    const reason = reasons[this.status] || ('ردّ الخادم برمز ' + this.status + ' وبمحتوى غير مفهوم.');
+                    console.error('[ERP] Non-JSON response', this.status, this.url, snippet);
+                    return {
+                        success: false,
+                        status: 'error',
+                        message: reason + ' [HTTP ' + this.status + ']',
+                        http_status: this.status,
+                        raw: snippet
+                    };
+                }
+            };
+        })();
+
         // ─── مسجّل تشخيص المتصفح: يلتقط أخطاء وحدة التحكم وأخطاء JavaScript والطلبات الفاشلة ───
         // يعمل منذ بداية تحميل الصفحة حتى تُرفق سجلاته تلقائياً مع البلاغ عن الخطأ
         (function installDiagnosticsRecorder() {
