@@ -119,3 +119,21 @@ Route::get('/verify/{uuid}', [\App\Http\Controllers\PublicVerificationController
     ->middleware('throttle:15,1')
     ->name('document.verify');
 
+
+// ============================================================
+// بوابة الأخطاء المخفية: مسار سري + كلمة سر مستقلة عن حسابات النظام.
+// لا تُسجَّل المسارات إطلاقاً ما لم يُضبط ERROR_PORTAL_PASSWORD_HASH (فتعطي 404).
+// ============================================================
+if (config('error_portal.password_hash') !== '' && config('error_portal.path') !== '') {
+    Route::prefix(config('error_portal.path'))->name('error-portal.')->group(function () {
+        Route::get('/login', [\App\Http\Controllers\ErrorPortalController::class, 'showLogin'])->name('login');
+        Route::post('/login', [\App\Http\Controllers\ErrorPortalController::class, 'login'])->name('login.post');
+
+        Route::middleware(\App\Http\Middleware\EnsureErrorPortalUnlocked::class)->group(function () {
+            Route::get('/', [\App\Http\Controllers\ErrorPortalController::class, 'index'])->name('index');
+            Route::get('/logs/{log}', [\App\Http\Controllers\ErrorPortalController::class, 'show'])->name('show');
+            Route::post('/logs/{log}/status', [\App\Http\Controllers\ErrorPortalController::class, 'updateStatus'])->name('status');
+            Route::post('/logout', [\App\Http\Controllers\ErrorPortalController::class, 'logout'])->name('logout');
+        });
+    });
+}
