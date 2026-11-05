@@ -38,10 +38,14 @@ return [
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
-            'busy_timeout' => env('DB_BUSY_TIMEOUT', 5000),
+            // مهلة الانتظار عند انشغال القاعدة بكاتب آخر (بالمللي ثانية)
+            'busy_timeout' => env('DB_BUSY_TIMEOUT', 15000),
             'journal_mode' => env('DB_JOURNAL_MODE', 'WAL'),
             'synchronous' => env('DB_SYNCHRONOUS', 'NORMAL'),
-            'transaction_mode' => 'DEFERRED',
+            // IMMEDIATE: تأخذ المعاملة قفل الكتابة عند البدء وتنتظر دورها حتى busy_timeout.
+            // مع DEFERRED تبدأ المعاملة قارئة (توليد رقم القيد) ثم تفشل فوراً بـ "database is locked"
+            // عند ترقيتها إلى كاتبة إن كتب طلب آخر بينهما، دون أي انتظار (ERR-20261104-35A49).
+            'transaction_mode' => env('DB_TRANSACTION_MODE', 'IMMEDIATE'),
         ],
 
         'mysql' => [

@@ -28,6 +28,7 @@ class Course extends Model
         'max_score',
         'pass_min_score',
         'second_round_max',
+        'min_final_exam_score',
         'is_active',
     ];
 
