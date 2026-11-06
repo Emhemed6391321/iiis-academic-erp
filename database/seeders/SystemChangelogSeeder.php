@@ -429,6 +429,19 @@ class SystemChangelogSeeder extends Seeder
                 'requires_migration' => false,
                 'deployed_at' => '2026-11-06 18:00:00',
             ],
+            [
+                'version' => '2.5.10',
+                'title' => 'إصلاح نفاد الذاكرة أثناء تشفير النسخة الاحتياطية',
+                'description' => 'بعد أن صارت النسخة الاحتياطية تشمل خزنة المستندات (2.5.9) كبر حجمها، فظهر الخطأ «Allowed memory size of 134217728 bytes exhausted» لأن التشفير وفك التشفير كانا يحمّلان الملف كاملاً في الذاكرة. صار التشفير وفك التشفير متدفقين على أجزاء بحجم 1MB بنفس خوارزمية AES-256-CBC، والناتج مطابق تماماً للصيغة السابقة، فتبقى كل النسخ القديمة قابلة للفك والاستعادة. استهلاك الذاكرة صار ثابتاً مهما كبر حجم النسخة.',
+                'type' => 'fix',
+                'impact' => 'critical',
+                'author' => 'فريق التطوير',
+                'branch' => 'main',
+                'affected_modules' => ['backups'],
+                'tags' => ['النسخ الاحتياطي', 'الذاكرة', 'التشفير'],
+                'requires_migration' => false,
+                'deployed_at' => '2026-11-06 20:00:00',
+            ],
         ];
 
         foreach ($entries as $entry) {

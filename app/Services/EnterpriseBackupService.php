@@ -371,23 +371,53 @@ class EnterpriseBackupService
         // Write IV at the beginning of the file (16 bytes)
         fwrite($outHandle, $iv);
 
-        // Read and encrypt in 64KB chunks to keep memory usage minimal
-        $chunkSize = 65536;
-        $unencryptedData = '';
+        // Stream in 1MB chunks (multiple of the 16-byte AES block). Full chunks are
+        // encrypted without padding and chained via the last ciphertext block; only the
+        // final chunk gets PKCS#7 padding. The output is byte-identical to a one-shot
+        // openssl_encrypt() of the whole file, so older backups stay compatible.
+        $chunkSize = self::STREAM_CHUNK_BYTES;
+        $chainIv = $iv;
+        $current = self::readExactly($inHandle, $chunkSize);
 
-        while (!feof($inHandle)) {
-            $unencryptedData .= fread($inHandle, $chunkSize);
-        }
-        fclose($inHandle);
+        try {
+            while (true) {
+                $next = self::readExactly($inHandle, $chunkSize);
+                $isLast = ($next === '');
+                $options = OPENSSL_RAW_DATA | ($isLast ? 0 : OPENSSL_ZERO_PADDING);
 
-        $encryptedData = openssl_encrypt($unencryptedData, self::CIPHER_METHOD, $key, OPENSSL_RAW_DATA, $iv);
-        if ($encryptedData === false) {
+                $cipher = openssl_encrypt($current, self::CIPHER_METHOD, $key, $options, $chainIv);
+                if ($cipher === false) {
+                    throw new Exception("فشلت خوارزمية التشفير AES-256-CBC.");
+                }
+                fwrite($outHandle, $cipher);
+
+                if ($isLast) {
+                    break;
+                }
+                $chainIv = substr($cipher, -16);
+                $current = $next;
+            }
+        } finally {
+            fclose($inHandle);
             fclose($outHandle);
-            throw new Exception("فشلت خوارزمية التشفير AES-256-CBC.");
         }
+    }
 
-        fwrite($outHandle, $encryptedData);
-        fclose($outHandle);
+    /** Streaming chunk size; must be a multiple of the 16-byte AES block. */
+    private const STREAM_CHUNK_BYTES = 1048576;
+
+    /** Read up to $length bytes, looping over short reads; '' only at EOF. */
+    private static function readExactly($handle, int $length): string
+    {
+        $buffer = '';
+        while (strlen($buffer) < $length && !feof($handle)) {
+            $part = fread($handle, $length - strlen($buffer));
+            if ($part === false || $part === '') {
+                break;
+            }
+            $buffer .= $part;
+        }
+        return $buffer;
     }
 
     /**
@@ -410,18 +440,50 @@ class EnterpriseBackupService
             throw new Exception("تلف في رأس التشفير (IV Corrupted).");
         }
 
-        $encryptedContent = '';
-        while (!feof($inHandle)) {
-            $encryptedContent .= fread($inHandle, 65536);
+        $outHandle = fopen($decryptedOutputPath, 'wb');
+        if (!$outHandle) {
+            fclose($inHandle);
+            throw new Exception("تعذر إنشاء ملف الإخراج لفك التشفير.");
         }
-        fclose($inHandle);
 
-        $decryptedData = openssl_decrypt($encryptedContent, self::CIPHER_METHOD, $key, OPENSSL_RAW_DATA, $iv);
-        if ($decryptedData === false) {
+        // Stream-decrypt: mirror of encryptFile(). Padding is only removed on the final chunk.
+        $chainIv = $iv;
+        $failed = false;
+        try {
+            $current = self::readExactly($inHandle, self::STREAM_CHUNK_BYTES);
+            while (true) {
+                $next = self::readExactly($inHandle, self::STREAM_CHUNK_BYTES);
+                $isLast = ($next === '');
+
+                if ($current === '' || strlen($current) % 16 !== 0) {
+                    $failed = true;
+                    break;
+                }
+
+                $options = OPENSSL_RAW_DATA | ($isLast ? 0 : OPENSSL_ZERO_PADDING);
+                $plain = openssl_decrypt($current, self::CIPHER_METHOD, $key, $options, $chainIv);
+                if ($plain === false) {
+                    $failed = true;
+                    break;
+                }
+                fwrite($outHandle, $plain);
+
+                if ($isLast) {
+                    break;
+                }
+                $chainIv = substr($current, -16);
+                $current = $next;
+            }
+        } finally {
+            fclose($inHandle);
+            fclose($outHandle);
+        }
+
+        if ($failed) {
+            @unlink($decryptedOutputPath);
             throw new Exception("فشل فك التشفير. تأكد من صحة مفتاح التشفير السري.");
         }
 
-        File::put($decryptedOutputPath, $decryptedData);
         return true;
     }
 
