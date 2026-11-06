@@ -69,7 +69,7 @@ class EnterpriseBackupService
             $dbDumpResult = self::dumpDatabase($tempDir, $timestamp);
 
             // 2. Archive Storage Files (branding, uploads, documents, photos)
-            $filesArchiveResult = self::packMediaFiles($tempDir);
+            $filesArchiveResult = self::packMediaFiles($tempDir, (bool) ($options['include_vault_files'] ?? false));
 
             // 3. Generate Cryptographic Manifest
             $manifest = [
@@ -280,7 +280,7 @@ class EnterpriseBackupService
     /**
      * Pack Storage / Public uploads.
      */
-    protected static function packMediaFiles(string $tempDir): array
+    protected static function packMediaFiles(string $tempDir, bool $includeVaultFiles = false): array
     {
         $storageSource = storage_path('app/public');
         $vaultSource = \App\Support\SecureVaultPaths::primary();
@@ -300,6 +300,31 @@ class EnterpriseBackupService
             foreach ($files as $f) {
                 $totalBytes += $f->getSize();
             }
+        }
+
+        // Incremental mode (default): vault files are immutable, so they are mirrored
+        // once and the archive only carries a manifest (path + size + sha256).
+        $mirror = self::syncVaultMirror();
+        File::put("{$tempDir}/vault_manifest.json", json_encode([
+            'format'  => 1,
+            'mirror'  => 'storage/app/backups/vault_mirror',
+            'files'   => $mirror['files'],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $mirrorSummary = [
+            'manifest_files' => count($mirror['files']),
+            'copied_files'   => $mirror['copied'],
+            'copied_bytes'   => $mirror['copied_bytes'],
+        ];
+
+        if (!$includeVaultFiles) {
+            return [
+                'mode' => 'incremental',
+                'vault_files' => count($mirror['files']),
+                'legacy_vault_files' => 0,
+                'vault_mirror' => $mirrorSummary,
+                'total_files' => $totalFiles,
+                'total_bytes' => $totalBytes,
+            ];
         }
 
         if (File::exists($vaultSource)) {
@@ -324,11 +349,107 @@ class EnterpriseBackupService
         }
 
         return [
+            'mode' => 'full',
             'vault_files' => $vaultFiles,
             'legacy_vault_files' => $legacyFiles,
+            'vault_mirror' => $mirrorSummary,
             'total_files' => $totalFiles,
             'total_bytes' => $totalBytes,
         ];
+    }
+
+    /**
+     * Copy new/changed vault files into the write-only mirror and build the manifest.
+     * Never deletes anything from the mirror.
+     *
+     * @return array{files: array<int,array{root:string,path:string,size:int,sha256:string}>, copied:int, copied_bytes:int}
+     */
+    protected static function syncVaultMirror(): array
+    {
+        $mirrorRoot = \App\Support\SecureVaultPaths::mirror();
+        $files = [];
+        $copied = 0;
+        $copiedBytes = 0;
+
+        foreach (\App\Support\SecureVaultPaths::roots() as $rootKey => $sourceRoot) {
+            if (!File::isDirectory($sourceRoot)) {
+                continue;
+            }
+            foreach (File::allFiles($sourceRoot) as $file) {
+                $relative = str_replace('\\', '/', $file->getRelativePathname());
+                if (str_ends_with($relative, '.health_check')) {
+                    continue;
+                }
+                $source = $file->getRealPath();
+                $size = $file->getSize();
+                $sha = hash_file('sha256', $source);
+                $target = "{$mirrorRoot}/{$rootKey}/{$relative}";
+
+                $needsCopy = !File::exists($target)
+                    || File::size($target) !== $size
+                    || hash_file('sha256', $target) !== $sha;
+
+                if ($needsCopy) {
+                    File::ensureDirectoryExists(dirname($target), 0750);
+                    $tmp = $target . '.part';
+                    if (!@copy($source, $tmp) || hash_file('sha256', $tmp) !== $sha) {
+                        @unlink($tmp);
+                        throw new Exception("تعذر نسخ ملف الخزنة إلى المرآة: {$relative}");
+                    }
+                    if (File::exists($target)) {
+                        // Keep the previous copy instead of overwriting it.
+                        @rename($target, $target . '.prev_' . date('Ymd_His'));
+                    }
+                    rename($tmp, $target);
+                    $copied++;
+                    $copiedBytes += $size;
+                }
+
+                $files[] = ['root' => $rootKey, 'path' => $relative, 'size' => $size, 'sha256' => $sha];
+            }
+        }
+
+        return ['files' => $files, 'copied' => $copied, 'copied_bytes' => $copiedBytes];
+    }
+
+    /**
+     * Rebuild vault files listed in a backup manifest from the mirror, verifying sha256.
+     * Merge only: existing files are left untouched when already identical.
+     *
+     * @return array{restored:int, missing:int, missing_paths: string[]}
+     */
+    protected static function restoreVaultFromMirror(array $manifestFiles): array
+    {
+        $mirrorRoot = \App\Support\SecureVaultPaths::mirror();
+        $roots = \App\Support\SecureVaultPaths::roots();
+        $restored = 0;
+        $missing = [];
+
+        foreach ($manifestFiles as $entry) {
+            $rootKey = $entry['root'] ?? '';
+            $relative = (string) ($entry['path'] ?? '');
+            if (!isset($roots[$rootKey]) || $relative === '' || str_contains($relative, '..')) {
+                $missing[] = "{$rootKey}/{$relative}";
+                continue;
+            }
+
+            $target = "{$roots[$rootKey]}/{$relative}";
+            if (File::exists($target) && hash_file('sha256', $target) === $entry['sha256']) {
+                continue;
+            }
+
+            $source = "{$mirrorRoot}/{$rootKey}/{$relative}";
+            if (!File::exists($source) || hash_file('sha256', $source) !== $entry['sha256']) {
+                $missing[] = "{$rootKey}/{$relative}";
+                continue;
+            }
+
+            File::ensureDirectoryExists(dirname($target), 0750);
+            File::copy($source, $target);
+            $restored++;
+        }
+
+        return ['restored' => $restored, 'missing' => count($missing), 'missing_paths' => array_slice($missing, 0, 50)];
     }
 
     /**
@@ -576,6 +697,18 @@ class EnterpriseBackupService
                 $restoredVaultFiles += count(File::allFiles($extractedLegacyVault));
             }
 
+            // Incremental backups: rebuild the vault from the mirror using the manifest
+            $missingVaultFiles = 0;
+            $missingVaultPaths = [];
+            $vaultManifestFile = "{$tempExtractDir}/vault_manifest.json";
+            if (File::exists($vaultManifestFile) && !File::exists($extractedVault)) {
+                $vaultManifest = json_decode(File::get($vaultManifestFile), true) ?: [];
+                $mirrorResult = self::restoreVaultFromMirror($vaultManifest['files'] ?? []);
+                $restoredVaultFiles += $mirrorResult['restored'];
+                $missingVaultFiles = $mirrorResult['missing'];
+                $missingVaultPaths = $mirrorResult['missing_paths'];
+            }
+
             SystemAuditTrail::log(
                 'BACKUP_RESTORED',
                 "تمت استعادة النظام بنجاح من النسخة الاحتياطية: {$ledger->file_name}",
@@ -585,6 +718,8 @@ class EnterpriseBackupService
                     'restored_db' => $restoredDb,
                     'restored_files_count' => $restoredFilesCount,
                     'restored_vault_files' => $restoredVaultFiles,
+                    'missing_vault_files' => $missingVaultFiles,
+                    'missing_vault_paths' => $missingVaultPaths,
                 ],
                 auth()->id(),
                 null,
@@ -601,6 +736,7 @@ class EnterpriseBackupService
                 'restored_database'    => $restoredDb,
                 'restored_files_count' => $restoredFilesCount,
                 'restored_vault_files' => $restoredVaultFiles,
+                'missing_vault_files'  => $missingVaultFiles,
                 'manifest'             => $manifest,
             ];
 

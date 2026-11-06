@@ -79,7 +79,7 @@ class BackupIncludesVaultTest extends TestCase
         $content = 'ENCRYPTED-' . Str::random(64);
         $relative = $this->putVaultFile($content);
 
-        $ledger = EnterpriseBackupService::createBackup('manual', $this->admin()->id);
+        $ledger = EnterpriseBackupService::createBackup('manual', $this->admin()->id, ['include_vault_files' => true]);
         $dir = $this->extractBackup($ledger->file_path);
 
         try {
@@ -97,7 +97,7 @@ class BackupIncludesVaultTest extends TestCase
         File::ensureDirectoryExists(dirname($legacyFile));
         File::put($legacyFile, 'LEGACY');
 
-        $ledger = EnterpriseBackupService::createBackup('manual', $this->admin()->id);
+        $ledger = EnterpriseBackupService::createBackup('manual', $this->admin()->id, ['include_vault_files' => true]);
         $dir = $this->extractBackup($ledger->file_path);
 
         try {

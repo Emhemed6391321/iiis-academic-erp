@@ -15,7 +15,8 @@ class BackupRunCommand extends Command
      */
     protected $signature = 'iiis:backup-run 
                             {--type=scheduled : Type of backup: scheduled, manual, or emergency}
-                            {--user= : User ID initiating the backup}';
+                            {--user= : User ID initiating the backup}
+                            {--full : Self-contained archive that also embeds every vault file (for off-site copies; large)}';
 
     /**
      * The console command description.
@@ -40,7 +41,9 @@ class BackupRunCommand extends Command
         $this->line("⏳ Initiating [{$type}] encrypted backup...");
 
         try {
-            $ledger = EnterpriseBackupService::createBackup($type, $userId);
+            $ledger = EnterpriseBackupService::createBackup($type, $userId, [
+                'include_vault_files' => (bool) $this->option('full'),
+            ]);
 
             $this->newLine();
             $this->info('================================================================');

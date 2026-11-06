@@ -24,4 +24,20 @@ final class SecureVaultPaths
     {
         return storage_path('app/secure_vault');
     }
+
+    /**
+     * Write-only mirror of the vault used by incremental backups. Files are
+     * copied in once (vault files are immutable UUID names) and never deleted
+     * by retention or cleanup. Layout: {mirror}/primary/... and {mirror}/legacy/...
+     */
+    public static function mirror(): string
+    {
+        return storage_path('app/backups/vault_mirror');
+    }
+
+    /** @return array<string,string> root key => absolute directory */
+    public static function roots(): array
+    {
+        return ['primary' => self::primary(), 'legacy' => self::legacy()];
+    }
 }

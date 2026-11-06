@@ -150,6 +150,11 @@ class CreateEnterpriseBackup extends Command
         $threshold = Carbon::now()->subDays($retentionDays)->timestamp;
 
         foreach ($directories as $dir) {
+            // Only this command's own snapshot folders. Never touch encrypted/,
+            // vault_mirror/ or anything else living under storage/app/backups.
+            if (!preg_match('/^snapshot_\d{8}_\d{6}$/', basename($dir))) {
+                continue;
+            }
             if (File::lastModified($dir) < $threshold) {
                 File::deleteDirectory($dir);
             }
