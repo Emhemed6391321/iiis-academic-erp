@@ -283,12 +283,15 @@ class EnterpriseBackupService
     protected static function packMediaFiles(string $tempDir): array
     {
         $storageSource = storage_path('app/public');
-        $vaultSource = storage_path('app/secure_vault');
+        $vaultSource = \App\Support\SecureVaultPaths::primary();
+        $legacyVaultSource = \App\Support\SecureVaultPaths::legacy();
         $destStorageDir = "{$tempDir}/storage_files";
         File::makeDirectory($destStorageDir, 0750, true);
 
         $totalFiles = 0;
         $totalBytes = 0;
+        $vaultFiles = 0;
+        $legacyFiles = 0;
 
         if (File::exists($storageSource)) {
             File::copyDirectory($storageSource, "{$destStorageDir}/public");
@@ -302,13 +305,27 @@ class EnterpriseBackupService
         if (File::exists($vaultSource)) {
             File::copyDirectory($vaultSource, "{$destStorageDir}/secure_vault");
             $vFiles = File::allFiles("{$destStorageDir}/secure_vault");
-            $totalFiles += count($vFiles);
+            $vaultFiles = count($vFiles);
+            $totalFiles += $vaultFiles;
             foreach ($vFiles as $f) {
                 $totalBytes += $f->getSize();
             }
         }
 
+        // Files written before the local disk root moved to storage/app/private
+        if (File::exists($legacyVaultSource) && File::allFiles($legacyVaultSource)) {
+            File::copyDirectory($legacyVaultSource, "{$destStorageDir}/secure_vault_legacy");
+            $lFiles = File::allFiles("{$destStorageDir}/secure_vault_legacy");
+            $legacyFiles = count($lFiles);
+            $totalFiles += $legacyFiles;
+            foreach ($lFiles as $f) {
+                $totalBytes += $f->getSize();
+            }
+        }
+
         return [
+            'vault_files' => $vaultFiles,
+            'legacy_vault_files' => $legacyFiles,
             'total_files' => $totalFiles,
             'total_bytes' => $totalBytes,
         ];
@@ -482,6 +499,21 @@ class EnterpriseBackupService
                 $restoredFilesCount = count(File::allFiles(storage_path('app/public')));
             }
 
+            // Restore encrypted vault (merge: copies over, never deletes existing files)
+            $restoredVaultFiles = 0;
+            $extractedVault = "{$tempExtractDir}/storage_files/secure_vault";
+            if (File::exists($extractedVault)) {
+                File::ensureDirectoryExists(\App\Support\SecureVaultPaths::primary(), 0750);
+                File::copyDirectory($extractedVault, \App\Support\SecureVaultPaths::primary());
+                $restoredVaultFiles += count(File::allFiles($extractedVault));
+            }
+            $extractedLegacyVault = "{$tempExtractDir}/storage_files/secure_vault_legacy";
+            if (File::exists($extractedLegacyVault)) {
+                File::ensureDirectoryExists(\App\Support\SecureVaultPaths::legacy(), 0750);
+                File::copyDirectory($extractedLegacyVault, \App\Support\SecureVaultPaths::legacy());
+                $restoredVaultFiles += count(File::allFiles($extractedLegacyVault));
+            }
+
             SystemAuditTrail::log(
                 'BACKUP_RESTORED',
                 "تمت استعادة النظام بنجاح من النسخة الاحتياطية: {$ledger->file_name}",
@@ -490,6 +522,7 @@ class EnterpriseBackupService
                     'file_name' => $ledger->file_name,
                     'restored_db' => $restoredDb,
                     'restored_files_count' => $restoredFilesCount,
+                    'restored_vault_files' => $restoredVaultFiles,
                 ],
                 auth()->id(),
                 null,
@@ -505,6 +538,7 @@ class EnterpriseBackupService
                 'message'              => "تمت استعادة النظام وقاعدة البيانات والملفات بنجاح من النسخة {$ledger->file_name}",
                 'restored_database'    => $restoredDb,
                 'restored_files_count' => $restoredFilesCount,
+                'restored_vault_files' => $restoredVaultFiles,
                 'manifest'             => $manifest,
             ];
 

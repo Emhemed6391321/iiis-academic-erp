@@ -73,7 +73,7 @@ class SystemHealthController extends Controller
         }
 
         // 3. Vault & Storage Check
-        $vaultDir = storage_path('app/secure_vault');
+        $vaultDir = \App\Support\SecureVaultPaths::primary();
         try {
             if (!File::exists($vaultDir)) {
                 File::makeDirectory($vaultDir, 0750, true);

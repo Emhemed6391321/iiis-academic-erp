@@ -60,21 +60,29 @@ class CreateEnterpriseBackup extends Command
 
         // 2. Vault Snapshot
         $this->line('[2/4] Archiving encrypted secure file vault...');
-        $vaultSource = storage_path('app/secure_vault');
-        $vaultDest = "{$backupDir}/secure_vault";
         $vaultFilesCount = 0;
         $vaultManifest = [];
+        $vaultRoots = [
+            'secure_vault'        => \App\Support\SecureVaultPaths::primary(),
+            'secure_vault_legacy' => \App\Support\SecureVaultPaths::legacy(),
+        ];
 
-        if (File::exists($vaultSource)) {
+        foreach ($vaultRoots as $destName => $vaultSource) {
+            if (!File::exists($vaultSource) || !File::allFiles($vaultSource)) {
+                continue;
+            }
+            $vaultDest = "{$backupDir}/{$destName}";
             File::copyDirectory($vaultSource, $vaultDest);
-            $files = File::allFiles($vaultDest);
-            $vaultFilesCount = count($files);
-            foreach ($files as $file) {
-                $vaultManifest[$file->getRelativePathname()] = [
+            foreach (File::allFiles($vaultDest) as $file) {
+                $vaultFilesCount++;
+                $vaultManifest[$destName . '/' . str_replace('\\', '/', $file->getRelativePathname())] = [
                     'size' => $file->getSize(),
                     'sha256' => hash_file('sha256', $file->getRealPath()),
                 ];
             }
+        }
+
+        if ($vaultFilesCount > 0) {
             $this->info("   ✓ Encrypted vault backed up ({$vaultFilesCount} files).");
         } else {
             $this->line("   - Secure vault directory is empty or not yet initialized.");
